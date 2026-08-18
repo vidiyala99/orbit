@@ -4,7 +4,7 @@
 
 > Networking runs on luck — who you happen to sit next to, who's still around when the doors open, who offers you a ride when it lets out. This is the app for when none of that is luck anymore.
 
-AI has made cold, mass-filed applications cheap and abundant. That makes a real in-person connection — one a bot couldn't have made — the actual scarce asset in a job search. This product exists to make the in-person side less accidental: state where you'll be, get spotted by the right people before you arrive, and walk away with something that survives past a LinkedIn add that goes quiet.
+A cover letter used to cost something — a little time, a little thought, per application. AI erased that cost, so now every recruiter's inbox is flooded with volume that proves nothing about the person behind it. The one signal AI still can't fake is two people who've actually stood in the same room. That's not a nice-to-have anymore — it's the scarce channel, precisely because everything else got cheap. This app exists to make that channel less accidental: say where you'll be, get spotted by the people worth meeting before you arrive, and leave with something that survives past a LinkedIn add that quietly stops replying.
 
 This is the first of three planned sub-projects:
 
