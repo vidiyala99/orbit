@@ -32,6 +32,13 @@ class ThreadOut(BaseModel):
     class Config:
         from_attributes = True
 
+class StampOut(BaseModel):
+    confirmed: bool
+    confirmed_at: datetime | None
+
+    class Config:
+        from_attributes = True
+
 class MessageOut(BaseModel):
     id: uuid.UUID
     thread_id: uuid.UUID

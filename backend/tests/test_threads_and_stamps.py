@@ -51,3 +51,23 @@ def test_non_participant_cannot_read_messages(db_session):
     resp = client.get(f"/threads/{thread['id']}/messages")
     assert resp.status_code == 403
     app.dependency_overrides.clear()
+
+def test_stamp_requires_both_sides_to_confirm(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    priya = _login_as(db_session, "priya_stamp")
+    dev = User(clerk_id="user_dev_stamp", name="Dev")
+    db_session.add(dev); db_session.commit()
+
+    client = TestClient(app)
+    thread = client.post("/threads", json={"other_user_id": str(dev.id)}).json()
+
+    first = client.post(f"/threads/{thread['id']}/stamp")
+    assert first.status_code == 200
+    assert first.json()["confirmed"] is False
+
+    app.dependency_overrides[get_current_user] = lambda: dev
+    second = client.post(f"/threads/{thread['id']}/stamp")
+    assert second.json()["confirmed"] is True
+    assert second.json()["confirmed_at"] is not None
+
+    app.dependency_overrides.clear()
