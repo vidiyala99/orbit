@@ -14,34 +14,36 @@ export default function MarketingNav({ active }: { active: Page }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-10 flex items-center justify-between border-b border-rule bg-card px-5 py-3">
-      <Link href="/" className="flex items-center gap-1.5 font-display text-sm font-bold text-ink">
-        <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
-        StayConnected
-      </Link>
+    <nav className="sticky top-0 z-10 border-b border-rule bg-card">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
+        <Link href="/" className="flex items-center gap-1.5 font-display text-sm font-bold text-ink">
+          <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+          StayConnected
+        </Link>
 
-      <div className="hidden gap-4 font-mono text-[10px] uppercase text-ink2 md:flex">
-        {LINKS.map((link) => (
-          <Link
-            key={link.page}
-            href={link.href}
-            aria-current={link.page === active ? "page" : undefined}
-            className={link.page === active ? "font-bold text-accent" : ""}
-          >
-            {link.label}
-          </Link>
-        ))}
+        <div className="hidden gap-4 font-mono text-[10px] uppercase text-ink2 md:flex">
+          {LINKS.map((link) => (
+            <Link
+              key={link.page}
+              href={link.href}
+              aria-current={link.page === active ? "page" : undefined}
+              className={link.page === active ? "font-bold text-accent" : ""}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-label="Menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="btn-press rounded-full border border-rule px-3 py-1.5 font-mono text-[10px] uppercase text-ink md:hidden"
+        >
+          Menu
+        </button>
       </div>
-
-      <button
-        type="button"
-        aria-label="Menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="btn-press rounded-full border border-rule px-3 py-1.5 font-mono text-[10px] uppercase text-ink md:hidden"
-      >
-        Menu
-      </button>
 
       <div
         data-testid="mobile-drawer"
