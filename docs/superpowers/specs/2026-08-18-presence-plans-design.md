@@ -29,19 +29,20 @@ Everything below is scoped to #1 only.
 
 ## Data model
 
-- **User** — Clerk-linked profile: name, headline, LinkedIn (optional), avatar
+- **User** — profile: name, headline, LinkedIn (optional), avatar. Auth fields (email, password hash, etc.) are covered by the separate `2026-08-19-custom-auth-design.md` spec, which replaces the originally-planned Clerk integration.
 - **Plan** — free text, location (point, snapped to neighborhood/venue precision — not exact GPS), time window, poster, visibility (public). No separate "logistics" plan type in v1 — a ride-share plan ("heading to Sunnyvale, 2 seats") is expressed the same way as an event plan; revisit structured fields once usage data exists. The composer offers optional quick-tag chips (e.g. "Need a ride," "Grabbing coffee," "Open to chat") that prepend to the free text — a one-tap starting point for the "standing outside a venue, need this fast" moment, not a structured field; the plan is still stored as plain text.
+- **Comment** — public reply to a Plan: text, author, plan_id, timestamp. Flat (no reply-to-reply nesting), newest-first. Lets everyone interested in a plan see each other and self-organize (e.g. a ride-share group), instead of the poster manually brokering separate DMs. Each comment has a "Message" action that opens/continues a private DM thread with its author — same Thread/Message model below, not a new mechanism.
 - **Thread** / **Message** — in-app WebSocket-backed DM, one thread per pair of users
-- **Stamp** — records that two users met in person. Triggered by mutual confirmation: either side can tap "we met" in a thread, and the stamp is created once both sides have confirmed (prevents one-sided/false stamping). Timestamped, shown in the chat thread and on the user's connection history.
-- **Report**, **Block** — safety primitives, one row per action, target can be a Plan, Message, or User
+- **Stamp** — records that two users met in person. Triggered by mutual confirmation: either side can tap "we met" in a thread, and the stamp is created once both sides have confirmed (prevents one-sided/false stamping). Timestamped, shown in the chat thread and on the user's connection history. Stamps remain DM-only in v1 — two users who only ever interacted via public Comments can't stamp until one of them escalates to a DM. Revisit if user feedback says this is a real gap.
+- **Report**, **Block** — safety primitives, one row per action, target can be a Plan, Comment, Message, or User
 
 ## Discovery flow
 
-Map + list toggle over the same underlying query: plans active now/today within a radius, filtered by time window (PostGIS). Tapping a plan opens its detail view; "Message" opens or continues a DM thread.
+Map + list toggle over the same underlying query: plans active now/today within a radius, filtered by time window (PostGIS). Tapping a plan opens its detail view, showing the plan and its public comment thread beneath it. "Message" (on the plan, or on any individual comment) opens or continues a DM thread with that person.
 
 ## Safety baseline
 
-Report + block on plans and messages, plus a basic server-side word-list filter on plan/message creation. No admin dashboard in v1 — reports land in a table for manual review.
+Report + block on plans, comments, and messages, plus a basic server-side word-list filter on plan/comment/message creation. No admin dashboard in v1 — reports land in a table for manual review.
 
 ## Visual design system
 
