@@ -7,7 +7,7 @@ export default async function Page() {
   return (
     <>
       <MarketingNav active="home" />
-      <main className="bg-[#F6F3EC]">
+      <main className="min-h-screen bg-[#F6F3EC]">
         <section className="px-6 py-16 text-center">
           <FadeInStagger>
             <h1 className="mx-auto max-w-md font-display text-3xl font-bold text-ink">
@@ -18,11 +18,11 @@ export default async function Page() {
               The one channel AI can&apos;t fake: say where you&apos;ll be, get spotted by the
               people worth meeting, leave with a connection that outlasts a LinkedIn add.
             </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <WaitlistForm />
               <Link
                 href="/how-it-works"
-                className="btn-press rounded-full border border-rule px-4 py-2 font-display text-sm font-semibold text-ink"
+                className="btn-press whitespace-nowrap rounded-full border border-rule px-4 py-2 font-display text-sm font-semibold text-ink"
               >
                 See how it works
               </Link>

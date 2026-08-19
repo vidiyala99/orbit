@@ -20,7 +20,7 @@ export default function HowItWorksPage() {
   return (
     <>
       <MarketingNav active="how-it-works" />
-      <main className="bg-[#F6F3EC]">
+      <main className="min-h-screen bg-[#F6F3EC]">
         <section className="px-6 py-12 text-center">
           <h1 className="mx-auto max-w-sm font-display text-2xl font-bold text-ink">
             Three moments, not a whole new app to learn

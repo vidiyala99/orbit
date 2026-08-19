@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <>
       <MarketingNav active="about" />
-      <main className="bg-[#F6F3EC] px-6 py-14">
+      <main className="min-h-screen bg-[#F6F3EC] px-6 py-14">
         <div className="mx-auto max-w-lg">
           <h1 className="font-display text-2xl font-bold text-ink">
             A cover letter used to cost something.
