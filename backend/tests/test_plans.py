@@ -63,3 +63,20 @@ def test_discover_excludes_plans_outside_radius(db_session):
     assert list_resp.json() == []
 
     app.dependency_overrides.clear()
+
+def test_get_single_plan(db_session):
+    from app.db import get_db
+    app.dependency_overrides[get_db] = lambda: db_session
+    _override_user(db_session, "single_plan_user")
+    client = TestClient(app)
+
+    now = datetime.now(timezone.utc)
+    created = client.post("/plans", json={
+        "text": "Founders Coffee", "lat": 37.44, "lon": -122.16,
+        "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=1)).isoformat(),
+    }).json()
+
+    resp = client.get(f"/plans/{created['id']}")
+    assert resp.status_code == 200
+    assert resp.json()["text"] == "Founders Coffee"
+    app.dependency_overrides.clear()

@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from geoalchemy2.functions import ST_DWithin, ST_Distance
@@ -43,3 +44,10 @@ def discover_plans(
         .all()
     )
     return plans
+
+@router.get("/{plan_id}", response_model=PlanOut)
+def get_plan(plan_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    plan = db.query(Plan).filter(Plan.id == plan_id).one_or_none()
+    if plan is None:
+        raise HTTPException(status_code=404, detail="plan not found")
+    return plan
