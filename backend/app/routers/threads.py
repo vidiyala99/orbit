@@ -4,7 +4,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.orm import Session
 from ..db import get_db
 from ..auth import get_current_user
-from ..models import Thread, Message, User
+from ..models import Block, Thread, Message, User
 from ..schemas import ThreadCreate, ThreadOut, MessageOut
 
 router = APIRouter(prefix="/threads", tags=["threads"])
@@ -13,6 +13,20 @@ router = APIRouter(prefix="/threads", tags=["threads"])
 def start_or_resume_thread(body: ThreadCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if body.other_user_id == user.id:
         raise HTTPException(status_code=400, detail="cannot start a thread with yourself")
+
+    blocked = (
+        db.query(Block)
+        .filter(
+            or_(
+                and_(Block.blocker_id == user.id, Block.blocked_id == body.other_user_id),
+                and_(Block.blocker_id == body.other_user_id, Block.blocked_id == user.id),
+            )
+        )
+        .first()
+    )
+    if blocked is not None:
+        raise HTTPException(status_code=403, detail="cannot start a thread with a blocked user")
+
     a, b = sorted([user.id, body.other_user_id], key=str)
     existing = db.query(Thread).filter(Thread.user_a_id == a, Thread.user_b_id == b).one_or_none()
     if existing:

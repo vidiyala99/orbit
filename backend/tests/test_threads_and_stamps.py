@@ -94,3 +94,23 @@ def test_stamp_requires_both_sides_to_confirm(db_session):
     assert second.json()["confirmed_at"] is not None
 
     app.dependency_overrides.clear()
+
+def test_cannot_start_thread_with_a_blocked_user(db_session):
+    from app.models import Block
+    app.dependency_overrides[get_db] = lambda: db_session
+    priya = _login_as(db_session, "priya_block")
+    dev = User(clerk_id="user_dev_block", name="Dev")
+    db_session.add(dev); db_session.commit()
+    db_session.add(Block(blocker_id=priya.id, blocked_id=dev.id))
+    db_session.commit()
+
+    client = TestClient(app)
+    resp = client.post("/threads", json={"other_user_id": str(dev.id)})
+    assert resp.status_code == 403
+
+    # and the block holds in the other direction too
+    app.dependency_overrides[get_current_user] = lambda: dev
+    reverse = client.post("/threads", json={"other_user_id": str(priya.id)})
+    assert reverse.status_code == 403
+
+    app.dependency_overrides.clear()
