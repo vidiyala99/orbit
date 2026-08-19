@@ -20,3 +20,24 @@ class PlanOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ThreadCreate(BaseModel):
+    other_user_id: uuid.UUID
+
+class ThreadOut(BaseModel):
+    id: uuid.UUID
+    user_a_id: uuid.UUID
+    user_b_id: uuid.UUID
+
+    class Config:
+        from_attributes = True
+
+class MessageOut(BaseModel):
+    id: uuid.UUID
+    thread_id: uuid.UUID
+    sender_id: uuid.UUID
+    body: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
