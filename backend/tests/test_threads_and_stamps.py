@@ -52,6 +52,29 @@ def test_non_participant_cannot_read_messages(db_session):
     assert resp.status_code == 403
     app.dependency_overrides.clear()
 
+def test_same_user_calling_twice_does_not_confirm_stamp(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    priya = _login_as(db_session, "priya_stamp_twice")
+    dev = User(clerk_id="user_dev_stamp_twice", name="Dev")
+    db_session.add(dev); db_session.commit()
+
+    client = TestClient(app)
+    thread = client.post("/threads", json={"other_user_id": str(dev.id)}).json()
+
+    first = client.post(f"/threads/{thread['id']}/stamp")
+    assert first.json()["confirmed"] is False
+
+    second = client.post(f"/threads/{thread['id']}/stamp")
+    assert second.json()["confirmed"] is False
+    assert second.json()["confirmed_at"] is None
+
+    app.dependency_overrides[get_current_user] = lambda: dev
+    third = client.post(f"/threads/{thread['id']}/stamp")
+    assert third.json()["confirmed"] is True
+    assert third.json()["confirmed_at"] is not None
+
+    app.dependency_overrides.clear()
+
 def test_stamp_requires_both_sides_to_confirm(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya_stamp")
