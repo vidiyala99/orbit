@@ -36,6 +36,11 @@ input:focus-visible {
   transition: transform 100ms ease-out;
 }
 
+@keyframes stampPress {
+  0% { transform: rotate(-3deg) scale(0.6); opacity: 0; }
+  100% { transform: rotate(-3deg) scale(1); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
