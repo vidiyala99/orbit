@@ -15,13 +15,13 @@ export default function MarketingNav({ active }: { active: Page }) {
 
   return (
     <nav className="sticky top-0 z-10 border-b border-rule bg-card">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
-        <Link href="/" className="flex items-center gap-1.5 font-display text-sm font-bold text-ink">
-          <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-8 lg:py-5">
+        <Link href="/" className="flex items-center gap-1.5 font-display text-sm font-bold text-ink lg:gap-2 lg:text-lg">
+          <span className="h-2 w-2 rounded-full bg-accent lg:h-2.5 lg:w-2.5" aria-hidden="true" />
           StayConnected
         </Link>
 
-        <div className="hidden gap-4 font-mono text-[10px] uppercase text-ink2 md:flex">
+        <div className="hidden gap-4 font-mono text-[10px] uppercase text-ink2 md:flex lg:gap-8 lg:text-xs">
           {LINKS.map((link) => (
             <Link
               key={link.page}

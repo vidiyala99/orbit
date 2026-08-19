@@ -29,14 +29,14 @@ export default function WaitlistForm() {
 
   if (count !== null) {
     return (
-      <p className="font-mono text-xs text-accent">
+      <p className="font-mono text-xs text-accent lg:text-base">
         You&apos;re on the list — {count} {count === 1 ? "person" : "people"} so far
       </p>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 lg:gap-3">
       <input
         type="email"
         required
@@ -44,16 +44,16 @@ export default function WaitlistForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
-        className="rounded-full border border-rule bg-white px-3 py-1.5 text-xs text-ink"
+        className="rounded-full border border-rule bg-white px-3 py-1.5 text-xs text-ink lg:px-5 lg:py-3.5 lg:text-lg"
       />
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-full bg-accent px-4 py-1.5 font-display text-xs font-semibold text-card active:scale-95 transition-transform"
+        className="btn-press rounded-full bg-accent px-4 py-1.5 font-display text-xs font-semibold text-card lg:px-7 lg:py-3.5 lg:text-lg"
       >
         {submitting ? "Joining..." : "Join the waitlist"}
       </button>
-      {error && <p className="font-mono text-[10px] text-accent">{error}</p>}
+      {error && <p className="font-mono text-[10px] text-accent lg:text-sm">{error}</p>}
     </form>
   );
 }
