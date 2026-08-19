@@ -11,6 +11,8 @@ router = APIRouter(prefix="/threads", tags=["threads"])
 
 @router.post("", response_model=ThreadOut, status_code=201)
 def start_or_resume_thread(body: ThreadCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if body.other_user_id == user.id:
+        raise HTTPException(status_code=400, detail="cannot start a thread with yourself")
     a, b = sorted([user.id, body.other_user_id], key=str)
     existing = db.query(Thread).filter(Thread.user_a_id == a, Thread.user_b_id == b).one_or_none()
     if existing:

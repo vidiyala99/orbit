@@ -19,11 +19,23 @@ def test_creating_thread_twice_returns_same_thread(db_session):
 
     client = TestClient(app)
     first = client.post("/threads", json={"other_user_id": str(dev.id)})
-    second = client.post("/threads", json={"other_user_id": str(dev.id)})
+
+    app.dependency_overrides[get_current_user] = lambda: dev  # switch caller to dev; reversed direction
+    second = client.post("/threads", json={"other_user_id": str(priya.id)})
 
     assert first.status_code == 201
     assert second.status_code == 201
     assert first.json()["id"] == second.json()["id"]
+    app.dependency_overrides.clear()
+
+def test_cannot_create_thread_with_self(db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
+    priya = _login_as(db_session, "priya")
+
+    client = TestClient(app)
+    resp = client.post("/threads", json={"other_user_id": str(priya.id)})
+
+    assert resp.status_code == 400
     app.dependency_overrides.clear()
 
 def test_non_participant_cannot_read_messages(db_session):
