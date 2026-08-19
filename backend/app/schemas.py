@@ -2,6 +2,17 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+class UserOut(BaseModel):
+    id: uuid.UUID
+    clerk_id: str
+    name: str
+    headline: str | None
+    linkedin_url: str | None
+    avatar_url: str | None
+
+    class Config:
+        from_attributes = True
+
 class PlanCreate(BaseModel):
     text: str = Field(min_length=1, max_length=500)
     lat: float
