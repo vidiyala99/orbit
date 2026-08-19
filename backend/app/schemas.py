@@ -67,3 +67,12 @@ class ReportCreate(BaseModel):
 
 class BlockCreate(BaseModel):
     blocked_user_id: uuid.UUID
+
+class WaitlistCreate(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+
+class WaitlistOut(BaseModel):
+    ok: bool = True
+
+class WaitlistCountOut(BaseModel):
+    count: int
