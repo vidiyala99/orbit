@@ -26,12 +26,16 @@ Persistent top bar, same on every marketing page: logo (pin icon + wordmark), li
 
 "Try it out" and every primary CTA ("Post your plan," "Post your first plan") link to `/sign-up`. Once auth exists, a signed-in visitor sees a different header treatment matching what's already on the app's home page today (sign-out affordance instead of sign-in/sign-up links) — no change needed here beyond what the custom-auth spec already wires into `app/page.tsx`.
 
+Every nav link and CTA is a real `<a>`/`Link`, not a `<div onClick>` — cmd-click and middle-click must work. See Interaction States below for their focus/hover/active treatment.
+
 ## Pages
 
 ### Home (`/`)
 
+**Cut from the earlier mockup:** the tracked-uppercase eyebrow line above the headline ("The channel AI can't fake" / "Why this exists" / "Step by step" on the three pages). It's a named default (`hero-eyebrow-chip`/`kicker-above-heading`) that was inherited from the visual-companion mockup, not derived from this subject, and the skill's own guidance is explicit that restyling a flagged eyebrow reproduces the same tell — so it's removed outright, not reworked. Its content isn't lost: "the channel AI can't fake" folds into the subhead below.
+
 Scroll order, top to bottom:
-1. **Hero** — eyebrow ("The channel AI can't fake"), headline ("Networking used to run on luck. Now it doesn't."), subhead, two CTAs (primary: "Post your plan" → `/sign-up`; secondary: "See how it works" → `/how-it-works`), three pinned proof-cards (Priya S. / Dev K. / Marcus T., pulled directly from the app's own data shape — not fabricated content, same `PlanT` shape as the real board)
+1. **Hero** — headline ("Networking used to run on luck. Now it doesn't."), subhead ("The one channel AI can't fake: say where you'll be, get spotted by the people worth meeting, leave with a connection that outlasts a LinkedIn add."), two CTAs (primary: "Post your plan" → `/sign-up`; secondary: "See how it works" → `/how-it-works`), three pinned proof-cards (Priya S. / Dev K. / Marcus T., pulled directly from the app's own data shape — not fabricated content, same `PlanT` shape as the real board)
 2. **Three-step summary** — condensed version of the same three steps detailed in full on How it works; links there via the secondary hero CTA and this section's framing, not a repeated deep-dive
 3. **Thesis quote** — dark cork-textured section, pull-quote from the About page's argument, attributed "See About us"
 4. **Footer CTA** — "Stop leaving it to luck," single primary button
@@ -47,31 +51,47 @@ Ends with the same footer CTA pattern as Home.
 
 ### About (`/about`)
 
-Single-column essay layout: eyebrow, headline ("A cover letter used to cost something."), full thesis paragraph (the same argument already written into the Presence & Plans spec's thesis section — not a new argument, just given room to breathe here), closing pull-quote section on the cream/cork transition.
+Single-column essay layout: headline ("A cover letter used to cost something."), full thesis paragraph (the same argument already written into the Presence & Plans spec's thesis section — not a new argument, just given room to breathe here), closing pull-quote section on the cream/cork transition.
 
 ## Animation system
 
-Implemented with plain CSS keyframes + `IntersectionObserver` (no new animation library — keeps the dependency surface matching what's already in `frontend/package.json`, which has none today):
+**Revised after an audit against the `deliberate` skill's dated-defaults list.** The first draft animated every section on scroll ("fade-up on every section" is itself a named current default) and used a generic `hover:scale-105`-style card lift — both cut. Per the skill's own decision-sheet discipline, MOTION should be a bounded *count* of specific moments, not a blanket treatment, and each moment should be justified by this subject (a corkboard, pinned physical objects) rather than being scroll-animation boilerplate. Implemented with plain CSS keyframes + `IntersectionObserver` where needed — no new animation library, matching `frontend/package.json`'s current zero-dependency baseline.
 
-- **Hero entrance**: eyebrow, headline, subhead, CTAs, and proof-cards each fade+slide-up (`translateY(10px)→0`, opacity `0→1`) in a staggered sequence on mount, ~150ms apart, `ease-out`, total sequence under 1s
-- **Scroll-triggered reveals**: every section below the hero (three-step summary, thesis quote, footer CTA on Home; each step row on How it works; the closing quote on About) starts at `opacity:0; translateY(10px)` and animates to resting state the first time it enters the viewport, via a shared `useScrollReveal` hook wrapping `IntersectionObserver`
-- **Stamp-press moment**: on How it works only, the stamp badge in step 3's illustration loops a gentle pulse (`scale(1)→scale(1.15)→scale(1)`) — the one continuously-animating element on the page, deliberately, since it's the actual product signature and should draw the eye
-- **Micro-interactions**: button hover/press states (existing Tailwind `hover:`/`active:` utility patterns), nav link underline on hover, proof-card hover lift (`scale(1.04)`, shadow increase, rotation resets to 0°)
-- **Accessibility**: every animation above is wrapped in a `prefers-reduced-motion: no-preference` media guard — under reduced-motion, content appears in its resting state immediately, no transitions play
+**Three moments total, matching the count already fixed in the app's own design system** (`2026-08-18-presence-plans-design.md`'s MOTION line names live-pulse, message slide-in, stamp-press — this reuses that budget rather than adding a new one):
+
+1. **Hero entrance** (Home only, on load): headline, subhead, CTAs, and proof-cards fade+slide-up in a staggered sequence, ~150ms apart, `ease-out`, under 1s total. One-time, tied to first paint — not repeated on scroll.
+2. **Stamp-press** (How it works, step 3 illustration only): reuses the app's own stamp-confirm animation (rotate to -3°, scale-in) exactly as it fires in the real product, rather than inventing a new "marketing" version of it — this is the actual signature moment, shown once per page load, not looping (a looping/pulsing badge was in the first draft and is cut — a signature element earns attention by being distinct, not by moving continuously).
+3. **Pinned-card hover response** (any pinned proof-card, anywhere it appears): the card's rotation straightens toward 0° and its shadow deepens — a physical response (a pinned card lifting off the board) rather than a generic scale-up. No `scale()` transform.
+
+Nothing else on these pages animates on scroll. Sections appear in their resting state; the reveal-everything pattern was the tell, and cutting it is the fix, not restyling it more subtly.
+
+**Accessibility**: all three moments respect `prefers-reduced-motion: no-preference` — under reduced-motion, content and the stamp illustration appear in their resting/final state immediately.
+
+## Interaction states
+
+**Missing entirely from the first draft** — flagged as the highest-signal gap in a `deliberate` audit, higher than color or layout, because a screenshot can look fine while the page is inert to actually touch. Every interactive element on these pages (nav links, both CTA styles, the hamburger toggle) gets:
+
+- **`:active`** — pointer-down feedback, not just hover: `transform: scale(0.97)` on buttons/CTA pills, ~100ms `ease-out`. Responds on press, not on click-release.
+- **`:focus-visible`** — `outline: 2px solid #B8461A; outline-offset: 2px` on every link and button, keyboard-only (not on mouse click). The hamburger drawer uses `:focus-within` so the whole open group signals focus.
+- **Hover** stays as already speced (nav underline, pinned-card rotation-straighten) but is no longer the *only* state — active and focus are layered on top, not instead of it.
+- **The six untamed surfaces**, themed instead of left at browser defaults: `::selection` (accent-tinted, not default blue), `caret-color` (accent), `::-webkit-scrollbar-thumb` (the existing `rule` token), link `text-underline-offset`/`text-decoration-thickness`, `.tabular` class with `font-variant-numeric: tabular-nums` (used where the site shows any count, e.g. "N plans pinned near you" on the app side this links to), and `color-scheme` set on `:root`.
+- **No forms live on these three marketing pages** (signup/login forms are the custom-auth spec's concern) — so disabled/loading/empty/error states aren't applicable here beyond the CTA buttons themselves, which need no disabled state since they're always-available navigation, not submissions.
+- Real semantic elements throughout: `<nav>`, `<a>`/`Link` for navigation (never `<div onClick>`), `<button>` only for the hamburger toggle (an action, not navigation), heading levels that don't skip (h1 once per page, h2 for section titles), a skip-to-content link before the nav.
 
 ## Responsive strategy
 
 Mobile-first Tailwind breakpoints. Below `md` (768px):
 - Nav collapses to hamburger drawer (logo + CTA stay in the bar)
-- Hero switches from centered-with-cards-below to a single stacked column: eyebrow → headline → subhead → CTAs → cards (cards stack vertically, still pinned/rotated)
+- Hero switches from centered-with-cards-below to a single stacked column: headline → subhead → CTAs → cards (cards stack vertically, still pinned/rotated)
 - How it works' alternating image-left/text-right rows stack to image-above-text, uniformly (no left/right alternation on mobile — alternation is a desktop-only rhythm device)
 - All section padding/type scales down using existing Tailwind responsive utilities, no new breakpoint tokens needed
 
 ## Testing
 
-- Vitest component tests for each page: renders expected headline/CTA text, CTA links point to the right routes
-- A test for the `useScrollReveal` hook: elements start hidden, become visible once `IntersectionObserver` reports intersection (mocked in jsdom, which has no real `IntersectionObserver`)
-- No visual-regression or animation-timing tests in v1 — motion correctness is checked by manual review (per `superpowers:verification-before-completion`, screenshot the running pages, don't just trust the code)
+- Vitest component tests for each page: renders expected headline/CTA text, CTA links point to the right routes (real `href`s, not click handlers)
+- A test for the hero-entrance stagger hook: elements start hidden, animate in on mount
+- A test confirming `:focus-visible` styles and `tabIndex` are correct on nav links, CTAs, and the hamburger toggle (jsdom + testing-library's accessibility queries, not a full visual check)
+- No visual-regression or animation-timing tests in v1 — motion correctness is checked by manual review (per `superpowers:verification-before-completion`, screenshot the running pages, don't just trust the code); this manual pass should also tab through every page keyboard-only and confirm the focus ring is visible at each stop
 
 ## Out of scope (v1)
 
