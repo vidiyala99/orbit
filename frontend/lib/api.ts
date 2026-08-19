@@ -10,8 +10,10 @@ export async function fetchMe(token: string): Promise<UserT> {
   return res.json();
 }
 
+/** Discovery is public — `token` is optional and, when present, only used to
+ *  personalize results (e.g. hiding plans from blocked users). */
 export async function fetchNearbyPlans(
-  lat: number, lon: number, radiusM: number, at: string, token: string,
+  lat: number, lon: number, radiusM: number, at: string, token?: string,
 ): Promise<PlanT[]> {
   const url = new URL(`${API_BASE}/plans`);
   url.searchParams.set("lat", String(lat));
@@ -19,13 +21,17 @@ export async function fetchNearbyPlans(
   url.searchParams.set("radius_m", String(radiusM));
   url.searchParams.set("at", at);
 
-  const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(url.toString(), {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
   if (!res.ok) throw new Error(`fetchNearbyPlans failed: ${res.status}`);
   return res.json();
 }
 
-export async function fetchPlan(id: string, token: string): Promise<PlanT> {
-  const res = await fetch(`${API_BASE}/plans/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+export async function fetchPlan(id: string, token?: string): Promise<PlanT> {
+  const res = await fetch(`${API_BASE}/plans/${id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
   if (!res.ok) throw new Error(`fetchPlan failed: ${res.status}`);
   return res.json();
 }
@@ -60,6 +66,22 @@ export async function confirmStamp(threadId: string, token: string): Promise<Sta
 export function wsUrl(threadId: string, token: string): string {
   const base = API_BASE.replace(/^http/, "ws");
   return `${base}/ws/threads/${threadId}?token=${encodeURIComponent(token)}`;
+}
+
+export async function joinWaitlist(email: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/waitlist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error("Could not join waitlist");
+}
+
+export async function fetchWaitlistCount(): Promise<number> {
+  const res = await fetch(`${API_BASE}/waitlist/count`);
+  if (!res.ok) throw new Error("Could not fetch waitlist count");
+  const body = await res.json();
+  return body.count;
 }
 
 export async function createPlan(
