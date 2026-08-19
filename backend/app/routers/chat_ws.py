@@ -3,6 +3,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.orm import Session
 from ..db import get_db
 from ..auth import verify_token
+from ..filters import contains_blocked_content
 from ..models import Thread, Message, User
 
 router = APIRouter(tags=["chat"])
@@ -35,6 +36,11 @@ async def chat_socket(
     try:
         while True:
             data = await websocket.receive_json()
+            if contains_blocked_content(data["body"]):
+                # Reject this one message without persisting, broadcasting, or
+                # tearing down the connection.
+                await websocket.send_json({"error": "message not allowed"})
+                continue
             message = Message(thread_id=thread_id, sender_id=user.id, body=data["body"])
             db.add(message)
             db.commit()
