@@ -34,6 +34,8 @@ Both tokens are single-use: `used_at` is set on redemption and checked before ho
 
 Keep the existing Bearer-JWT-per-request pattern already threaded through `frontend/lib/api.ts` and the WebSocket connection (`wsUrl(threadId, token)`) — only the issuer changes, not the shape. `backend/app/auth.py`'s verification logic keeps the same structure (`get_current_user`, `get_optional_user`, `verify_token`) but verifies against our own signing key instead of fetching Clerk's JWKS.
 
+**Storage correction from the original draft:** several existing pages (`app/page.tsx`, `app/plans/[id]/page.tsx`, `app/chats/[threadId]/page.tsx`) are Next.js Server Components that read the token server-side via Clerk's `auth()` — `localStorage` is invisible there. The token is instead stored in a plain (non-httpOnly) cookie: server components read it via `next/headers`'s `cookies()`, client components read/write it via `document.cookie`. Same Bearer-token-per-request shape as today everywhere it's actually used in a fetch call — only where the token is parked between requests changes.
+
 - JWT signed with a backend-held secret (HS256) — since our own backend is the only verifier, there's no need for the asymmetric key pair / JWKS-endpoint machinery Clerk needed to let multiple parties verify independently
 - 7-day expiry, no refresh token in v1 — session ends at expiry, user re-logs in
 - Token payload: `sub` (user id), `iat`, `exp`
@@ -58,7 +60,7 @@ Password hashing via `passlib`'s argon2 scheme. Verification-gate decision: `ema
 - Remove `@clerk/nextjs` dependency and its provider wrapper in `frontend/app/layout.tsx`
 - Replace `frontend/app/sign-in/[[...sign-in]]/page.tsx` and `frontend/app/sign-up/[[...sign-up]]/page.tsx` with custom-styled forms (corkboard design system — see the landing-page spec for the shared visual language once written)
 - New routes: `/verify-email` (handles the emailed link), `/forgot-password` (request form), `/reset-password` (handles the emailed link + new-password form)
-- New lightweight auth context/hook: holds the JWT (persisted to `localStorage`), exposes `login`, `signup`, `logout`, `token`, `user`
+- New lightweight auth helper: holds the JWT (persisted to a `sc_token` cookie, readable both server- and client-side), exposes `login`, `signup`, `logout`, `getToken`
 - Google OAuth button links to `GET /auth/google`; the frontend adds a callback-landing route that calls `POST /auth/google/exchange` with the code from the query string, stores the resulting JWT, redirects to the app
 
 ## Email delivery
