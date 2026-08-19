@@ -48,3 +48,11 @@ class MessageOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ReportCreate(BaseModel):
+    target_type: str = Field(pattern="^(plan|message|user)$")
+    target_id: uuid.UUID
+    reason: str = Field(min_length=1, max_length=500)
+
+class BlockCreate(BaseModel):
+    blocked_user_id: uuid.UUID

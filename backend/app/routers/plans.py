@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from geoalchemy2.functions import ST_DWithin, ST_Distance
 from geoalchemy2.elements import WKTElement
@@ -7,11 +7,14 @@ from ..db import get_db
 from ..auth import get_current_user
 from ..models import Plan, User
 from ..schemas import PlanCreate, PlanOut
+from ..filters import contains_blocked_content
 
 router = APIRouter(prefix="/plans", tags=["plans"])
 
 @router.post("", response_model=PlanOut, status_code=201)
 def create_plan(body: PlanCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if contains_blocked_content(body.text):
+        raise HTTPException(status_code=422, detail="plan text not allowed")
     plan = Plan(
         user_id=user.id,
         text=body.text,
