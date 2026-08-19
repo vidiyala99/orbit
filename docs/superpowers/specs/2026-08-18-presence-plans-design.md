@@ -30,7 +30,7 @@ Everything below is scoped to #1 only.
 ## Data model
 
 - **User** — Clerk-linked profile: name, headline, LinkedIn (optional), avatar
-- **Plan** — free text, location (point, snapped to neighborhood/venue precision — not exact GPS), time window, poster, visibility (public). No separate "logistics" plan type in v1 — a ride-share plan ("heading to Sunnyvale, 2 seats") is expressed the same way as an event plan; revisit structured fields once usage data exists.
+- **Plan** — free text, location (point, snapped to neighborhood/venue precision — not exact GPS), time window, poster, visibility (public). No separate "logistics" plan type in v1 — a ride-share plan ("heading to Sunnyvale, 2 seats") is expressed the same way as an event plan; revisit structured fields once usage data exists. The composer offers optional quick-tag chips (e.g. "Need a ride," "Grabbing coffee," "Open to chat") that prepend to the free text — a one-tap starting point for the "standing outside a venue, need this fast" moment, not a structured field; the plan is still stored as plain text.
 - **Thread** / **Message** — in-app WebSocket-backed DM, one thread per pair of users
 - **Stamp** — records that two users met in person. Triggered by mutual confirmation: either side can tap "we met" in a thread, and the stamp is created once both sides have confirmed (prevents one-sided/false stamping). Timestamped, shown in the chat thread and on the user's connection history.
 - **Report**, **Block** — safety primitives, one row per action, target can be a Plan, Message, or User
@@ -87,6 +87,7 @@ SIGNATURE The pushpin + slight card rotation. Every plan is a physical object pi
 - Structured ride-share/logistics plan type (free text covers it for now)
 - In-venue matching (sub-project 2)
 - AI memory/reminder agent (sub-project 3)
+- Calendar or event-platform integration (Luma/Meetup/Eventbrite) — considered and explicitly rejected for v1: venue-to-event mapping is unreliable (a venue can host many simultaneous events) and these platforms don't offer easy public APIs for arbitrary lookup. Free text lets a poster name their event themselves if they want to be found by others from it.
 - Native mobile app
 - Admin moderation dashboard
 - User-adjustable location precision (fixed to neighborhood/venue-level for everyone)
