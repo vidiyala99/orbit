@@ -1,0 +1,77 @@
+from __future__ import annotations
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import String, ForeignKey, DateTime, Boolean, Text, UniqueConstraint, Float
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID
+from geoalchemy2 import Geography
+from .db import Base
+
+def _uuid() -> uuid.UUID:
+    return uuid.uuid4()
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    clerk_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    headline: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+class Plan(Base):
+    __tablename__ = "plans"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    text: Mapped[str] = mapped_column(Text)
+    lat: Mapped[float] = mapped_column(Float)
+    lon: Mapped[float] = mapped_column(Float)
+    location: Mapped[str] = mapped_column(Geography(geometry_type="POINT", srid=4326))
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+class Thread(Base):
+    __tablename__ = "threads"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_a_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    user_b_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    __table_args__ = (UniqueConstraint("user_a_id", "user_b_id", name="uq_thread_pair"),)
+
+class Message(Base):
+    __tablename__ = "messages"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    thread_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("threads.id"))
+    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+class Stamp(Base):
+    __tablename__ = "stamps"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    thread_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("threads.id"), unique=True)
+    user_a_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    user_b_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+class Report(Base):
+    __tablename__ = "reports"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    reporter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    target_type: Mapped[str] = mapped_column(String(20))
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+class Block(Base):
+    __tablename__ = "blocks"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    blocker_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    blocked_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="uq_block_pair"),)
