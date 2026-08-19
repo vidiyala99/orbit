@@ -53,3 +53,16 @@ export function wsUrl(threadId: string, token: string): string {
   const base = API_BASE.replace(/^http/, "ws");
   return `${base}/ws/threads/${threadId}?token=${encodeURIComponent(token)}`;
 }
+
+export async function createPlan(
+  input: { text: string; lat: number; lon: number; starts_at: string; ends_at: string },
+  token: string,
+): Promise<PlanT> {
+  const res = await fetch(`${API_BASE}/plans`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(`createPlan failed: ${res.status}`);
+  return res.json();
+}
