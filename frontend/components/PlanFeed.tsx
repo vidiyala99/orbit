@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PlanT } from "@/lib/types";
 import PlanCard from "./PlanCard";
 
@@ -8,7 +9,9 @@ export default function PlanFeed({ plans }: { plans: PlanT[] }) {
   return (
     <div className="flex flex-col gap-4 p-4">
       {plans.map((plan, i) => (
-        <PlanCard key={plan.id} plan={plan} rotationSeed={i} />
+        <Link key={plan.id} href={`/plans/${plan.id}`} className="block">
+          <PlanCard plan={plan} rotationSeed={i} />
+        </Link>
       ))}
     </div>
   );

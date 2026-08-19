@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { fetchNearbyPlans } from "@/lib/api";
 import PlanFeed from "@/components/PlanFeed";
@@ -12,9 +14,25 @@ export default async function Page() {
 
   return (
     <main>
-      <div className="p-4">
-        <h1 className="font-hand text-2xl text-card">Today</h1>
-        <p className="font-mono text-xs text-rule">{plans.length} plans pinned near you</p>
+      <div className="flex items-center justify-between px-4 pt-4">
+        <span className="font-display text-sm font-bold text-card">StayConnected</span>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className="font-mono text-xs text-accent">Sign in</button>
+          </SignInButton>
+        </SignedOut>
+      </div>
+      <div className="flex items-baseline justify-between p-4">
+        <div>
+          <h1 className="font-hand text-2xl text-card">Today</h1>
+          <p className="font-mono text-xs text-rule">{plans.length} plans pinned near you</p>
+        </div>
+        <Link href="/post" className="font-mono text-xs text-accent">
+          + Post a plan
+        </Link>
       </div>
       <PlanFeed plans={plans} />
     </main>
