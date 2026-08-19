@@ -1,3 +1,12 @@
+export type UserT = {
+  id: string;
+  clerk_id: string;
+  name: string;
+  headline: string | null;
+  linkedin_url: string | null;
+  avatar_url: string | null;
+};
+
 export type PlanT = {
   id: string;
   user_id: string;

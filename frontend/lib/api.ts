@@ -1,6 +1,14 @@
-import { MessageT, PlanT, StampT, ThreadT } from "./types";
+import { MessageT, PlanT, StampT, ThreadT, UserT } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+
+/** The backend's own User row for the current Clerk session. Its `id` — not the
+ *  Clerk user id — is what `Message.sender_id` references. */
+export async function fetchMe(token: string): Promise<UserT> {
+  const res = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`fetchMe failed: ${res.status}`);
+  return res.json();
+}
 
 export async function fetchNearbyPlans(
   lat: number, lon: number, radiusM: number, at: string, token: string,
