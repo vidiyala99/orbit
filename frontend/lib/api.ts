@@ -1,4 +1,4 @@
-import { PlanT, ThreadT } from "./types";
+import { MessageT, PlanT, StampT, ThreadT } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
@@ -30,4 +30,26 @@ export async function startThread(otherUserId: string, token: string): Promise<T
   });
   if (!res.ok) throw new Error(`startThread failed: ${res.status}`);
   return res.json();
+}
+
+export async function fetchMessages(threadId: string, token: string): Promise<MessageT[]> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`fetchMessages failed: ${res.status}`);
+  return res.json();
+}
+
+export async function confirmStamp(threadId: string, token: string): Promise<StampT> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/stamp`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`confirmStamp failed: ${res.status}`);
+  return res.json();
+}
+
+export function wsUrl(threadId: string, token: string): string {
+  const base = API_BASE.replace(/^http/, "ws");
+  return `${base}/ws/threads/${threadId}?token=${encodeURIComponent(token)}`;
 }
