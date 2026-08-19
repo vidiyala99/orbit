@@ -26,3 +26,9 @@ def get_current_user(authorization: str = Header(...), db: Session = Depends(get
         db.commit()
         db.refresh(user)
     return user
+
+def verify_token(token: str) -> str:
+    """Returns the Clerk user id (sub claim) or raises jwt.PyJWTError."""
+    signing_key = _jwk_client.get_signing_key_from_jwt(token)
+    payload = jwt.decode(token, signing_key.key, algorithms=["RS256"], options={"verify_aud": False})
+    return payload["sub"]
