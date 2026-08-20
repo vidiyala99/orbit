@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from app.main import app
-from app.auth import get_current_user
+from app.auth import get_current_user, get_optional_user
 from app.models import User
 
 def _override_user(db_session, name="Priya Shah"):
-    user = User(clerk_id=f"user_{name.replace(' ', '_')}", name=name)
+    user = User(email=f"user_{name.replace(' ', '_')}@example.com", name=name)
     db_session.add(user)
     db_session.commit()
     app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_optional_user] = lambda: user
     return user
 
 def test_create_and_discover_nearby_plan(db_session):
@@ -38,6 +39,37 @@ def test_create_and_discover_nearby_plan(db_session):
     assert list_resp.status_code == 200
     ids = [p["id"] for p in list_resp.json()]
     assert created["id"] in ids
+
+    app.dependency_overrides.clear()
+
+def test_discovery_is_public_no_auth_required(db_session):
+    from app.db import get_db
+    app.dependency_overrides[get_db] = lambda: db_session
+    _override_user(db_session)
+    client = TestClient(app)
+
+    now = datetime.now(timezone.utc)
+    created = client.post("/plans", json={
+        "text": "Coffee near University Ave",
+        "lat": 37.4419, "lon": -122.1430,
+        "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=2)).isoformat(),
+    }).json()
+
+    # No dependency override for get_current_user/get_optional_user, no Authorization
+    # header sent at all -- discovery must still work for a signed-out visitor.
+    app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(get_optional_user, None)
+
+    list_resp = client.get("/plans", params={
+        "lat": 37.4443, "lon": -122.1598, "radius_m": 2000, "at": now.isoformat(),
+    })
+    assert list_resp.status_code == 200
+    ids = [p["id"] for p in list_resp.json()]
+    assert created["id"] in ids
+
+    detail_resp = client.get(f"/plans/{created['id']}")
+    assert detail_resp.status_code == 200
+    assert detail_resp.json()["text"] == "Coffee near University Ave"
 
     app.dependency_overrides.clear()
 

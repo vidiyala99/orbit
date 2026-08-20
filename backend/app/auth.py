@@ -1,34 +1,39 @@
-import jwt
-from jwt import PyJWKClient
 from fastapi import Header, HTTPException, Depends
 from sqlalchemy.orm import Session
+import jwt
+import uuid
+
 from .db import get_db
 from .models import User
-from .config import settings
+from .security import decode_access_token
 
-_jwk_client = PyJWKClient(settings.clerk_jwks_url)
 
 def get_current_user(authorization: str = Header(...), db: Session = Depends(get_db)) -> User:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="missing bearer token")
     token = authorization.removeprefix("Bearer ")
     try:
-        signing_key = _jwk_client.get_signing_key_from_jwt(token)
-        payload = jwt.decode(token, signing_key.key, algorithms=["RS256"], options={"verify_aud": False})
+        user_id = decode_access_token(token)
     except jwt.PyJWTError as e:
         raise HTTPException(status_code=401, detail=f"invalid token: {e}")
 
-    clerk_id = payload["sub"]
-    user = db.query(User).filter(User.clerk_id == clerk_id).one_or_none()
+    user = db.query(User).filter(User.id == user_id).one_or_none()
     if user is None:
-        user = User(clerk_id=clerk_id, name=payload.get("name") or "New user")
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        raise HTTPException(status_code=401, detail="user not found")
     return user
 
-def verify_token(token: str) -> str:
-    """Returns the Clerk user id (sub claim) or raises jwt.PyJWTError."""
-    signing_key = _jwk_client.get_signing_key_from_jwt(token)
-    payload = jwt.decode(token, signing_key.key, algorithms=["RS256"], options={"verify_aud": False})
-    return payload["sub"]
+
+def get_optional_user(authorization: str | None = Header(default=None), db: Session = Depends(get_db)) -> User | None:
+    """Like get_current_user, but returns None instead of raising when no/invalid credentials are present.
+    Used by endpoints that are public but personalize their response for signed-in callers."""
+    if not authorization:
+        return None
+    try:
+        return get_current_user(authorization=authorization, db=db)
+    except HTTPException:
+        return None
+
+
+def verify_token(token: str) -> uuid.UUID:
+    """Returns the user id (sub claim) or raises jwt.PyJWTError."""
+    return decode_access_token(token)

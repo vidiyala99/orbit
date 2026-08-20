@@ -5,7 +5,7 @@ from app.auth import get_current_user
 from app.models import User
 
 def _login_as(db_session, name):
-    user = User(clerk_id=f"user_{name}", name=name)
+    user = User(email=f"user_{name}@example.com", name=name)
     db_session.add(user)
     db_session.commit()
     app.dependency_overrides[get_current_user] = lambda: user
@@ -14,7 +14,7 @@ def _login_as(db_session, name):
 def test_creating_thread_twice_returns_same_thread(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya")
-    dev = User(clerk_id="user_dev", name="Dev")
+    dev = User(email="user_dev@example.com", name="Dev")
     db_session.add(dev); db_session.commit()
 
     client = TestClient(app)
@@ -41,7 +41,7 @@ def test_cannot_create_thread_with_self(db_session):
 def test_non_participant_cannot_read_messages(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya")
-    dev = User(clerk_id="user_dev2", name="Dev")
+    dev = User(email="user_dev2@example.com", name="Dev")
     db_session.add(dev); db_session.commit()
 
     client = TestClient(app)
@@ -55,7 +55,7 @@ def test_non_participant_cannot_read_messages(db_session):
 def test_same_user_calling_twice_does_not_confirm_stamp(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya_stamp_twice")
-    dev = User(clerk_id="user_dev_stamp_twice", name="Dev")
+    dev = User(email="user_dev_stamp_twice@example.com", name="Dev")
     db_session.add(dev); db_session.commit()
 
     client = TestClient(app)
@@ -78,7 +78,7 @@ def test_same_user_calling_twice_does_not_confirm_stamp(db_session):
 def test_stamp_requires_both_sides_to_confirm(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya_stamp")
-    dev = User(clerk_id="user_dev_stamp", name="Dev")
+    dev = User(email="user_dev_stamp@example.com", name="Dev")
     db_session.add(dev); db_session.commit()
 
     client = TestClient(app)
@@ -99,7 +99,7 @@ def test_cannot_start_thread_with_a_blocked_user(db_session):
     from app.models import Block
     app.dependency_overrides[get_db] = lambda: db_session
     priya = _login_as(db_session, "priya_block")
-    dev = User(clerk_id="user_dev_block", name="Dev")
+    dev = User(email="user_dev_block@example.com", name="Dev")
     db_session.add(dev); db_session.commit()
     db_session.add(Block(blocker_id=priya.id, blocked_id=dev.id))
     db_session.commit()

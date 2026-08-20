@@ -19,12 +19,12 @@ async def chat_socket(
     db: Session = Depends(get_db),
 ):
     try:
-        clerk_id = verify_token(token)
+        user_id = verify_token(token)
     except Exception:
         await websocket.close(code=4401)
         return
 
-    user = db.query(User).filter(User.clerk_id == clerk_id).one_or_none()
+    user = db.query(User).filter(User.id == user_id).one_or_none()
     thread = db.query(Thread).filter(Thread.id == thread_id).one_or_none()
     if user is None or thread is None or user.id not in (thread.user_a_id, thread.user_b_id):
         await websocket.close(code=4403)

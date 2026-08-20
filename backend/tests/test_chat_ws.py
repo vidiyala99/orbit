@@ -7,15 +7,15 @@ from app.models import User, Thread
 @patch("app.routers.chat_ws.verify_token")
 def test_two_participants_exchange_a_message(mock_verify, db_session):
     app.dependency_overrides[get_db] = lambda: db_session
-    priya = User(clerk_id="user_ws_priya", name="Priya")
-    dev = User(clerk_id="user_ws_dev", name="Dev")
+    priya = User(email="priya@example.com", name="Priya")
+    dev = User(email="dev@example.com", name="Dev")
     db_session.add_all([priya, dev]); db_session.commit()
     a, b = sorted([priya.id, dev.id], key=str)
     thread = Thread(user_a_id=a, user_b_id=b)
     db_session.add(thread); db_session.commit()
 
     def fake_verify(token):
-        return {"priya-token": "user_ws_priya", "dev-token": "user_ws_dev"}[token]
+        return {"priya-token": priya.id, "dev-token": dev.id}[token]
     mock_verify.side_effect = fake_verify
 
     client = TestClient(app)
@@ -32,14 +32,14 @@ def test_two_participants_exchange_a_message(mock_verify, db_session):
 def test_blocked_content_message_is_rejected_without_closing_the_socket(mock_verify, db_session):
     from app.models import Message
     app.dependency_overrides[get_db] = lambda: db_session
-    priya = User(clerk_id="user_ws_filter_priya", name="Priya")
-    dev = User(clerk_id="user_ws_filter_dev", name="Dev")
+    priya = User(email="priya-filter@example.com", name="Priya")
+    dev = User(email="dev-filter@example.com", name="Dev")
     db_session.add_all([priya, dev]); db_session.commit()
     a, b = sorted([priya.id, dev.id], key=str)
     thread = Thread(user_a_id=a, user_b_id=b)
     db_session.add(thread); db_session.commit()
 
-    mock_verify.side_effect = lambda token: {"priya-token": "user_ws_filter_priya"}[token]
+    mock_verify.side_effect = lambda token: {"priya-token": priya.id}[token]
 
     client = TestClient(app)
     with client.websocket_connect(f"/ws/threads/{thread.id}?token=priya-token") as ws:
