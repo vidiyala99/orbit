@@ -166,6 +166,25 @@ def test_reset_password_updates_hash_and_invalidates_token(db_session):
 
 
 from unittest.mock import MagicMock
+from urllib.parse import urlparse, parse_qs
+
+
+def test_google_authorize_redirect_is_properly_url_encoded(db_session):
+    client = next(_client(db_session))
+    res = client.get("/auth/google", follow_redirects=False)
+    assert res.status_code == 307
+
+    location = res.headers["location"]
+    assert location.startswith("https://accounts.google.com/o/oauth2/v2/auth?")
+    # Raw, unencoded special characters (colons, slashes, spaces) must not
+    # appear directly in the query string — only inside decoded param values.
+    query = urlparse(location).query
+    params = parse_qs(query)
+    assert params["redirect_uri"] == ["http://localhost:8001/auth/google/callback"]
+    assert params["scope"] == ["openid email profile"]
+    # And the query string itself must actually be percent-encoded, not raw.
+    assert "redirect_uri=http://" not in query
+    assert "scope=openid email profile" not in query
 
 
 @patch("app.routers.auth.httpx.get")

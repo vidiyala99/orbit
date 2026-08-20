@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -112,8 +113,7 @@ def google_authorize():
         "scope": "openid email profile",
         "access_type": "online",
     }
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    return RedirectResponse(f"{GOOGLE_AUTH_URL}?{query}")
+    return RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")
 
 
 @router.get("/google/callback")
