@@ -1,5 +1,5 @@
 import { render, screen, act } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import ReplayOnView from "../ReplayOnView";
 
 let observerCallback: (entries: { isIntersecting: boolean }[]) => void;
@@ -21,12 +21,18 @@ function Counter() {
 }
 
 describe("ReplayOnView", () => {
-  it("remounts children (restarting their animation state) each time it enters the viewport", () => {
-    render(
-      <ReplayOnView>
-        <Counter />
-      </ReplayOnView>,
-    );
+  it("renders nothing until the element first enters the viewport", () => {
+    render(<ReplayOnView>{() => <Counter />}</ReplayOnView>);
+    expect(screen.queryByTestId("count")).not.toBeInTheDocument();
+
+    act(() => observerCallback([{ isIntersecting: true }]));
+    expect(screen.getByTestId("count")).toBeInTheDocument();
+  });
+
+  it("remounts children (restarting their animation state) on every re-entry", () => {
+    render(<ReplayOnView>{() => <Counter />}</ReplayOnView>);
+
+    act(() => observerCallback([{ isIntersecting: true }]));
     const firstValue = screen.getByTestId("count").textContent;
 
     act(() => observerCallback([{ isIntersecting: true }]));
@@ -36,11 +42,8 @@ describe("ReplayOnView", () => {
   });
 
   it("does not remount on an exit event, only on entry", () => {
-    render(
-      <ReplayOnView>
-        <Counter />
-      </ReplayOnView>,
-    );
+    render(<ReplayOnView>{() => <Counter />}</ReplayOnView>);
+    act(() => observerCallback([{ isIntersecting: true }]));
     const firstValue = screen.getByTestId("count").textContent;
 
     act(() => observerCallback([{ isIntersecting: false }]));

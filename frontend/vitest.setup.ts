@@ -19,19 +19,30 @@ window.matchMedia ??= (query: string) => ({
   dispatchEvent: () => false,
 });
 
-// jsdom doesn't implement IntersectionObserver either; components like
-// ReplayOnView need this no-op stub to construct without throwing. Tests that
-// need to actually drive intersection events (see ReplayOnView.test.tsx)
-// override this with a fuller mock in their own beforeEach.
-class NoopIntersectionObserver implements IntersectionObserver {
+// jsdom doesn't implement IntersectionObserver either. Components like
+// ReplayOnView defer rendering until an entry reports isIntersecting, so this
+// stub fires immediately as "visible" — the sane default for tests that
+// aren't specifically exercising scroll behavior. Tests that need granular
+// control (see ReplayOnView.test.tsx) override this with a fuller mock in
+// their own beforeEach.
+class AlwaysVisibleIntersectionObserver implements IntersectionObserver {
   readonly root = null;
   readonly rootMargin = "";
   readonly thresholds: ReadonlyArray<number> = [];
-  observe() {}
+  #callback: IntersectionObserverCallback;
+  constructor(callback: IntersectionObserverCallback) {
+    this.#callback = callback;
+  }
+  observe(target: Element) {
+    this.#callback(
+      [{ isIntersecting: true, target } as IntersectionObserverEntry],
+      this,
+    );
+  }
   unobserve() {}
   disconnect() {}
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
 }
-window.IntersectionObserver ??= NoopIntersectionObserver;
+window.IntersectionObserver ??= AlwaysVisibleIntersectionObserver;
