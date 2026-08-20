@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { createPlan } from "@/lib/api";
+import { getClientToken } from "@/lib/auth";
 
 function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -14,7 +14,6 @@ function errorMessage(err: unknown): string {
 }
 
 export default function PostPlanPage() {
-  const { getToken } = useAuth();
   const router = useRouter();
   const [text, setText] = useState("");
   const [hours, setHours] = useState(2);
@@ -26,7 +25,7 @@ export default function PostPlanPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = (await getToken()) ?? "";
+      const token = getClientToken() ?? "";
       const position = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject),
       );

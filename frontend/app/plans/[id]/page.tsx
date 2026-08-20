@@ -1,11 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchPlan, startThread } from "@/lib/api";
 
 export default async function PlanDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { getToken } = await auth();
-  const token = (await getToken()) ?? "";
+  const token = (await cookies()).get("sc_token")?.value ?? "";
   const plan = await fetchPlan(id, token);
 
   const now = Date.now();
@@ -13,8 +12,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
 
   async function messagePoster() {
     "use server";
-    const { getToken } = await auth();
-    const t = (await getToken()) ?? "";
+    const t = (await cookies()).get("sc_token")?.value ?? "";
     const thread = await startThread(plan.user_id, t);
     redirect(`/chats/${thread.id}`);
   }
