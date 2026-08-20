@@ -72,8 +72,9 @@ export default async function Page() {
 
         <section className="bg-board px-6 py-14 text-center [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px] lg:py-24">
           <p className="mx-auto max-w-sm font-hand text-xl text-card lg:max-w-3xl lg:text-4xl">
-            &quot;Every recruiter&apos;s inbox is flooded with AI cover letters. The one signal that
-            still can&apos;t be faked is two people who&apos;ve actually stood in the same room.&quot;
+            &quot;Cold applications go nowhere. Cold email is a coin flip. A LinkedIn add gets left
+            on read. The one thing that actually works is meeting someone in person — but nobody
+            has time to network with everyone to find the right people.&quot;
           </p>
           <p className="mt-2 font-mono text-[10px] text-rule lg:mt-4 lg:text-sm">
             — THE THESIS,{" "}

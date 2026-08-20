@@ -7,21 +7,19 @@ export default function AboutPage() {
       <main className="min-h-screen bg-[#F6F3EC] px-6 py-14 lg:py-24">
         <div className="mx-auto max-w-lg lg:max-w-3xl">
           <h1 className="font-display text-2xl font-bold text-ink lg:text-5xl">
-            A cover letter used to cost something.
+            In-person is the only thing that still works.
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-[#4A4438] lg:mt-8 lg:text-xl lg:leading-relaxed">
-            AI erased that cost — now every inbox is flooded with volume that proves nothing
-            about the person behind it.{" "}
+            Cold applications rarely get a response. Cold email is a coin flip. A LinkedIn add
+            just as often gets left on read.{" "}
             <strong className="text-accent">
-              The one signal AI still can&apos;t fake is two people who&apos;ve actually stood in
-              the same room.
+              The one thing that actually moves the needle is meeting someone in person.
             </strong>
           </p>
           <p className="mt-4 text-sm leading-relaxed text-[#4A4438] lg:mt-6 lg:text-xl lg:leading-relaxed">
-            That&apos;s not a nice-to-have anymore. It&apos;s the scarce channel, precisely because
-            everything else got cheap. StayConnected exists to make that channel less
-            accidental — say where you&apos;ll be, get spotted by the people worth meeting,
-            leave with something that survives past a LinkedIn add that quietly stops replying.
+            The problem was never effort — it&apos;s time. Nobody can network with everyone to
+            find the right people. StayConnected exists to close that gap: say where you&apos;ll
+            be, get spotted by the people worth meeting, before you even arrive.
           </p>
         </div>
         <div className="mx-auto mt-10 max-w-lg border-t border-dashed border-rule pt-8 text-center lg:mt-20 lg:max-w-3xl lg:pt-14">

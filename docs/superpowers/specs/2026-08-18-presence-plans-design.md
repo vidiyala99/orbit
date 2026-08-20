@@ -4,7 +4,7 @@
 
 > Networking runs on luck — who you happen to sit next to, who's still around when the doors open, who offers you a ride when it lets out. This is the app for when none of that is luck anymore.
 
-A cover letter used to cost something — a little time, a little thought, per application. AI erased that cost, so now every recruiter's inbox is flooded with volume that proves nothing about the person behind it. The one signal AI still can't fake is two people who've actually stood in the same room. That's not a nice-to-have anymore — it's the scarce channel, precisely because everything else got cheap. This app exists to make that channel less accidental: say where you'll be, get spotted by the people worth meeting before you arrive, and leave with something that survives past a LinkedIn add that quietly stops replying.
+Cold applications rarely get a response. Cold email is a coin flip. A LinkedIn add just as often gets left on read. The one thing that actually moves the needle is meeting someone in person — but the problem was never effort, it's time: nobody can network with everyone to find the right people. This app exists to close that gap, and make networking less overwhelming: say where you'll be, get spotted by the people worth meeting before you arrive, and leave with something that survives past a LinkedIn add that quietly stops replying.
 
 This is the first of three planned sub-projects:
 
