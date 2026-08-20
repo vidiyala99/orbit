@@ -1,13 +1,18 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..db import get_db
 from ..models import User, EmailVerificationToken, PasswordResetToken
 from ..schemas import (
     SignupRequest, LoginRequest, TokenOut,
     VerifyEmailRequest, RequestPasswordResetRequest, ResetPasswordRequest, OkResponse,
+    GoogleExchangeRequest,
 )
 from ..security import hash_password, verify_password, create_access_token, generate_opaque_token
 from ..email import send_verification_email, send_password_reset_email
@@ -16,6 +21,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 VERIFICATION_TOKEN_LIFETIME = timedelta(hours=24)
 PASSWORD_RESET_TOKEN_LIFETIME = timedelta(hours=1)
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+# In-process one-time-code -> user_id store. Same single-instance tradeoff
+# already accepted for chat_ws.py's connection registry; fine for v1.
+_pending_exchanges: dict[str, uuid.UUID] = {}
 
 
 @router.post("/signup", response_model=TokenOut, status_code=201)
@@ -88,3 +101,57 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user.password_hash = hash_password(body.new_password)
     db.commit()
     return OkResponse()
+
+
+@router.get("/google")
+def google_authorize():
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": settings.google_redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "online",
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(f"{GOOGLE_AUTH_URL}?{query}")
+
+
+@router.get("/google/callback")
+def google_callback(code: str, db: Session = Depends(get_db)):
+    token_res = httpx.post(GOOGLE_TOKEN_URL, data={
+        "code": code,
+        "client_id": settings.google_client_id,
+        "client_secret": settings.google_client_secret,
+        "redirect_uri": settings.google_redirect_uri,
+        "grant_type": "authorization_code",
+    })
+    google_access_token = token_res.json()["access_token"]
+
+    userinfo_res = httpx.get(GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {google_access_token}"})
+    info = userinfo_res.json()
+    google_id, email, name = info["sub"], info["email"], info.get("name", "New user")
+
+    user = db.query(User).filter(User.google_id == google_id).one_or_none()
+    if user is None:
+        user = db.query(User).filter(User.email == email).one_or_none()
+        if user is None:
+            user = User(email=email, name=name, google_id=google_id)
+            db.add(user)
+        else:
+            user.google_id = google_id
+        db.commit()
+        db.refresh(user)
+
+    one_time_code = generate_opaque_token()
+    _pending_exchanges[one_time_code] = user.id
+    return RedirectResponse(f"{settings.frontend_origin}/auth/google/callback?code={one_time_code}")
+
+
+@router.post("/google/exchange", response_model=TokenOut)
+def google_exchange(body: GoogleExchangeRequest, db: Session = Depends(get_db)):
+    user_id = _pending_exchanges.pop(body.code, None)
+    if user_id is None:
+        raise HTTPException(status_code=400, detail="invalid or already-used code")
+
+    user = db.query(User).filter(User.id == user_id).one()
+    return TokenOut(access_token=create_access_token(user.id), user=user)

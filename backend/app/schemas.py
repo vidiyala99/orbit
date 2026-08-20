@@ -95,6 +95,9 @@ class ResetPasswordRequest(BaseModel):
 class OkResponse(BaseModel):
     ok: bool = True
 
+class GoogleExchangeRequest(BaseModel):
+    code: str
+
 class WaitlistCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)
 

@@ -163,3 +163,85 @@ def test_reset_password_updates_hash_and_invalidates_token(db_session):
 
     reuse_res = client.post("/auth/reset-password", json={"token": token, "new_password": "anotherone3"})
     assert reuse_res.status_code == 400
+
+
+from unittest.mock import MagicMock
+
+
+@patch("app.routers.auth.httpx.get")
+@patch("app.routers.auth.httpx.post")
+def test_google_callback_creates_new_user_and_redirects_with_code(mock_post, mock_get, db_session):
+    client = next(_client(db_session))
+    mock_post.return_value = MagicMock(status_code=200, json=lambda: {"access_token": "google-access-token"})
+    mock_get.return_value = MagicMock(
+        status_code=200,
+        json=lambda: {"sub": "google-user-123", "email": "googleuser@example.com", "name": "Google User"},
+    )
+
+    res = client.get("/auth/google/callback?code=fake-auth-code", follow_redirects=False)
+    assert res.status_code == 307
+    location = res.headers["location"]
+    assert "code=" in location
+
+    user = db_session.query(User).filter(User.email == "googleuser@example.com").one()
+    assert user.google_id == "google-user-123"
+
+
+@patch("app.routers.auth.httpx.get")
+@patch("app.routers.auth.httpx.post")
+def test_google_callback_links_existing_password_account_by_email(mock_post, mock_get, db_session):
+    client = next(_client(db_session))
+    db_session.add(User(email="existing@example.com", name="E", password_hash=hash_password("somepassword1")))
+    db_session.commit()
+
+    mock_post.return_value = MagicMock(status_code=200, json=lambda: {"access_token": "google-access-token"})
+    mock_get.return_value = MagicMock(
+        status_code=200,
+        json=lambda: {"sub": "google-user-456", "email": "existing@example.com", "name": "Existing"},
+    )
+
+    client.get("/auth/google/callback?code=fake-auth-code", follow_redirects=False)
+
+    user = db_session.query(User).filter(User.email == "existing@example.com").one()
+    assert user.google_id == "google-user-456"
+    assert user.password_hash is not None  # still has their password too
+
+
+@patch("app.routers.auth.httpx.get")
+@patch("app.routers.auth.httpx.post")
+def test_google_exchange_returns_jwt_for_valid_code(mock_post, mock_get, db_session):
+    client = next(_client(db_session))
+    mock_post.return_value = MagicMock(status_code=200, json=lambda: {"access_token": "google-access-token"})
+    mock_get.return_value = MagicMock(
+        status_code=200,
+        json=lambda: {"sub": "google-user-789", "email": "exchange@example.com", "name": "Exchange"},
+    )
+    callback_res = client.get("/auth/google/callback?code=fake-auth-code", follow_redirects=False)
+    one_time_code = callback_res.headers["location"].split("code=")[1]
+
+    exchange_res = client.post("/auth/google/exchange", json={"code": one_time_code})
+    assert exchange_res.status_code == 200
+    assert "access_token" in exchange_res.json()
+
+
+def test_google_exchange_rejects_unknown_code(db_session):
+    client = next(_client(db_session))
+    res = client.post("/auth/google/exchange", json={"code": "not-a-real-code"})
+    assert res.status_code == 400
+
+
+@patch("app.routers.auth.httpx.get")
+@patch("app.routers.auth.httpx.post")
+def test_google_exchange_code_is_single_use(mock_post, mock_get, db_session):
+    client = next(_client(db_session))
+    mock_post.return_value = MagicMock(status_code=200, json=lambda: {"access_token": "google-access-token"})
+    mock_get.return_value = MagicMock(
+        status_code=200,
+        json=lambda: {"sub": "google-user-999", "email": "singleuse@example.com", "name": "Single Use"},
+    )
+    callback_res = client.get("/auth/google/callback?code=fake-auth-code", follow_redirects=False)
+    one_time_code = callback_res.headers["location"].split("code=")[1]
+
+    client.post("/auth/google/exchange", json={"code": one_time_code})
+    res = client.post("/auth/google/exchange", json={"code": one_time_code})
+    assert res.status_code == 400
