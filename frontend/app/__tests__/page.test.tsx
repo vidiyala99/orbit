@@ -16,6 +16,6 @@ describe("Home page", () => {
     render(ui);
     expect(screen.getByText(/post where you'll be/i)).toBeInTheDocument();
     expect(screen.getByText(/leave with a stamp, not just an add/i)).toBeInTheDocument();
-    expect(screen.getByText(/nobody has time to network with everyone/i)).toBeInTheDocument();
+    expect(screen.getByText(/don't have time to go find the right people/i)).toBeInTheDocument();
   });
 });

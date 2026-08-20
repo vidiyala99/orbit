@@ -72,9 +72,10 @@ export default async function Page() {
 
         <section className="bg-board px-6 py-14 text-center [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px] lg:py-24">
           <p className="mx-auto max-w-sm font-hand text-xl text-card lg:max-w-3xl lg:text-4xl">
-            &quot;Cold applications go nowhere. Cold email is a coin flip. A LinkedIn add gets left
-            on read. The one thing that actually works is meeting someone in person — but nobody
-            has time to network with everyone to find the right people.&quot;
+            Cold applications rarely get a response. Cold email is unreliable. LinkedIn
+            connection requests often don&apos;t turn into a real conversation. Meeting someone in
+            person still works, but most people don&apos;t have time to go find the right people
+            to meet.
           </p>
           <p className="mt-2 font-mono text-[10px] text-rule lg:mt-4 lg:text-sm">
             — THE THESIS,{" "}

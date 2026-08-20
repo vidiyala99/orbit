@@ -7,19 +7,17 @@ export default function AboutPage() {
       <main className="min-h-screen bg-[#F6F3EC] px-6 py-14 lg:py-24">
         <div className="mx-auto max-w-lg lg:max-w-3xl">
           <h1 className="font-display text-2xl font-bold text-ink lg:text-5xl">
-            In-person is the only thing that still works.
+            Why StayConnected exists
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-[#4A4438] lg:mt-8 lg:text-xl lg:leading-relaxed">
-            Cold applications rarely get a response. Cold email is a coin flip. A LinkedIn add
-            just as often gets left on read.{" "}
-            <strong className="text-accent">
-              The one thing that actually moves the needle is meeting someone in person.
-            </strong>
+            Cold applications rarely get a response. Cold email is unreliable. LinkedIn
+            connection requests often don&apos;t turn into a real conversation. Meeting someone
+            in person works better than any of those, but it takes time to find the right
+            people to meet, and most people don&apos;t have that time.
           </p>
           <p className="mt-4 text-sm leading-relaxed text-[#4A4438] lg:mt-6 lg:text-xl lg:leading-relaxed">
-            The problem was never effort — it&apos;s time. Nobody can network with everyone to
-            find the right people. StayConnected exists to close that gap: say where you&apos;ll
-            be, get spotted by the people worth meeting, before you even arrive.
+            StayConnected is built to reduce that time cost. Post where you&apos;ll be, and the
+            people worth meeting can find you before you arrive.
           </p>
         </div>
         <div className="mx-auto mt-10 max-w-lg border-t border-dashed border-rule pt-8 text-center lg:mt-20 lg:max-w-3xl lg:pt-14">

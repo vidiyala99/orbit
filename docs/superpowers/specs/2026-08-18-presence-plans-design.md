@@ -4,7 +4,7 @@
 
 > Networking runs on luck — who you happen to sit next to, who's still around when the doors open, who offers you a ride when it lets out. This is the app for when none of that is luck anymore.
 
-Cold applications rarely get a response. Cold email is a coin flip. A LinkedIn add just as often gets left on read. The one thing that actually moves the needle is meeting someone in person — but the problem was never effort, it's time: nobody can network with everyone to find the right people. This app exists to close that gap, and make networking less overwhelming: say where you'll be, get spotted by the people worth meeting before you arrive, and leave with something that survives past a LinkedIn add that quietly stops replying.
+Cold applications rarely get a response. Cold email is unreliable. LinkedIn connection requests often don't turn into a real conversation. Meeting someone in person works better than any of those, but it takes time to find the right people to meet, and most people don't have that time. This app is built to reduce that time cost: say where you'll be, get spotted by the people worth meeting before you arrive, and leave with something that survives past a LinkedIn add that quietly stops replying.
 
 This is the first of three planned sub-projects:
 
