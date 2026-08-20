@@ -69,3 +69,97 @@ def test_login_rejected_for_google_only_account(db_session):
 
     res = client.post("/auth/login", json={"email": "googleonly@example.com", "password": "anything12345"})
     assert res.status_code == 401
+
+
+from datetime import datetime, timedelta, timezone
+from app.models import EmailVerificationToken, PasswordResetToken
+from app.security import generate_opaque_token
+
+
+def test_verify_email_marks_user_verified(db_session):
+    client = next(_client(db_session))
+    user = User(email="verify@example.com", name="V", password_hash=hash_password("password123"))
+    db_session.add(user)
+    db_session.commit()
+    token = generate_opaque_token()
+    db_session.add(EmailVerificationToken(
+        user_id=user.id, token=token, expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    db_session.commit()
+
+    res = client.post("/auth/verify-email", json={"token": token})
+    assert res.status_code == 200
+
+    db_session.refresh(user)
+    assert user.email_verified_at is not None
+
+
+def test_verify_email_rejects_expired_token(db_session):
+    client = next(_client(db_session))
+    user = User(email="expired@example.com", name="E", password_hash=hash_password("password123"))
+    db_session.add(user)
+    db_session.commit()
+    token = generate_opaque_token()
+    db_session.add(EmailVerificationToken(
+        user_id=user.id, token=token, expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+    ))
+    db_session.commit()
+
+    res = client.post("/auth/verify-email", json={"token": token})
+    assert res.status_code == 400
+
+
+def test_verify_email_rejects_reused_token(db_session):
+    client = next(_client(db_session))
+    user = User(email="reuse@example.com", name="R", password_hash=hash_password("password123"))
+    db_session.add(user)
+    db_session.commit()
+    token = generate_opaque_token()
+    db_session.add(EmailVerificationToken(
+        user_id=user.id, token=token, expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    db_session.commit()
+
+    client.post("/auth/verify-email", json={"token": token})
+    res = client.post("/auth/verify-email", json={"token": token})
+    assert res.status_code == 400
+
+
+@patch("app.routers.auth.send_password_reset_email")
+def test_request_password_reset_always_returns_200(mock_send, db_session):
+    client = next(_client(db_session))
+    res_known = client.post("/auth/request-password-reset", json={"email": "nobody@example.com"})
+    assert res_known.status_code == 200
+    assert not mock_send.called  # unknown email — no email sent, but same response
+
+
+@patch("app.routers.auth.send_password_reset_email")
+def test_request_password_reset_sends_email_for_known_user(mock_send, db_session):
+    client = next(_client(db_session))
+    db_session.add(User(email="known@example.com", name="K", password_hash=hash_password("oldpassword1")))
+    db_session.commit()
+
+    res = client.post("/auth/request-password-reset", json={"email": "known@example.com"})
+    assert res.status_code == 200
+    assert mock_send.called
+
+
+def test_reset_password_updates_hash_and_invalidates_token(db_session):
+    client = next(_client(db_session))
+    user = User(email="reset@example.com", name="R", password_hash=hash_password("oldpassword1"))
+    db_session.add(user)
+    db_session.commit()
+    token = generate_opaque_token()
+    db_session.add(PasswordResetToken(
+        user_id=user.id, token=token, expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+    ))
+    db_session.commit()
+
+    res = client.post("/auth/reset-password", json={"token": token, "new_password": "newpassword2"})
+    assert res.status_code == 200
+
+    login_res = client.post("/auth/login", json={"email": "reset@example.com", "password": "newpassword2"})
+    assert login_res.status_code == 200
+
+    reuse_res = client.post("/auth/reset-password", json={"token": token, "new_password": "anotherone3"})
+    assert reuse_res.status_code == 400

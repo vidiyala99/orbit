@@ -82,6 +82,19 @@ class TokenOut(BaseModel):
     access_token: str
     user: UserOut
 
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+class RequestPasswordResetRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=255)
+
+class OkResponse(BaseModel):
+    ok: bool = True
+
 class WaitlistCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)
 
