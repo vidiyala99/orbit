@@ -1,6 +1,7 @@
 export type UserT = {
   id: string;
-  clerk_id: string;
+  email: string;
+  email_verified_at: string | null;
   name: string;
   headline: string | null;
   linkedin_url: string | null;

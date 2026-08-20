@@ -84,6 +84,69 @@ export async function fetchWaitlistCount(): Promise<number> {
   return body.count;
 }
 
+export async function signup(
+  email: string, password: string, name: string,
+): Promise<{ access_token: string; user: UserT }> {
+  const res = await fetch(`${API_BASE}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, name }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Signup failed");
+  return res.json();
+}
+
+export async function login(
+  email: string, password: string,
+): Promise<{ access_token: string; user: UserT }> {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Login failed");
+  return res.json();
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/request-password-reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error("Could not request password reset");
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not reset password");
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not verify email");
+}
+
+export async function exchangeGoogleCode(
+  code: string,
+): Promise<{ access_token: string; user: UserT }> {
+  const res = await fetch(`${API_BASE}/auth/google/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not sign in with Google");
+  return res.json();
+}
+
 export async function createPlan(
   input: { text: string; lat: number; lon: number; starts_at: string; ends_at: string },
   token: string,
