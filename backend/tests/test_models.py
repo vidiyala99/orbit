@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
+import pytest
+from sqlalchemy.exc import IntegrityError
 from app.models import User, Plan
 
 def test_create_user_and_plan(db_session):
-    user = User(clerk_id="user_abc123", name="Priya Shah")
+    user = User(email="priya@example.com", name="Priya Shah")
     db_session.add(user)
     db_session.commit()
 
@@ -22,3 +24,10 @@ def test_create_user_and_plan(db_session):
     fetched = db_session.query(Plan).filter_by(id=plan.id).one()
     assert fetched.text == "Coffee near University Ave"
     assert fetched.user_id == user.id
+
+def test_duplicate_email_rejected(db_session):
+    db_session.add(User(email="dup@example.com", name="A"))
+    db_session.commit()
+    db_session.add(User(email="dup@example.com", name="B"))
+    with pytest.raises(IntegrityError):
+        db_session.commit()

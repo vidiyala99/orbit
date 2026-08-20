@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 
 class UserOut(BaseModel):
     id: uuid.UUID
-    clerk_id: str
+    email: str
+    email_verified_at: datetime | None
     name: str
     headline: str | None
     linkedin_url: str | None
