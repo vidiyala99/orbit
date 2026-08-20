@@ -69,6 +69,19 @@ class ReportCreate(BaseModel):
 class BlockCreate(BaseModel):
     blocked_user_id: uuid.UUID
 
+class SignupRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=8, max_length=255)
+    name: str = Field(min_length=1, max_length=120)
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    user: UserOut
+
 class WaitlistCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)
 

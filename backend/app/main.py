@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import plans, threads, stamps, moderation, chat_ws, me, waitlist
+from .routers import plans, threads, stamps, moderation, chat_ws, me, waitlist, auth
 
 app = FastAPI(title="StayConnected API")
 
@@ -21,6 +21,7 @@ app.include_router(moderation.router)
 app.include_router(chat_ws.router)
 app.include_router(me.router)
 app.include_router(waitlist.router)
+app.include_router(auth.router)
 
 
 @app.get("/health")
