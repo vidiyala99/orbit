@@ -1,5 +1,9 @@
 import MarketingNav from "@/components/MarketingNav";
 import WaitlistForm from "@/components/WaitlistForm";
+import ReplayOnView from "@/components/ReplayOnView";
+import Typewriter from "@/components/Typewriter";
+
+const PLAN_TEXT = "Grabbing coffee near University Ave, happy to talk shop.";
 
 const STEPS = [
   {
@@ -37,20 +41,70 @@ export default function HowItWorksPage() {
                 i % 2 === 1 ? "md:flex-row-reverse" : ""
               }`}
             >
-              <div className="flex h-32 w-24 flex-shrink-0 items-center justify-center rounded-2xl bg-board [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:5px_5px] lg:h-48 lg:w-36">
-                {step.n === 3 ? (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full border border-stamp bg-stamp/10 px-2 py-1 font-mono text-[8px] text-stamp lg:px-3 lg:py-1.5 lg:text-xs"
-                    style={{ animation: "stampPress 600ms ease-out", transform: "rotate(-3deg)" }}
-                  >
-                    ● MET IN PERSON
-                  </span>
-                ) : (
-                  <div className="w-16 rotate-[-1.5deg] rounded-card bg-card p-1.5 shadow-[1px_3px_6px_rgba(0,0,0,0.28)] lg:w-24 lg:p-2.5">
-                    <p className="font-display text-[9px] font-bold text-ink lg:text-sm">Priya S.</p>
-                  </div>
-                )}
-              </div>
+              <ReplayOnView>
+                <div className="flex w-full max-w-[280px] flex-shrink-0 flex-col items-center gap-2 rounded-2xl bg-board p-5 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:5px_5px] lg:max-w-[340px] lg:gap-3 lg:p-8">
+                  {step.n === 1 && (
+                    <div
+                      className="w-full rounded-card bg-card p-2.5 shadow-[1px_3px_6px_rgba(0,0,0,0.28)] lg:p-4"
+                      style={{ "--pin-rotate": "-1.5deg", animation: "pinIn 350ms ease-out both" } as React.CSSProperties}
+                    >
+                      <p className="font-display text-[10px] font-bold text-ink lg:text-base">Priya S.</p>
+                      <p className="mt-1 min-h-[2.4em] text-[9px] text-ink2 lg:text-sm">
+                        <Typewriter text={PLAN_TEXT} speedMs={22} />
+                      </p>
+                      <p
+                        className="mt-2 font-mono text-[8px] font-bold text-accent opacity-0 lg:text-xs"
+                        style={{ animation: "bubbleIn 300ms ease-out 1600ms forwards" }}
+                      >
+                        ● LIVE till 4P
+                      </p>
+                    </div>
+                  )}
+                  {step.n === 2 && (
+                    <>
+                      <div
+                        className="w-full rounded-card bg-card p-2 shadow-[1px_3px_6px_rgba(0,0,0,0.28)] lg:p-3"
+                        style={{ "--pin-rotate": "-1deg", animation: "pinIn 350ms ease-out both" } as React.CSSProperties}
+                      >
+                        <p className="font-display text-[9px] font-bold text-ink lg:text-sm">Priya S.</p>
+                        <p className="text-[8px] text-ink2 lg:text-xs">Coffee · Palo Alto</p>
+                      </div>
+                      <div
+                        className="w-full rounded-lg bg-card/90 px-2 py-1.5 text-left opacity-0 lg:px-3 lg:py-2"
+                        style={{ animation: "bubbleIn 300ms ease-out 600ms forwards" }}
+                      >
+                        <p className="font-mono text-[7px] text-ink2 lg:text-[10px]">
+                          💬 &quot;same event — heading to Caltrain too, want to walk over?&quot;
+                        </p>
+                      </div>
+                      <div
+                        className="w-full rounded-lg bg-card/90 px-2 py-1.5 text-left opacity-0 lg:px-3 lg:py-2"
+                        style={{ animation: "bubbleIn 300ms ease-out 1100ms forwards" }}
+                      >
+                        <p className="font-mono text-[7px] text-ink2 lg:text-[10px]">
+                          💬 &quot;I have a car, can drop 2 people near the station&quot;
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  {step.n === 3 && (
+                    <>
+                      <div
+                        className="w-full rounded-lg bg-[#EFE6CF] px-2.5 py-1.5 text-left opacity-0 lg:px-3.5 lg:py-2"
+                        style={{ animation: "bubbleIn 300ms ease-out 200ms forwards" }}
+                      >
+                        <p className="text-[9px] text-ink lg:text-sm">so good meeting you today!</p>
+                      </div>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-stamp bg-stamp/10 px-2 py-1 font-mono text-[8px] text-stamp opacity-0 lg:px-3 lg:py-1.5 lg:text-xs"
+                        style={{ animation: "stampPress 500ms ease-out 700ms forwards", transform: "rotate(-3deg)" }}
+                      >
+                        ● MET IN PERSON
+                      </span>
+                    </>
+                  )}
+                </div>
+              </ReplayOnView>
               <div className="max-w-xs text-center md:text-left lg:max-w-md">
                 <p className="font-mono text-[10px] font-bold text-accent lg:text-sm">STEP {step.n}</p>
                 <p className="font-display text-sm font-bold text-ink lg:mt-1 lg:text-2xl">{step.title}</p>
