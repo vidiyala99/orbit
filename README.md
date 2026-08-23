@@ -4,94 +4,60 @@ Post a time-boxed plan pinned to a location, discover plans nearby, message the
 poster, and mutually confirm an in-person "stamp" once you've met.
 
 - **Backend:** FastAPI + SQLAlchemy 2.0 + GeoAlchemy2 + Alembic, Postgres/PostGIS
-- **Frontend:** Next.js (App Router) + TypeScript + Tailwind + Clerk
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind
+- **Auth:** custom cookie-based sessions (email/password + Google OAuth) — see
+  `docs/superpowers/plans/2026-08-19-custom-auth.md`
 - **Design spec:** `docs/superpowers/specs/2026-08-18-presence-plans-design.md`
 - **Implementation plan:** `docs/superpowers/plans/2026-08-18-presence-plans.md`
 
 ## Prerequisites
 
 - Docker (for the local Postgres/PostGIS container)
-- Node.js 22+
+- Node.js 22+ with pnpm
 - Python 3.12+
 
-## Setup
-
-### 1. Database
-
-From the repo root:
+## Quick start
 
 ```bash
-docker compose up -d db
-docker compose exec db pg_isready -U stayconnected   # expect: accepting connections
+./scripts/setup.sh   # one-time: db, venv, deps, .env files, migrations
+./scripts/dev.sh      # start db + backend (:8001) + frontend (:3000), detached
+./scripts/stop.sh     # stop backend + frontend
 ```
 
-The container publishes Postgres on host port **5433** (container 5432) so it
-won't collide with a local Postgres install.
+`setup.sh` copies `backend/.env.example` → `backend/.env` and
+`frontend/.env.local.example` → `frontend/.env.local` if they don't already
+exist. Fill in `RESEND_API_KEY` / `GOOGLE_CLIENT_*` in `backend/.env` before
+those flows (email sending, Google sign-in) will work — everything else runs
+fine without them.
 
-Enable PostGIS and create the test database (one time):
-
-```bash
-docker compose exec db psql -U stayconnected -d stayconnected -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-docker compose exec db psql -U stayconnected -d stayconnected -c "CREATE DATABASE stayconnected_test;"
-docker compose exec db psql -U stayconnected -d stayconnected_test -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-```
-
-### 2. Backend
-
-```bash
-cd backend
-python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt   # Windows
-# .venv/bin/pip install -r requirements.txt     # macOS / Linux
-
-cp .env.example .env        # then fill in CLERK_JWKS_URL
-alembic upgrade head
-```
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-cp .env.local.example .env.local   # then fill in your Clerk keys
-```
-
-## Running the dev servers
-
-Two terminals, with the `db` container already up.
-
-```bash
-# Terminal 1 — API on http://localhost:8000
-cd backend
-.venv/Scripts/uvicorn app.main:app --reload   # Windows
-# .venv/bin/uvicorn app.main:app --reload     # macOS / Linux
-
-# Terminal 2 — web app on http://localhost:3000
-cd frontend
-npm run dev
-```
-
-The backend allows cross-origin requests from `FRONTEND_ORIGIN`
-(default `http://localhost:3000`); change it if you run the web app elsewhere.
+Logs from `dev.sh` land in `.run/logs/{backend,frontend}.log`.
 
 ## Tests
 
 ```bash
-cd backend && .venv/Scripts/pytest         # needs the db container running
-cd frontend && npm test                    # Vitest
-cd frontend && npx tsc --noEmit            # type check
-cd frontend && npm run build               # production build
+./scripts/test.sh    # backend pytest + frontend vitest + tsc, all in one
 ```
+
+## Resetting the local database
+
+```bash
+./scripts/reset-db.sh   # drops + recreates stayconnected / stayconnected_test, re-migrates
+```
+
+Refuses to run unless `DATABASE_URL` points at localhost.
 
 ## Environment variables
 
-| Where      | Variable                            | Purpose                                        |
-| ---------- | ----------------------------------- | ---------------------------------------------- |
-| `backend`  | `DATABASE_URL`                      | Postgres/PostGIS connection string             |
-| `backend`  | `CLERK_JWKS_URL`                    | JWKS endpoint used to verify Clerk JWTs        |
-| `backend`  | `FRONTEND_ORIGIN`                   | Origin allowed by CORS (default `:3000`)       |
-| `frontend` | `NEXT_PUBLIC_API_BASE`              | Base URL of the FastAPI backend                |
-| `frontend` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (safe to expose)         |
-| `frontend` | `CLERK_SECRET_KEY`                  | Clerk secret key (server only — never commit)  |
+| Where      | Variable               | Purpose                                          |
+| ---------- | ---------------------- | ------------------------------------------------- |
+| `backend`  | `DATABASE_URL`         | Postgres/PostGIS connection string (port 5434)     |
+| `backend`  | `FRONTEND_ORIGIN`      | Origin allowed by CORS (default `:3000`)           |
+| `backend`  | `JWT_SECRET`           | Signs our own session JWTs                         |
+| `backend`  | `RESEND_API_KEY`       | Resend API key for verification/reset emails       |
+| `backend`  | `RESEND_FROM_EMAIL`    | Verified sender address                            |
+| `backend`  | `GOOGLE_CLIENT_ID`     | Google OAuth client id                             |
+| `backend`  | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret                         |
+| `backend`  | `GOOGLE_REDIRECT_URI`  | Google OAuth callback (default `:8001/auth/google/callback`) |
+| `frontend` | `NEXT_PUBLIC_API_BASE` | Base URL of the FastAPI backend (default `:8001`)  |
 
 See `backend/.env.example` and `frontend/.env.local.example`.

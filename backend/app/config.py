@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+psycopg://stayconnected:localdev@localhost:5433/stayconnected"
+    database_url: str = "postgresql+psycopg://stayconnected:localdev@localhost:5434/stayconnected"
     frontend_origin: str = "http://localhost:3000"
 
     jwt_secret: str = "dev-only-insecure-secret-change-me"
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
+    google_redirect_uri: str = "http://localhost:8001/auth/google/callback"
 
     class Config:
         env_file = ".env"

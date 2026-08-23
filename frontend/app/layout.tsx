@@ -1,4 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { Space_Grotesk, Source_Sans_3, IBM_Plex_Mono, Caveat } from "next/font/google";
 import "./globals.css";
 
@@ -9,10 +8,8 @@ const caveat = Caveat({ subsets: ["latin"], weight: ["600", "700"], variable: "-
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${spaceGrotesk.variable} ${sourceSans.variable} ${plexMono.variable} ${caveat.variable}`}>
-        <body className="bg-board font-body text-ink">{children}</body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${spaceGrotesk.variable} ${sourceSans.variable} ${plexMono.variable} ${caveat.variable}`}>
+      <body className="bg-board font-body text-ink">{children}</body>
+    </html>
   );
 }

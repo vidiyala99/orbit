@@ -1481,7 +1481,7 @@ describe("SignUpPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"));
     expect(document.cookie).toContain("sc_token=tok123");
   });
 
@@ -1534,7 +1534,7 @@ export default function SignUpPage() {
     try {
       const { access_token } = await signup(email, password, name);
       setClientToken(access_token);
-      router.push("/");
+      router.push("/today");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -1622,7 +1622,7 @@ describe("SignInPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"));
     expect(document.cookie).toContain("sc_token=tok456");
   });
 
@@ -1673,7 +1673,7 @@ export default function SignInPage() {
     try {
       const { access_token } = await login(email, password);
       setClientToken(access_token);
-      router.push("/");
+      router.push("/today");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -2004,7 +2004,7 @@ export default function GoogleCallbackPage() {
     exchangeGoogleCode(code)
       .then(({ access_token }) => {
         setClientToken(access_token);
-        router.push("/");
+        router.push("/today");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not sign in with Google"));
   }, [searchParams, router]);
@@ -2102,7 +2102,7 @@ export default function UserMenu() {
 
   function handleSignOut() {
     clearClientToken();
-    router.push("/");
+    router.push("/today");
     router.refresh();
   }
 

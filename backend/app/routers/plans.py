@@ -5,7 +5,7 @@ from geoalchemy2.functions import ST_DWithin, ST_Distance
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.orm import Session
 from ..db import get_db
-from ..auth import get_current_user
+from ..auth import get_current_user, get_optional_user
 from ..models import Block, Plan, User
 from ..schemas import PlanCreate, PlanOut
 from ..filters import contains_blocked_content
@@ -54,7 +54,7 @@ def create_plan(body: PlanCreate, db: Session = Depends(get_db), user: User = De
 @router.get("", response_model=list[PlanOut])
 def discover_plans(
     lat: float, lon: float, radius_m: int, at: datetime,
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    db: Session = Depends(get_db), user: User | None = Depends(get_optional_user),
 ):
     point = WKTElement(f"POINT({lon} {lat})", srid=4326)
     query = (
@@ -62,13 +62,14 @@ def discover_plans(
         .filter(ST_DWithin(Plan.location, point, radius_m))
         .filter(Plan.starts_at <= at, Plan.ends_at >= at)
     )
-    hidden = _blocked_user_ids(db, user.id)
-    if hidden:
-        query = query.filter(Plan.user_id.notin_(hidden))
+    if user is not None:
+        hidden = _blocked_user_ids(db, user.id)
+        if hidden:
+            query = query.filter(Plan.user_id.notin_(hidden))
     return query.order_by(ST_Distance(Plan.location, point)).all()
 
 @router.get("/{plan_id}", response_model=PlanOut)
-def get_plan(plan_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def get_plan(plan_id: uuid.UUID, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     plan = db.query(Plan).filter(Plan.id == plan_id).one_or_none()
     if plan is None:
         raise HTTPException(status_code=404, detail="plan not found")
