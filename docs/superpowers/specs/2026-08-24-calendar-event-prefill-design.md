@@ -21,19 +21,69 @@ Google Calendar (Luma syncs the invite, or the confirmation email gets
 added), and that calendar event already has the title/location/time we
 need — no Luma access required at all.
 
+## Revision 2 (same day) — from single Luma-detection to general candidates
+
+Live testing exposed two problems with the v1 design as originally
+written below: (1) domain-sniffing for `lu.ma` in calendar
+location/description missed real Luma events, because Luma's "Add to
+Google Calendar" export actually links `luma.com`, not `lu.ma` — and more
+fundamentally, any keyword-matching approach is whack-a-mole against
+Meetup, Eventbrite, Partiful, or a manually-typed event with no platform
+link at all. (2) Luma doesn't push RSVPs to Google Calendar automatically
+— the user has to click "Add to Calendar" per event — so calendar-only
+detection misses anything not manually added.
+
+The sections below are updated in place to reflect the revised design.
+Where they still say "the event" (singular) or describe Luma-marker
+matching, read it as superseded by:
+
+- **Calendar candidates**: stop trying to identify the *platform*. Any
+  non-all-day event today with a non-empty `location` is a candidate — no
+  domain/keyword matching at all.
+- **Gmail candidates** (new second source): search Gmail for messages
+  from a small sender-domain allowlist (`lu.ma`/`luma.com`,
+  `meetup.com`, `eventbrite.com`) received in roughly the last 45 days.
+  Known limitation, accepted for v1: email bodies aren't semantically
+  parsed for date/time/location (every platform formats these
+  differently, and reliable extraction would need an LLM call per
+  candidate, which this backend doesn't have wired up) — a Gmail-sourced
+  candidate surfaces with the email's subject as its title and no
+  start/end time; the user picks duration themselves on `/post`, same as
+  they would for a manually-typed plan.
+- **UI**: `/today` shows however many candidates were found (calendar +
+  Gmail combined, capped at ~4, soonest-first) as rows in one pinned-note
+  card — "Pick one to pin" headline, each row tagged `Calendar` or
+  `Inbox`, a **"Pin this →"** button per row (not "Prefill" — plainer
+  wording, matches the app's existing "Pin a plan" / "Pin it" language).
+  One candidate collapses to the same component with a single row, no
+  visual difference otherwise.
+- **Auth**: Gmail access (`gmail.readonly`) is requested as an *additional
+  scope in the same consent grant* as calendar (`access_type=offline`,
+  both scopes in one `GET /me/calendar/connect` redirect) — not a second
+  OAuth flow. One click, one token, both scopes. The stored refresh token
+  column keeps its existing name (`google_calendar_refresh_token`)
+  despite now also covering Gmail, to avoid an unnecessary migration —
+  flagged here so it isn't confusing later.
+- Considered and rejected: Arcade.dev (a managed tool-calling platform
+  with its own OAuth-handled Gmail integration). It doesn't solve the
+  actual bottleneck — extracting structured event data from free-text
+  email — and would trade our one existing OAuth flow for a second,
+  unrelated one. Not worth it for this feature.
+
 ## Goals
 
-- A user who has connected Google Calendar sees, on `/today`, a
-  low-friction surface for "you have an event today" when that event
-  looks like a Luma event (a `lu.ma` link in its location or description).
-- Tapping through from that surface lands on `/post` with activity,
-  openness, duration, and detail already filled in — "Pin it" is usable
-  immediately, no typing required.
-- Calendar connection is optional and skippable; the app is fully
+- A user who has connected Google (Calendar + Gmail scopes) sees, on
+  `/today`, a low-friction surface listing whatever looks like "things
+  you're attending today" — sourced from calendar events with a location,
+  and Gmail registration emails from known event platforms.
+- Tapping "Pin this →" on any candidate lands on `/post` with activity,
+  openness, duration (when known), and detail already filled in — "Pin
+  it" is usable immediately or after a quick edit.
+- Calendar/Gmail connection is optional and skippable; the app is fully
   functional without it (this is additive, not a gate).
-- Any failure in this path (API error, revoked/expired token, no matching
-  event) degrades silently — `/today` and `/post` work exactly as they do
-  today.
+- Any failure in this path (API error, revoked/expired token, no
+  candidates) degrades silently — `/today` and `/post` work exactly as
+  they do today.
 
 ## Non-goals
 
@@ -41,12 +91,15 @@ need — no Luma access required at all.
   doesn't expose them for non-hosted events, and even where a public guest
   list exists it's Luma display names only, not matched to StayConnected
   users. Not worth the fragility for v1.
-- Any Luma API integration or scraping. The calendar event's own fields
-  are sufficient; we never talk to Luma at all.
+- Any Luma (or Meetup/Eventbrite) *API* integration or scraping. Only
+  Google Calendar and Gmail are read; the platform itself is never
+  contacted directly.
+- Semantic parsing of email bodies for date/time/location — see Revision
+  2 above. Gmail candidates carry a title only.
 - Background sync/polling. Detection happens on-demand when `/today` loads.
-- Piggybacking calendar scope onto the existing Google *sign-in* OAuth
-  flow — that flow uses `access_type=online` for identity only and serves
-  email/password users too. Calendar access is a separate, optional grant.
+- Piggybacking onto the existing Google *sign-in* OAuth flow's identity
+  request — that flow uses `access_type=online` and serves email/password
+  users too. This is a separate, optional, offline-access grant.
 
 ## Data model
 
@@ -80,52 +133,68 @@ the state.
    `get_current_user` uses) — 401 if invalid/expired.
 2. Redirect to Google's OAuth consent screen:
    `access_type=offline`, `prompt=consent`,
-   `scope=https://www.googleapis.com/auth/calendar.readonly`,
-   `redirect_uri=<calendar callback URL>`, `state=<the same jwt>`.
+   `scope=https://www.googleapis.com/auth/calendar.readonly
+   https://www.googleapis.com/auth/gmail.readonly` (both scopes, one
+   grant), `redirect_uri=<the shared google_redirect_uri>`,
+   `state=calendar:<the same jwt>`.
 
-**`GET /me/calendar/callback?code=&state=`** (Google redirects here)
-1. If `error` is present instead of `code` (user declined consent),
-   redirect to `${frontend_origin}/today?calendar=error`.
-2. Verify `state` as a JWT → `user_id`. Invalid/expired → redirect to
-   `/today?calendar=error`.
-3. Exchange `code` for tokens at Google's token endpoint
-   (`grant_type=authorization_code`). Store the returned `refresh_token`
-   on the user, set `google_calendar_connected_at = now()`.
-4. Redirect to `${frontend_origin}/today?calendar=connected`.
+**`GET /auth/google/callback?code=&state=`** (Google redirects here — the
+single shared callback, in `routers/auth.py`, used by *every* Google flow)
+1. If `state` starts with `calendar:`, strip the prefix and run the
+   calendar-connect branch below (`routers/calendar.py::complete_connect`).
+   Otherwise (`state=login`, missing, or anything else) run the existing
+   sign-in logic unchanged.
+2. Calendar branch: if `error` is present instead of `code` (user declined
+   consent), redirect to `${frontend_origin}/today?calendar=error`.
+3. Verify the remaining state string as a JWT → `user_id`.
+   Invalid/expired → redirect to `/today?calendar=error`.
+4. Exchange `code` for tokens at Google's token endpoint
+   (`grant_type=authorization_code`, same `redirect_uri` that initiated
+   the flow). Store the returned `refresh_token` on the user, set
+   `google_calendar_connected_at = now()`. A failed exchange also
+   redirects to `/today?calendar=error` rather than raising.
+5. Redirect to `${frontend_origin}/today?calendar=connected`.
 
 **`POST /me/calendar/disconnect`** (standard bearer auth)
 Clears `google_calendar_refresh_token` and `google_calendar_connected_at`.
 Returns `OkResponse`.
 
-**`GET /me/calendar/today-event?day_start=<iso>&day_end=<iso>`**
+**`GET /me/calendar/candidates?day_start=<iso>&day_end=<iso>`**
 (standard bearer auth; frontend computes the boundaries from the
 browser's local timezone, same reasoning as browser geolocation on
-`/post` — the server doesn't know the user's timezone.)
+`/post` — the server doesn't know the user's timezone. Replaces the v1
+`today-event` endpoint.)
 
-1. No stored refresh token → `{"connected": false, "event": null}`.
+1. No stored refresh token → `{"connected": false, "candidates": []}`.
 2. Exchange the refresh token for a fresh access token
    (`grant_type=refresh_token`). On failure (revoked/expired) — clear the
    stored refresh token (self-healing back to "not connected") and return
-   `{"connected": false, "event": null}`.
-3. Call Google Calendar's `events.list` for the primary calendar with
-   `timeMin=day_start&timeMax=day_end&singleEvents=true`.
-4. Return the first event whose `location` or `description` contains
-   `lu.ma` (case-insensitive substring match):
+   `{"connected": false, "candidates": []}`.
+3. **Calendar source**: call Google Calendar's `events.list` for the
+   primary calendar with `timeMin=day_start&timeMax=day_end&singleEvents=true`.
+   Every item that (a) is not all-day (has a `dateTime`, not just a bare
+   `date`) and (b) has a non-empty `location` is a candidate:
    ```json
-   {
-     "connected": true,
-     "event": {
-       "title": "string",
-       "location": "string | null",
-       "starts_at": "iso8601",
-       "ends_at": "iso8601"
-     }
-   }
+   {"source": "calendar", "title": "string", "location": "string",
+    "starts_at": "iso8601", "ends_at": "iso8601"}
    ```
-   or `{"connected": true, "event": null}` if none match.
-5. Any Google API error (timeout, 5xx, malformed response) is treated the
-   same as "no event" — logged, never raised to the client, never blocks
-   `/today`.
+4. **Gmail source**: call Gmail's `messages.list` with
+   `q=(from:lu.ma OR from:luma.com OR from:meetup.com OR from:eventbrite.com) newer_than:45d`
+   (a small, extensible sender-domain allowlist — see Non-goals re: no
+   body parsing), capped to the 5 most recent matches. For each, fetch
+   just the `Subject` header (`messages.get?format=metadata&metadataHeaders=Subject`)
+   as the candidate's title:
+   ```json
+   {"source": "gmail", "title": "string", "location": null,
+    "starts_at": null, "ends_at": null}
+   ```
+5. Merge both sources, calendar candidates first (soonest `starts_at`
+   first), then Gmail candidates, cap the combined list at 4. Return
+   `{"connected": true, "candidates": [...]}` (empty array if none).
+6. Any Google API error on either source (timeout, 5xx, malformed
+   response) drops just that source silently — logged, never raised to
+   the client, never blocks `/today`. A Calendar failure doesn't prevent
+   Gmail candidates from showing and vice versa.
 
 **`GET /me`** (existing) — add `google_calendar_connected: bool` (derived
 from `google_calendar_connected_at is not None`) so the frontend knows
@@ -152,12 +221,19 @@ with set-membership validation.
    (`sc_calendar_ribbon_dismissed`) — reappears next session, since
    connecting is a real feature worth re-surfacing, not nagging.
 3. If connected: compute local day boundaries, call
-   `GET /me/calendar/today-event`. If an event comes back and its id
-   (derived from title+starts_at) isn't in `sessionStorage`'s
-   `sc_calendar_skipped` set, render the event card (State B). "Not
-   going / skip" adds it to that skipped set (won't reappear today).
-   "Prefill a plan →" writes the event payload to
-   `sessionStorage.sc_calendar_prefill` and navigates to `/post`.
+   `GET /me/calendar/candidates`. Filter out any candidate whose derived
+   id (`${source}-${title}-${starts_at ?? ""}`) is in `sessionStorage`'s
+   `sc_calendar_skipped` set. If one or more remain, render the picker
+   card: headline "Pick one to pin" when there are 2+ rows, or just the
+   single candidate's title as the headline when there's exactly 1 (no
+   visual difference otherwise — same component). Each row shows title,
+   a `Calendar`/`Inbox` source tag, and time range + location when known
+   (Gmail-sourced rows omit the time/location, showing just the tag).
+   A "Pin this →" button per row writes that candidate's payload to
+   `sessionStorage.sc_calendar_prefill` and navigates to `/post`. A
+   card-level "Not going / skip" (single candidate) or "Not seeing your
+   plans, dismiss for today" (multiple) adds all currently-shown
+   candidates' ids to the skipped set.
 
 **`/post`** (`frontend/app/post/page.tsx`):
 - Add `event` to `ACTIVITIES` (`label: "Event"`) and
@@ -167,22 +243,28 @@ with set-membership validation.
   key so a later plain visit to `/post` doesn't re-apply it). If present:
   - `activity = "event"`, `openness = "open_to_chat"` (a neutral default,
     still tappable to change).
-  - `minutes` = whichever of the four `DURATIONS` buckets is closest to
-    `ends_at - starts_at`, clamped to the existing [30, 240] range.
-  - `showDetail = true`, `detail = "{title} @ {location}"` (omit the
-    `@ {location}` part if `location` is null).
-  - Render a small "From calendar: {title}, {time range}" ribbon above
-    the plan-preview card, with a "Not this one" action that clears all
-    of the above back to the blank-composer defaults.
+  - `minutes`: if `starts_at`/`ends_at` are both present (calendar
+    source), whichever of the four `DURATIONS` buckets is closest to
+    `ends_at - starts_at`, clamped to [30, 240]. If either is null (Gmail
+    source, no known time), leave `minutes` at its existing default
+    (120) — don't guess.
+  - `showDetail = true`, `detail = "{title} @ {location}"` when
+    `location` is present, else just `"{title}"`.
+  - Render a small "From {Calendar|Inbox}: {title}[, {time range}]"
+    ribbon above the plan-preview card (time range omitted when unknown),
+    with a "Not this one" action that clears all of the above back to
+    blank-composer defaults.
 - Everything prefilled stays fully editable — this is a starting point,
   not a lock.
 
 **`lib/api.ts`**: add `calendarConnectUrl(token)` (builds the URL, used
 as a plain href/navigation target, not a `fetch`), `disconnectCalendar(token)`,
-`fetchTodayEvent(dayStart, dayEnd, token)`.
+`fetchEventCandidates(dayStart, dayEnd, token)`.
 
 **`lib/types.ts`**: extend `UserT` with `google_calendar_connected:
-boolean`; add a `CalendarEventT` type for the today-event payload.
+boolean`; add an `EventCandidateT` type (`source: "calendar" | "gmail"`,
+`title: string`, `location: string | null`, `starts_at: string | null`,
+`ends_at: string | null`).
 
 ## Error handling
 
@@ -196,16 +278,25 @@ boolean`; add a `CalendarEventT` type for the today-event payload.
 
 ## Configuration
 
-- New setting `google_calendar_redirect_uri` (backend/app/config.py),
-  distinct from the existing `google_redirect_uri` used for sign-in —
-  Google requires each redirect URI to be individually allow-listed on
-  the OAuth client, and reusing the login one would route calendar
-  consent through the wrong callback.
-- The Google Cloud project needs the **Calendar API** enabled (separate
-  toggle from whatever's already enabled for sign-in/userinfo) and the
-  new redirect URI added to the OAuth client's allow-list — the same
-  console screen that caused the `redirect_uri_mismatch` issue earlier
-  this project. Must be done before this ships to any environment.
+- No new redirect-URI setting. Calendar consent reuses the existing
+  `google_redirect_uri` (backend/app/config.py) that sign-in already
+  uses. Google requires each redirect URI to be individually allow-listed
+  on the OAuth client — a manual Cloud Console step — so the app keeps
+  exactly one and tells the flows apart via the `state` param
+  (`login` vs `calendar:<jwt>`), which Google round-trips unmodified.
+  Any future Google-scoped feature adds another `state` prefix, not
+  another console entry.
+- The Google Cloud project needs both the **Calendar API** and the
+  **Gmail API** enabled (APIs & Services → Library — separate toggles
+  from whatever's already enabled for sign-in/userinfo). The redirect URI
+  itself is already allow-listed from the sign-in work — no new console
+  change needed there.
+- While the OAuth consent screen is in "Testing" publishing status
+  (expected during development), only accounts added under Audience →
+  Test users can complete consent — anyone else hits a hard
+  `403 access_denied`, not a soft warning. This is unrelated to the
+  redirect-URI allow-list and easy to miss since it lives on a different
+  tab in the current Console UI ("Audience", not "Clients").
 
 ## Testing
 
@@ -215,23 +306,35 @@ tests):
 
 - `/me/calendar/connect` redirects to Google with the right params;
   401 on an invalid/expired `token`.
-- `/me/calendar/callback` happy path stores the refresh token and
-  redirects to `/today?calendar=connected`; `error` param and invalid
-  `state` both redirect to `/today?calendar=error` without raising.
+- `/auth/google/callback` with a `calendar:`-prefixed `state`: happy path
+  stores the refresh token and redirects to `/today?calendar=connected`;
+  `error` param, invalid `state`, and a failed token exchange all redirect
+  to `/today?calendar=error` without raising.
+- `/auth/google/callback` with `state=login` still runs the sign-in path
+  and is not misrouted into calendar logic.
 - `/me/calendar/disconnect` clears stored token.
-- `/me/calendar/today-event`: not-connected case; connected + matching
-  lu.ma event found; connected + no matching event; connected + expired
-  refresh token (asserts token gets cleared server-side).
+- `/me/calendar/candidates`: not-connected case; connected + calendar
+  candidate(s) found (located, non-all-day only — an all-day or
+  location-less event must NOT appear); connected + Gmail candidate(s)
+  found (title from Subject header, null location/times); connected +
+  both sources contributing, correctly merged/capped/ordered; connected +
+  no candidates from either source; connected + expired refresh token
+  (asserts token cleared server-side); one source failing (e.g. Gmail
+  API error) still returns the other source's candidates.
 - `POST /plans` accepts `activity="event"`.
 
 Frontend (vitest):
-- `CalendarEventBanner`: renders ribbon when not connected; renders event
-  card when connected + event found; renders nothing when connected +
-  no event, or when dismissed/skipped this session.
+- `CalendarEventBanner`: renders ribbon when not connected; renders the
+  picker card with N rows when connected + candidates found (including
+  the single-candidate collapse to one row); renders nothing when
+  connected + no candidates, or when all current candidates are
+  dismissed/skipped this session; a Gmail-sourced row renders without a
+  time/location.
 - `/post`: reading `sc_calendar_prefill` from `sessionStorage` sets
-  activity/openness/minutes/detail correctly; "Not this one" clears it;
-  the key is consumed (cleared) after read so a later plain visit isn't
-  affected.
+  activity/openness/detail correctly for both calendar-sourced
+  (`minutes` computed from the time window) and Gmail-sourced (`minutes`
+  left at its default) payloads; "Not this one" clears it; the key is
+  consumed (cleared) after read so a later plain visit isn't affected.
 
 ## Design guidelines applied
 
