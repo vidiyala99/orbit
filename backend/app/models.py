@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, ForeignKey, DateTime, Boolean, Text, UniqueConstraint, Float
+from sqlalchemy import String, ForeignKey, DateTime, Boolean, Text, UniqueConstraint, Float, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geography
@@ -20,10 +20,19 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     google_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
-    name: Mapped[str] = mapped_column(String(120))
     headline: Mapped[str | None] = mapped_column(String(160), nullable=True)
     linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pain_points: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    pain_point_other: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    google_calendar_refresh_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    google_calendar_connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
@@ -50,6 +59,14 @@ class Plan(Base):
     __tablename__ = "plans"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    # Structured composer selections (tap-first /post UI).
+    # Enum-ish values validated at the Pydantic layer, not in the DB:
+    #   activity: coffee | ride_share | cowork | meal | other
+    #   openness: heads_down | open_to_chat | actively_meeting
+    activity: Mapped[str] = mapped_column(String(20))
+    openness: Mapped[str] = mapped_column(String(20))
+    detail: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Server-assembled from activity + openness + duration + detail.
     text: Mapped[str] = mapped_column(Text)
     lat: Mapped[float] = mapped_column(Float)
     lon: Mapped[float] = mapped_column(Float)

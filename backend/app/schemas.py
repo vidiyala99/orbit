@@ -1,30 +1,71 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 class UserOut(BaseModel):
     id: uuid.UUID
     email: str
     email_verified_at: datetime | None
-    name: str
     headline: str | None
     linkedin_url: str | None
     avatar_url: str | None
+    first_name: str | None
+    last_name: str | None
+    city: str | None
+    lat: float | None
+    lon: float | None
+    pain_points: list[str] | None
+    pain_point_other: str | None
+    onboarded_at: datetime | None
+    # Read off the user row but never sent to the client — only the derived
+    # boolean below is. The refresh token itself is never exposed at all.
+    google_calendar_connected_at: datetime | None = Field(default=None, exclude=True)
+
+    @computed_field
+    @property
+    def google_calendar_connected(self) -> bool:
+        return self.google_calendar_connected_at is not None
 
     class Config:
         from_attributes = True
 
+# Tap-first /post composer. Keys are fixed; the display sentence is assembled
+# server-side (see app/routers/plans.py::_assemble_plan_text).
+ACTIVITY_KEYS = {"coffee", "ride_share", "cowork", "meal", "event", "other"}
+OPENNESS_KEYS = {"heads_down", "open_to_chat", "actively_meeting"}
+
 class PlanCreate(BaseModel):
-    text: str = Field(min_length=1, max_length=500)
+    activity: str
+    openness: str
+    detail: str | None = Field(default=None, max_length=500)
     lat: float
     lon: float
     starts_at: datetime
     ends_at: datetime
 
+    @field_validator("activity")
+    @classmethod
+    def _valid_activity(cls, value: str) -> str:
+        if value not in ACTIVITY_KEYS:
+            raise ValueError(f"invalid activity: {value}")
+        return value
+
+    @field_validator("openness")
+    @classmethod
+    def _valid_openness(cls, value: str) -> str:
+        if value not in OPENNESS_KEYS:
+            raise ValueError(f"invalid openness: {value}")
+        return value
+
 class PlanOut(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     text: str
+    activity: str
+    openness: str
+    detail: str | None
     lat: float
     lon: float
     starts_at: datetime
@@ -72,7 +113,23 @@ class BlockCreate(BaseModel):
 class SignupRequest(BaseModel):
     email: str = Field(min_length=3, max_length=255)
     password: str = Field(min_length=8, max_length=255)
-    name: str = Field(min_length=1, max_length=120)
+
+PAIN_POINT_KEYS = {"cold_outreach", "dont_know_who", "no_time", "no_followthrough", "other"}
+
+class OnboardingRequest(BaseModel):
+    first_name: str = Field(min_length=1, max_length=60)
+    last_name: str = Field(min_length=1, max_length=60)
+    city: str = Field(min_length=1, max_length=120)
+    pain_points: list[str] = Field(min_length=1)
+    pain_point_other: str | None = Field(default=None, max_length=200)
+
+    @field_validator("pain_points")
+    @classmethod
+    def _valid_pain_points(cls, value: list[str]) -> list[str]:
+        invalid = set(value) - PAIN_POINT_KEYS
+        if invalid:
+            raise ValueError(f"invalid pain point(s): {', '.join(sorted(invalid))}")
+        return value
 
 class LoginRequest(BaseModel):
     email: str
@@ -97,6 +154,17 @@ class OkResponse(BaseModel):
 
 class GoogleExchangeRequest(BaseModel):
     code: str
+
+class EventCandidateOut(BaseModel):
+    source: Literal["calendar", "gmail"]
+    title: str
+    location: str | None
+    starts_at: datetime | None
+    ends_at: datetime | None
+
+class CandidatesOut(BaseModel):
+    connected: bool
+    candidates: list[EventCandidateOut]
 
 class WaitlistCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)

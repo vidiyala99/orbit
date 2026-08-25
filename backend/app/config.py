@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     google_client_id: str = ""
     google_client_secret: str = ""
+    # The one redirect URI allow-listed in the Google Cloud Console. Every
+    # Google flow (sign-in, calendar consent, anything later) comes back
+    # through it and is told apart by the `state` param.
     google_redirect_uri: str = "http://localhost:8001/auth/google/callback"
 
     class Config:

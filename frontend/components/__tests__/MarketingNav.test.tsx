@@ -1,8 +1,12 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import MarketingNav from "../MarketingNav";
 
 describe("MarketingNav", () => {
+  beforeEach(() => {
+    document.cookie = "sc_token=; path=/; max-age=0";
+  });
+
   it("renders links to all three marketing pages with real hrefs", () => {
     render(<MarketingNav active="home" />);
     expect(screen.getAllByRole("link", { name: "Home" })[0]).toHaveAttribute("href", "/");
@@ -22,5 +26,24 @@ describe("MarketingNav", () => {
     expect(screen.getByTestId("mobile-drawer")).not.toBeVisible();
     fireEvent.click(toggle);
     expect(screen.getByTestId("mobile-drawer")).toBeVisible();
+  });
+
+  it("shows a Sign in link in both the desktop nav and mobile drawer when signed out", () => {
+    render(<MarketingNav active="home" />);
+    fireEvent.click(screen.getByRole("button", { name: /menu/i }));
+    const links = screen.getAllByRole("link", { name: /sign in/i });
+    expect(links).toHaveLength(2);
+    links.forEach((link) => expect(link).toHaveAttribute("href", "/sign-in"));
+    expect(screen.queryByRole("link", { name: /today/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a Today link instead of Sign in when a session token is present", async () => {
+    document.cookie = "sc_token=tok123; path=/";
+    render(<MarketingNav active="home" />);
+    fireEvent.click(screen.getByRole("button", { name: /menu/i }));
+    const links = await screen.findAllByRole("link", { name: /today/i });
+    expect(links).toHaveLength(2);
+    links.forEach((link) => expect(link).toHaveAttribute("href", "/today"));
+    expect(screen.queryByRole("link", { name: /sign in/i })).not.toBeInTheDocument();
   });
 });

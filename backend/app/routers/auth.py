@@ -17,6 +17,7 @@ from ..schemas import (
 )
 from ..security import hash_password, verify_password, create_access_token, generate_opaque_token
 from ..email import send_verification_email, send_password_reset_email
+from .calendar import CALENDAR_STATE_PREFIX, complete_connect as complete_calendar_connect
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -37,7 +38,7 @@ def signup(body: SignupRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).one_or_none() is not None:
         raise HTTPException(status_code=409, detail="email already registered")
 
-    user = User(email=body.email, name=body.name, password_hash=hash_password(body.password))
+    user = User(email=body.email, password_hash=hash_password(body.password))
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -112,12 +113,28 @@ def google_authorize():
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "online",
+        "state": "login",
     }
     return RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}")
 
 
 @router.get("/google/callback")
-def google_callback(code: str, db: Session = Depends(get_db)):
+def google_callback(
+    code: str | None = None,
+    state: str | None = None,
+    db: Session = Depends(get_db),
+    error: str | None = None,
+):
+    """The single redirect URI registered with Google, shared by every Google
+    flow — `state` says which one this is."""
+    if state is not None and state.startswith(CALENDAR_STATE_PREFIX):
+        return complete_calendar_connect(
+            code, state.removeprefix(CALENDAR_STATE_PREFIX), db, error=error,
+        )
+
+    if code is None:
+        raise HTTPException(status_code=400, detail="missing code")
+
     token_res = httpx.post(GOOGLE_TOKEN_URL, data={
         "code": code,
         "client_id": settings.google_client_id,
@@ -129,13 +146,13 @@ def google_callback(code: str, db: Session = Depends(get_db)):
 
     userinfo_res = httpx.get(GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {google_access_token}"})
     info = userinfo_res.json()
-    google_id, email, name = info["sub"], info["email"], info.get("name", "New user")
+    google_id, email = info["sub"], info["email"]
 
     user = db.query(User).filter(User.google_id == google_id).one_or_none()
     if user is None:
         user = db.query(User).filter(User.email == email).one_or_none()
         if user is None:
-            user = User(email=email, name=name, google_id=google_id)
+            user = User(email=email, google_id=google_id)
             db.add(user)
         else:
             user.google_id = google_id

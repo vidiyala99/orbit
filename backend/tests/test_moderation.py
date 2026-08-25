@@ -15,14 +15,17 @@ from datetime import datetime, timedelta, timezone
 
 def test_plan_with_blocked_content_is_rejected(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
-    user = User(email="user_filter_test@example.com", name="Test User")
+    user = User(email="user_filter_test@example.com")
     db_session.add(user); db_session.commit()
     app.dependency_overrides[get_current_user] = lambda: user
     client = TestClient(app)
 
     now = datetime.now(timezone.utc)
     resp = client.post("/plans", json={
-        "text": "wire transfer needed, click here to claim your prize",
+        "activity": "coffee", "openness": "open_to_chat",
+        # `detail` is the only free-text surface on a plan now, so it's the
+        # only thing moderation has to catch.
+        "detail": "wire transfer needed, click here to claim your prize",
         "lat": 37.4419, "lon": -122.1430,
         "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=1)).isoformat(),
     })
@@ -31,8 +34,8 @@ def test_plan_with_blocked_content_is_rejected(db_session):
 
 def test_report_and_block_endpoints(db_session):
     app.dependency_overrides[get_db] = lambda: db_session
-    reporter = User(email="user_reporter@example.com", name="Reporter")
-    target = User(email="user_target@example.com", name="Target")
+    reporter = User(email="user_reporter@example.com")
+    target = User(email="user_target@example.com")
     db_session.add_all([reporter, target]); db_session.commit()
     app.dependency_overrides[get_current_user] = lambda: reporter
     client = TestClient(app)

@@ -4,13 +4,15 @@ from sqlalchemy.exc import IntegrityError
 from app.models import User, Plan
 
 def test_create_user_and_plan(db_session):
-    user = User(email="priya@example.com", name="Priya Shah")
+    user = User(email="priya@example.com")
     db_session.add(user)
     db_session.commit()
 
     now = datetime.now(timezone.utc)
     plan = Plan(
         user_id=user.id,
+        activity="coffee",
+        openness="open_to_chat",
         text="Coffee near University Ave",
         lat=37.4419,
         lon=-122.1430,
@@ -26,8 +28,8 @@ def test_create_user_and_plan(db_session):
     assert fetched.user_id == user.id
 
 def test_duplicate_email_rejected(db_session):
-    db_session.add(User(email="dup@example.com", name="A"))
+    db_session.add(User(email="dup@example.com"))
     db_session.commit()
-    db_session.add(User(email="dup@example.com", name="B"))
+    db_session.add(User(email="dup@example.com"))
     with pytest.raises(IntegrityError):
         db_session.commit()

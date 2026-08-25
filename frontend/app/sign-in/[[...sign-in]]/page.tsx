@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login } from "@/lib/api";
-import { setClientToken } from "@/lib/auth";
+import { fetchMe, login } from "@/lib/api";
+import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not sign in";
@@ -11,24 +11,45 @@ function errorMessage(err: unknown): string {
 
 export default function SignInPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const token = getClientToken();
+    if (!token) {
+      setChecking(false);
+      return;
+    }
+    fetchMe(token)
+      .then((user) => router.replace(user.onboarded_at ? "/today" : "/onboarding"))
+      .catch(() => {
+        clearClientToken();
+        setChecking(false);
+      });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      const { access_token } = await login(email, password);
+      const { access_token, user } = await login(email, password);
       setClientToken(access_token);
-      router.push("/today");
+      router.push(user.onboarded_at ? "/today" : "/onboarding");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-board px-6 py-16 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px]" />
+    );
   }
 
   return (

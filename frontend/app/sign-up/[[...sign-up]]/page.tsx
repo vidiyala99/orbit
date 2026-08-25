@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signup } from "@/lib/api";
-import { setClientToken } from "@/lib/auth";
+import { fetchMe, signup } from "@/lib/api";
+import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not create account";
@@ -11,25 +11,45 @@ function errorMessage(err: unknown): string {
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const token = getClientToken();
+    if (!token) {
+      setChecking(false);
+      return;
+    }
+    fetchMe(token)
+      .then((user) => router.replace(user.onboarded_at ? "/today" : "/onboarding"))
+      .catch(() => {
+        clearClientToken();
+        setChecking(false);
+      });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
-      const { access_token } = await signup(email, password, name);
+      const { access_token, user } = await signup(email, password);
       setClientToken(access_token);
-      router.push("/today");
+      router.push(user.onboarded_at ? "/today" : "/onboarding");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-board px-6 py-16 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px]" />
+    );
   }
 
   return (
@@ -50,21 +70,7 @@ export default function SignUpPage() {
         </h1>
         <p className="mt-1 font-body text-xs text-ink2 lg:text-sm">Free, takes 30 seconds</p>
 
-        <label className="mt-5 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="name">
-          Name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="mt-1 w-full rounded border border-rule bg-white px-3 py-2 text-sm text-ink lg:text-base"
-        />
-
-        <label className="mt-3 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="email">
+        <label className="mt-5 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="email">
           Email
         </label>
         <input

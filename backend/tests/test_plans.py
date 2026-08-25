@@ -3,9 +3,10 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.auth import get_current_user, get_optional_user
 from app.models import User
+from app.routers.plans import _assemble_plan_text
 
 def _override_user(db_session, name="Priya Shah"):
-    user = User(email=f"user_{name.replace(' ', '_')}@example.com", name=name)
+    user = User(email=f"user_{name.replace(' ', '_')}@example.com")
     db_session.add(user)
     db_session.commit()
     app.dependency_overrides[get_current_user] = lambda: user
@@ -19,16 +20,21 @@ def test_create_and_discover_nearby_plan(db_session):
     client = TestClient(app)
 
     now = datetime.now(timezone.utc)
+    ends = now + timedelta(hours=2)
     create_resp = client.post("/plans", json={
-        "text": "Coffee near University Ave",
+        "activity": "coffee",
+        "openness": "open_to_chat",
+        "detail": "Near University Ave.",
         "lat": 37.4419,
         "lon": -122.1430,
         "starts_at": now.isoformat(),
-        "ends_at": (now + timedelta(hours=2)).isoformat(),
+        "ends_at": ends.isoformat(),
     })
     assert create_resp.status_code == 201
     created = create_resp.json()
-    assert created["text"] == "Coffee near University Ave"
+    assert created["text"] == _assemble_plan_text(
+        "coffee", "open_to_chat", now, ends, "Near University Ave.",
+    )
     assert created["user_id"] == str(user.id)
 
     # 500m away in Palo Alto, within a 2km radius search
@@ -49,10 +55,12 @@ def test_discovery_is_public_no_auth_required(db_session):
     client = TestClient(app)
 
     now = datetime.now(timezone.utc)
+    ends = now + timedelta(hours=2)
     created = client.post("/plans", json={
-        "text": "Coffee near University Ave",
+        "activity": "coffee", "openness": "open_to_chat",
+        "detail": "Near University Ave.",
         "lat": 37.4419, "lon": -122.1430,
-        "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=2)).isoformat(),
+        "starts_at": now.isoformat(), "ends_at": ends.isoformat(),
     }).json()
 
     # No dependency override for get_current_user/get_optional_user, no Authorization
@@ -69,7 +77,9 @@ def test_discovery_is_public_no_auth_required(db_session):
 
     detail_resp = client.get(f"/plans/{created['id']}")
     assert detail_resp.status_code == 200
-    assert detail_resp.json()["text"] == "Coffee near University Ave"
+    assert detail_resp.json()["text"] == _assemble_plan_text(
+        "coffee", "open_to_chat", now, ends, "Near University Ave.",
+    )
 
     app.dependency_overrides.clear()
 
@@ -81,7 +91,8 @@ def test_discover_excludes_plans_outside_radius(db_session):
 
     now = datetime.now(timezone.utc)
     client.post("/plans", json={
-        "text": "Meetup in SF",
+        "activity": "other", "openness": "actively_meeting",
+        "detail": "Meetup in SF.",
         "lat": 37.7749, "lon": -122.4194,
         "starts_at": now.isoformat(),
         "ends_at": (now + timedelta(hours=2)).isoformat(),
@@ -103,14 +114,19 @@ def test_get_single_plan(db_session):
     client = TestClient(app)
 
     now = datetime.now(timezone.utc)
+    ends = now + timedelta(hours=1)
     created = client.post("/plans", json={
-        "text": "Founders Coffee", "lat": 37.44, "lon": -122.16,
-        "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=1)).isoformat(),
+        "activity": "coffee", "openness": "heads_down",
+        "detail": "Founders Coffee.",
+        "lat": 37.44, "lon": -122.16,
+        "starts_at": now.isoformat(), "ends_at": ends.isoformat(),
     }).json()
 
     resp = client.get(f"/plans/{created['id']}")
     assert resp.status_code == 200
-    assert resp.json()["text"] == "Founders Coffee"
+    assert resp.json()["text"] == _assemble_plan_text(
+        "coffee", "heads_down", now, ends, "Founders Coffee.",
+    )
     app.dependency_overrides.clear()
 
 def test_stored_coordinates_are_snapped_to_neighborhood_precision(db_session):
@@ -123,7 +139,7 @@ def test_stored_coordinates_are_snapped_to_neighborhood_precision(db_session):
 
     now = datetime.now(timezone.utc)
     resp = client.post("/plans", json={
-        "text": "Coffee near University Ave",
+        "activity": "coffee", "openness": "open_to_chat",
         "lat": 37.44190123456, "lon": -122.14309876543,
         "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=1)).isoformat(),
     })
@@ -147,7 +163,7 @@ def test_discovery_hides_plans_from_blocked_users(db_session):
 
     now = datetime.now(timezone.utc)
     spam_plan = client.post("/plans", json={
-        "text": "Hanging out downtown", "lat": 37.4419, "lon": -122.1430,
+        "activity": "other", "openness": "open_to_chat", "lat": 37.4419, "lon": -122.1430,
         "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=2)).isoformat(),
     }).json()
 
@@ -173,7 +189,7 @@ def test_discovery_hides_plans_from_users_who_blocked_me(db_session):
 
     now = datetime.now(timezone.utc)
     plan = client.post("/plans", json={
-        "text": "Reading at the park", "lat": 37.4419, "lon": -122.1430,
+        "activity": "cowork", "openness": "heads_down", "lat": 37.4419, "lon": -122.1430,
         "starts_at": now.isoformat(), "ends_at": (now + timedelta(hours=2)).isoformat(),
     }).json()
 

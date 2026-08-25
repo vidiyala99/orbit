@@ -17,7 +17,7 @@ def _client(db_session):
 def test_signup_creates_user_and_sends_verification(mock_send, db_session):
     client = next(_client(db_session))
     res = client.post("/auth/signup", json={
-        "email": "new@example.com", "password": "hunter2hunter2", "name": "New User",
+        "email": "new@example.com", "password": "hunter2hunter2",
     })
     assert res.status_code == 201
     body = res.json()
@@ -32,14 +32,14 @@ def test_signup_creates_user_and_sends_verification(mock_send, db_session):
 @patch("app.routers.auth.send_verification_email")
 def test_signup_rejects_duplicate_email(mock_send, db_session):
     client = next(_client(db_session))
-    client.post("/auth/signup", json={"email": "dup@example.com", "password": "hunter2hunter2", "name": "A"})
-    res = client.post("/auth/signup", json={"email": "dup@example.com", "password": "hunter2hunter2", "name": "B"})
+    client.post("/auth/signup", json={"email": "dup@example.com", "password": "hunter2hunter2"})
+    res = client.post("/auth/signup", json={"email": "dup@example.com", "password": "hunter2hunter2"})
     assert res.status_code == 409
 
 
 def test_login_with_correct_password_succeeds(db_session):
     client = next(_client(db_session))
-    db_session.add(User(email="login@example.com", name="L", password_hash=hash_password("correcthorse")))
+    db_session.add(User(email="login@example.com", password_hash=hash_password("correcthorse")))
     db_session.commit()
 
     res = client.post("/auth/login", json={"email": "login@example.com", "password": "correcthorse"})
@@ -49,7 +49,7 @@ def test_login_with_correct_password_succeeds(db_session):
 
 def test_login_with_wrong_password_rejected(db_session):
     client = next(_client(db_session))
-    db_session.add(User(email="login2@example.com", name="L", password_hash=hash_password("correcthorse")))
+    db_session.add(User(email="login2@example.com", password_hash=hash_password("correcthorse")))
     db_session.commit()
 
     res = client.post("/auth/login", json={"email": "login2@example.com", "password": "wrongpassword"})
@@ -64,7 +64,7 @@ def test_login_with_unknown_email_rejected(db_session):
 
 def test_login_rejected_for_google_only_account(db_session):
     client = next(_client(db_session))
-    db_session.add(User(email="googleonly@example.com", name="G", google_id="g-123", password_hash=None))
+    db_session.add(User(email="googleonly@example.com", google_id="g-123", password_hash=None))
     db_session.commit()
 
     res = client.post("/auth/login", json={"email": "googleonly@example.com", "password": "anything12345"})
@@ -78,7 +78,7 @@ from app.security import generate_opaque_token
 
 def test_verify_email_marks_user_verified(db_session):
     client = next(_client(db_session))
-    user = User(email="verify@example.com", name="V", password_hash=hash_password("password123"))
+    user = User(email="verify@example.com", password_hash=hash_password("password123"))
     db_session.add(user)
     db_session.commit()
     token = generate_opaque_token()
@@ -96,7 +96,7 @@ def test_verify_email_marks_user_verified(db_session):
 
 def test_verify_email_rejects_expired_token(db_session):
     client = next(_client(db_session))
-    user = User(email="expired@example.com", name="E", password_hash=hash_password("password123"))
+    user = User(email="expired@example.com", password_hash=hash_password("password123"))
     db_session.add(user)
     db_session.commit()
     token = generate_opaque_token()
@@ -111,7 +111,7 @@ def test_verify_email_rejects_expired_token(db_session):
 
 def test_verify_email_rejects_reused_token(db_session):
     client = next(_client(db_session))
-    user = User(email="reuse@example.com", name="R", password_hash=hash_password("password123"))
+    user = User(email="reuse@example.com", password_hash=hash_password("password123"))
     db_session.add(user)
     db_session.commit()
     token = generate_opaque_token()
@@ -136,7 +136,7 @@ def test_request_password_reset_always_returns_200(mock_send, db_session):
 @patch("app.routers.auth.send_password_reset_email")
 def test_request_password_reset_sends_email_for_known_user(mock_send, db_session):
     client = next(_client(db_session))
-    db_session.add(User(email="known@example.com", name="K", password_hash=hash_password("oldpassword1")))
+    db_session.add(User(email="known@example.com", password_hash=hash_password("oldpassword1")))
     db_session.commit()
 
     res = client.post("/auth/request-password-reset", json={"email": "known@example.com"})
@@ -146,7 +146,7 @@ def test_request_password_reset_sends_email_for_known_user(mock_send, db_session
 
 def test_reset_password_updates_hash_and_invalidates_token(db_session):
     client = next(_client(db_session))
-    user = User(email="reset@example.com", name="R", password_hash=hash_password("oldpassword1"))
+    user = User(email="reset@example.com", password_hash=hash_password("oldpassword1"))
     db_session.add(user)
     db_session.commit()
     token = generate_opaque_token()
@@ -182,6 +182,8 @@ def test_google_authorize_redirect_is_properly_url_encoded(db_session):
     params = parse_qs(query)
     assert params["redirect_uri"] == ["http://localhost:8001/auth/google/callback"]
     assert params["scope"] == ["openid email profile"]
+    # The shared callback tells flows apart by state.
+    assert params["state"] == ["login"]
     # And the query string itself must actually be percent-encoded, not raw.
     assert "redirect_uri=http://" not in query
     assert "scope=openid email profile" not in query
@@ -210,7 +212,7 @@ def test_google_callback_creates_new_user_and_redirects_with_code(mock_post, moc
 @patch("app.routers.auth.httpx.post")
 def test_google_callback_links_existing_password_account_by_email(mock_post, mock_get, db_session):
     client = next(_client(db_session))
-    db_session.add(User(email="existing@example.com", name="E", password_hash=hash_password("somepassword1")))
+    db_session.add(User(email="existing@example.com", password_hash=hash_password("somepassword1")))
     db_session.commit()
 
     mock_post.return_value = MagicMock(status_code=200, json=lambda: {"access_token": "google-access-token"})

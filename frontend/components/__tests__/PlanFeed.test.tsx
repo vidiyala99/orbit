@@ -4,6 +4,7 @@ import PlanFeed from "../PlanFeed";
 
 const makePlan = (id: string, text: string) => ({
   id, user_id: "u1", text,
+  activity: "coffee", openness: "open_to_chat", detail: null,
   lat: 37.44, lon: -122.14,
   starts_at: new Date(Date.now() - 60000).toISOString(),
   ends_at: new Date(Date.now() + 3600000).toISOString(),

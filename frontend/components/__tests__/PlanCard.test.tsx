@@ -4,6 +4,7 @@ import PlanCard from "../PlanCard";
 
 const plan = {
   id: "1", user_id: "u1", text: "Coffee near University Ave",
+  activity: "coffee", openness: "open_to_chat", detail: null,
   lat: 37.44, lon: -122.14,
   starts_at: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
   ends_at: new Date(Date.now() + 1000 * 60 * 60).toISOString(),

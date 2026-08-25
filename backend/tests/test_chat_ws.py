@@ -7,8 +7,8 @@ from app.models import User, Thread
 @patch("app.routers.chat_ws.verify_token")
 def test_two_participants_exchange_a_message(mock_verify, db_session):
     app.dependency_overrides[get_db] = lambda: db_session
-    priya = User(email="priya@example.com", name="Priya")
-    dev = User(email="dev@example.com", name="Dev")
+    priya = User(email="priya@example.com")
+    dev = User(email="dev@example.com")
     db_session.add_all([priya, dev]); db_session.commit()
     a, b = sorted([priya.id, dev.id], key=str)
     thread = Thread(user_a_id=a, user_b_id=b)
@@ -32,8 +32,8 @@ def test_two_participants_exchange_a_message(mock_verify, db_session):
 def test_blocked_content_message_is_rejected_without_closing_the_socket(mock_verify, db_session):
     from app.models import Message
     app.dependency_overrides[get_db] = lambda: db_session
-    priya = User(email="priya-filter@example.com", name="Priya")
-    dev = User(email="dev-filter@example.com", name="Dev")
+    priya = User(email="priya-filter@example.com")
+    dev = User(email="dev-filter@example.com")
     db_session.add_all([priya, dev]); db_session.commit()
     a, b = sorted([priya.id, dev.id], key=str)
     thread = Thread(user_a_id=a, user_b_id=b)

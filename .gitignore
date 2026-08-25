@@ -8,3 +8,7 @@ __pycache__/
 .venv/
 venv/
 .run/
+.agents/
+.claude/skills/
+.playwright-cli/
+skills-lock.json

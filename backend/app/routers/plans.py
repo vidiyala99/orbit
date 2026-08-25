@@ -22,6 +22,45 @@ def _snap(coord: float, precision: int = 3) -> float:
     return round(coord, precision)
 
 
+ACTIVITY_FRAGMENTS = {
+    "coffee": "Grabbing coffee",
+    "ride_share": "Heading out, ride share",
+    "cowork": "Working from a spot nearby",
+    "meal": "Grabbing food",
+    "event": "Heading to an event",
+    "other": "Making plans",
+}
+
+OPENNESS_FRAGMENTS = {
+    "heads_down": "heads down, but say hi",
+    "open_to_chat": "open to chat",
+    "actively_meeting": "actively looking to meet people",
+}
+
+
+def _duration_label(starts_at: datetime, ends_at: datetime) -> str:
+    """Human duration: whole minutes under an hour, else hours to the nearest half."""
+    minutes = max(1, round((ends_at - starts_at).total_seconds() / 60))
+    if minutes < 60:
+        return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+    hours = round(minutes / 30) / 2
+    return f"{hours:g} hour" if hours == 1 else f"{hours:g} hours"
+
+
+def _assemble_plan_text(
+    activity: str, openness: str, starts_at: datetime, ends_at: datetime,
+    detail: str | None,
+) -> str:
+    """Build the display sentence for a plan from the composer's structured choices."""
+    sentence = (
+        f"{ACTIVITY_FRAGMENTS[activity]}, {OPENNESS_FRAGMENTS[openness]}"
+        f" — around for the next {_duration_label(starts_at, ends_at)}."
+    )
+    if detail and detail.strip():
+        sentence = f"{sentence} {detail.strip()}"
+    return sentence
+
+
 def _blocked_user_ids(db: Session, user_id) -> list:
     """Ids of users in a block relationship with user_id, in either direction."""
     rows = (
@@ -33,13 +72,20 @@ def _blocked_user_ids(db: Session, user_id) -> list:
 
 @router.post("", response_model=PlanOut, status_code=201)
 def create_plan(body: PlanCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    if contains_blocked_content(body.text):
+    # Only `detail` is free-form user input; the rest of the sentence is
+    # server-assembled from a fixed set of fragments.
+    if body.detail and contains_blocked_content(body.detail):
         raise HTTPException(status_code=422, detail="plan text not allowed")
     lat = _snap(body.lat)
     lon = _snap(body.lon)
     plan = Plan(
         user_id=user.id,
-        text=body.text,
+        activity=body.activity,
+        openness=body.openness,
+        detail=body.detail,
+        text=_assemble_plan_text(
+            body.activity, body.openness, body.starts_at, body.ends_at, body.detail,
+        ),
         lat=lat,
         lon=lon,
         location=f"SRID=4326;POINT({lon} {lat})",

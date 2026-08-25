@@ -16,9 +16,9 @@ export default function GoogleCallbackPage() {
       return;
     }
     exchangeGoogleCode(code)
-      .then(({ access_token }) => {
+      .then(({ access_token, user }) => {
         setClientToken(access_token);
-        router.push("/today");
+        router.push(user.onboarded_at ? "/today" : "/onboarding");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not sign in with Google"));
   }, [searchParams, router]);

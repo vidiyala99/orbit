@@ -13,7 +13,7 @@ def test_missing_bearer_prefix_raises_401(db_session):
 
 
 def test_valid_token_resolves_existing_user(db_session):
-    user = User(email="a@example.com", name="Dev Kulkarni")
+    user = User(email="a@example.com")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -42,7 +42,7 @@ def test_get_optional_user_returns_none_when_missing(db_session):
 
 
 def test_get_optional_user_returns_user_when_valid(db_session):
-    user = User(email="b@example.com", name="Priya")
+    user = User(email="b@example.com")
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)

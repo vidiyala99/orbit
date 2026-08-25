@@ -268,9 +268,10 @@ boolean`; add an `EventCandidateT` type (`source: "calendar" | "gmail"`,
 
 ## Error handling
 
-- Every Google API call (connect, callback, today-event) treats failure
-  as "not connected" / "no event" — never a 500, never blocks page render.
-- A revoked/expired refresh token self-heals: the next `today-event` call
+- Every Google API call (connect, callback, candidates) treats failure as
+  "not connected" / "no candidates" — never a 500, never blocks page
+  render. Calendar and Gmail fail independently.
+- A revoked/expired refresh token self-heals: the next `candidates` call
   clears it server-side, and the banner falls back to the connect ribbon.
 - User declines consent on Google's screen → `/today?calendar=error`,
   which the frontend treats identically to "not connected" (no error

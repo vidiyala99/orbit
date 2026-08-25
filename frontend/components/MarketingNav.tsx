@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getClientToken } from "@/lib/auth";
 
 type Page = "home" | "how-it-works" | "about";
 
@@ -12,6 +13,11 @@ const LINKS: { page: Page; label: string; href: string }[] = [
 
 export default function MarketingNav({ active }: { active: Page }) {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    setSignedIn(getClientToken() !== null);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-10 border-b border-rule bg-card">
@@ -21,7 +27,7 @@ export default function MarketingNav({ active }: { active: Page }) {
           StayConnected
         </Link>
 
-        <div className="hidden gap-4 font-mono text-[10px] uppercase text-ink2 md:flex lg:gap-8 lg:text-xs">
+        <div className="hidden items-center gap-4 font-mono text-[10px] uppercase text-ink2 md:flex lg:gap-8 lg:text-xs">
           {LINKS.map((link) => (
             <Link
               key={link.page}
@@ -32,6 +38,12 @@ export default function MarketingNav({ active }: { active: Page }) {
               {link.label}
             </Link>
           ))}
+          <Link
+            href={signedIn ? "/today" : "/sign-in"}
+            className="btn-press rounded-full border border-rule px-3 py-1.5 font-bold text-ink lg:px-4 lg:py-2"
+          >
+            {signedIn ? "Today" : "Sign in"}
+          </Link>
         </div>
 
         <button
@@ -60,6 +72,9 @@ export default function MarketingNav({ active }: { active: Page }) {
             {link.label}
           </Link>
         ))}
+        <Link href={signedIn ? "/today" : "/sign-in"} className="font-bold text-accent">
+          {signedIn ? "Today" : "Sign in"}
+        </Link>
       </div>
     </nav>
   );

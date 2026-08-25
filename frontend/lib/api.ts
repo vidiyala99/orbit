@@ -1,4 +1,4 @@
-import { MessageT, PlanT, StampT, ThreadT, UserT } from "./types";
+import { EventCandidateT, MessageT, PlanT, StampT, ThreadT, UserT } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
@@ -68,6 +68,36 @@ export function wsUrl(threadId: string, token: string): string {
   return `${base}/ws/threads/${threadId}?token=${encodeURIComponent(token)}`;
 }
 
+/** A plain browser-navigation target, not a `fetch` — the OAuth consent flow is a
+ *  redirect chain, so the JWT rides along as a query param like `wsUrl` does. */
+export function calendarConnectUrl(token: string): string {
+  return `${API_BASE}/me/calendar/connect?token=${encodeURIComponent(token)}`;
+}
+
+export async function disconnectCalendar(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/me/calendar/disconnect`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`disconnectCalendar failed: ${res.status}`);
+}
+
+/** Day boundaries come from the browser because the server doesn't know the
+ *  user's timezone — same reasoning as geolocation on `/post`. */
+export async function fetchEventCandidates(
+  dayStart: string, dayEnd: string, token: string,
+): Promise<{ connected: boolean; candidates: EventCandidateT[] }> {
+  const url = new URL(`${API_BASE}/me/calendar/candidates`);
+  url.searchParams.set("day_start", dayStart);
+  url.searchParams.set("day_end", dayEnd);
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`fetchEventCandidates failed: ${res.status}`);
+  return res.json();
+}
+
 export async function joinWaitlist(email: string): Promise<void> {
   const res = await fetch(`${API_BASE}/waitlist`, {
     method: "POST",
@@ -85,12 +115,12 @@ export async function fetchWaitlistCount(): Promise<number> {
 }
 
 export async function signup(
-  email: string, password: string, name: string,
+  email: string, password: string,
 ): Promise<{ access_token: string; user: UserT }> {
   const res = await fetch(`${API_BASE}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, name }),
+    body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error((await res.json()).detail ?? "Signup failed");
   return res.json();
@@ -147,8 +177,35 @@ export async function exchangeGoogleCode(
   return res.json();
 }
 
+export async function submitOnboarding(
+  input: {
+    first_name: string;
+    last_name: string;
+    city: string;
+    pain_points: string[];
+    pain_point_other?: string;
+  },
+  token: string,
+): Promise<UserT> {
+  const res = await fetch(`${API_BASE}/me/onboarding`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not save profile");
+  return res.json();
+}
+
 export async function createPlan(
-  input: { text: string; lat: number; lon: number; starts_at: string; ends_at: string },
+  input: {
+    activity: string;
+    openness: string;
+    detail?: string | null;
+    lat: number;
+    lon: number;
+    starts_at: string;
+    ends_at: string;
+  },
   token: string,
 ): Promise<PlanT> {
   const res = await fetch(`${API_BASE}/plans`, {
