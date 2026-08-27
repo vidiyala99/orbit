@@ -5,9 +5,47 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..auth import get_current_user
 from ..models import Block, Thread, Message, User
-from ..schemas import ThreadCreate, ThreadOut, MessageOut
+from ..schemas import ThreadCreate, ThreadOut, ThreadSummaryOut, MessageOut
 
 router = APIRouter(prefix="/threads", tags=["threads"])
+
+@router.get("", response_model=list[ThreadSummaryOut])
+def list_threads(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    threads = (
+        db.query(Thread)
+        .filter(or_(Thread.user_a_id == user.id, Thread.user_b_id == user.id))
+        .all()
+    )
+    if not threads:
+        return []
+
+    # Ascending, so the last write per thread_id wins and is the newest message.
+    last_message = {
+        m.thread_id: m
+        for m in db.query(Message)
+        .filter(Message.thread_id.in_([t.id for t in threads]))
+        .order_by(Message.created_at.asc())
+        .all()
+    }
+    other_id = {t.id: t.user_b_id if t.user_a_id == user.id else t.user_a_id for t in threads}
+    others = {u.id: u for u in db.query(User).filter(User.id.in_(other_id.values())).all()}
+
+    summaries = [
+        ThreadSummaryOut(
+            id=t.id,
+            user_a_id=t.user_a_id,
+            user_b_id=t.user_b_id,
+            created_at=t.created_at,
+            other_user=others[other_id[t.id]],
+            last_message=last_message.get(t.id),
+        )
+        for t in threads
+    ]
+    summaries.sort(
+        key=lambda s: s.last_message.created_at if s.last_message else s.created_at,
+        reverse=True,
+    )
+    return summaries
 
 @router.post("", response_model=ThreadOut, status_code=201)
 def start_or_resume_thread(body: ThreadCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):

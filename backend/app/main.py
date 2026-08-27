@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import plans, threads, stamps, moderation, chat_ws, me, waitlist, auth, calendar
+from .routers import (
+    plans, rooms, room_messages, scheduling, threads, stamps, moderation, chat_ws, me,
+    waitlist, auth, calendar,
+)
 
 app = FastAPI(title="StayConnected API")
 
@@ -15,6 +18,9 @@ app.add_middleware(
 )
 
 app.include_router(plans.router)
+app.include_router(rooms.router)
+app.include_router(room_messages.router)
+app.include_router(scheduling.router)
 app.include_router(threads.router)
 app.include_router(stamps.router)
 app.include_router(moderation.router)

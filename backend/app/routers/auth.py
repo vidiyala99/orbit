@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..db import get_db
+from ..demo import get_or_create_demo_user
 from ..models import User, EmailVerificationToken, PasswordResetToken
 from ..schemas import (
     SignupRequest, LoginRequest, TokenOut,
@@ -60,6 +61,21 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     if user is None or user.password_hash is None or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="invalid email or password")
 
+    return TokenOut(access_token=create_access_token(user.id), user=user)
+
+
+@router.post("/demo-login", response_model=TokenOut, include_in_schema=settings.demo_login_enabled)
+def demo_login(db: Session = Depends(get_db)):
+    """One-click sign-in as the seeded demo account, for showing the app.
+
+    404 (not 403) when the flag is off, so the endpoint isn't discoverable in an
+    environment that never opted in. Returns exactly what /login returns, so the
+    client treats it as an ordinary sign-in.
+    """
+    if not settings.demo_login_enabled:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    user = get_or_create_demo_user(db)
     return TokenOut(access_token=create_access_token(user.id), user=user)
 
 

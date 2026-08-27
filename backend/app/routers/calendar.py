@@ -162,6 +162,30 @@ def _calendar_candidates(access_token: str, day_start: str, day_end: str) -> lis
     return out
 
 
+def busy_blocks(access_token: str, day_start: str, day_end: str) -> list[dict]:
+    """Timed events in the window, as opaque intervals. Titles are deliberately
+    dropped: a room's day view shows *when* a member is unavailable, never what
+    for. All-day events carry a bare `date` and aren't busy blocks."""
+    res = httpx.get(
+        GOOGLE_EVENTS_URL,
+        params={"timeMin": day_start, "timeMax": day_end, "singleEvents": "true"},
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=GOOGLE_TIMEOUT,
+    )
+    if res.status_code != 200:
+        raise RuntimeError(f"events.list returned {res.status_code}")
+
+    out = []
+    for item in res.json().get("items", []):
+        starts_at = (item.get("start") or {}).get("dateTime")
+        ends_at = (item.get("end") or {}).get("dateTime")
+        if not starts_at or not ends_at:
+            continue
+        out.append({"starts_at": starts_at, "ends_at": ends_at})
+    out.sort(key=lambda b: datetime.fromisoformat(b["starts_at"]))
+    return out
+
+
 def _gmail_candidates(access_token: str) -> list[dict]:
     """Registration mail from known event platforms. Subject line only — see the
     spec's non-goals: bodies aren't parsed, so there's no time or location."""

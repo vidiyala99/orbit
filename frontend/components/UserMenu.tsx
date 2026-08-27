@@ -12,7 +12,10 @@ export default function UserMenu() {
   }
 
   return (
-    <button onClick={handleSignOut} className="btn-press font-mono text-xs text-rule">
+    <button
+      onClick={handleSignOut}
+      className="btn-press rounded-full px-2 py-1 text-[11.5px] font-medium text-ink3 transition-colors hover:bg-accent-soft hover:text-ink"
+    >
       Sign out
     </button>
   );

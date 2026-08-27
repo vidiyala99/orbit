@@ -31,36 +31,45 @@ export default function ChatThread({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-board">
+    <div className="mx-auto flex h-screen w-full max-w-md flex-col bg-ground">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.map((m) => (
           <div
             key={m.id}
-            className={`max-w-[74%] rounded-xl px-3 py-2 text-xs ${
-              m.sender_id === currentUserId ? "ml-auto bg-ink text-card" : "bg-[#EFE6CF] text-ink"
+            className={`max-w-[74%] px-3.5 py-2 text-[13px] font-medium leading-relaxed shadow-card ${
+              m.sender_id === currentUserId
+                ? "ml-auto rounded-[14px] rounded-br-[4px] bg-ink text-ground"
+                : "rounded-[14px] rounded-bl-[4px] bg-surface text-ink"
             }`}
           >
             {m.body}
           </div>
         ))}
         {stamp?.confirmed && (
-          <div className="my-2 text-center">
-            <span className="inline-block -rotate-3 rounded-full border border-stamp bg-stamp/10 px-3 py-1 font-mono text-[10px] text-stamp">
-              ● MET IN PERSON — {new Date(stamp.confirmed_at!).toLocaleDateString()}
+          <div className="my-3 text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.04em] text-accent">
+              ● Met in person — {new Date(stamp.confirmed_at!).toLocaleDateString()}
             </span>
           </div>
         )}
         {!stamp?.confirmed && <StampButton threadId={threadId} token={token} onConfirmed={setStamp} />}
       </div>
-      <div className="flex gap-2 border-t border-rule p-3">
+      <div className="flex gap-2 border-t border-rule bg-ground p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <label htmlFor="chat-draft" className="sr-only">
+          Message
+        </label>
         <input
+          id="chat-draft"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          className="flex-1 rounded-full bg-card px-3 py-2 text-xs text-ink"
-          placeholder="Message..."
+          className="field flex-1 rounded-full border border-rule bg-surface px-4 py-2.5 text-[13px] text-ink placeholder:text-ink3"
+          placeholder="Message…"
         />
-        <button onClick={send} className="rounded-full bg-accent px-4 py-2 font-mono text-[10px] text-card">
+        <button
+          onClick={send}
+          className="btn-press rounded-full bg-accent px-4 py-2.5 text-[12.5px] font-bold text-white transition-colors hover:bg-ink"
+        >
           Send
         </button>
       </div>

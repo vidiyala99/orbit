@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # through it and is told apart by the `state` param.
     google_redirect_uri: str = "http://localhost:8001/auth/google/callback"
 
+    # Off unless explicitly turned on. When false, POST /auth/demo-login 404s —
+    # the one-click demo account must not exist anywhere it wasn't asked for.
+    demo_login_enabled: bool = False
+
     class Config:
         env_file = ".env"
 

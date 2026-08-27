@@ -19,7 +19,7 @@ export default function StampButton({ threadId, token, onConfirmed }: {
     <button
       onClick={handleClick}
       disabled={pending}
-      className="mx-auto block rounded-full border border-stamp px-4 py-1.5 font-mono text-[10px] text-stamp"
+      className="btn-press mx-auto block rounded-full border border-rule bg-surface px-4 py-2 text-[11.5px] font-semibold text-accent shadow-card transition-colors hover:border-accent hover:bg-accent-soft disabled:opacity-50"
     >
       {pending ? "Confirming..." : "We met in person"}
     </button>

@@ -1,11 +1,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import SignInPage from "../[[...sign-in]]/page";
 import * as api from "@/lib/api";
 
-const pushMock = vi.fn();
-const replaceMock = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock, replace: replaceMock }) }));
+const { pushMock, replaceMock, routerMock } = vi.hoisted(() => {
+  const push = vi.fn();
+  const replace = vi.fn();
+  return { pushMock: push, replaceMock: replace, routerMock: { push, replace } };
+});
+// The real `useRouter` returns a stable object; returning a fresh one per call
+// would re-fire the page's `useEffect([router])` on every render.
+vi.mock("next/navigation", () => ({ useRouter: () => routerMock }));
 
 const baseUser = {
   id: "u1", email: "a@b.com", email_verified_at: null, headline: null, linkedin_url: null,
@@ -19,6 +24,10 @@ describe("SignInPage", () => {
     pushMock.mockClear();
     replaceMock.mockClear();
     document.cookie = "sc_token=; path=/; max-age=0";
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("submits email and password, stores the token, and redirects to /onboarding when not yet onboarded", async () => {
@@ -94,5 +103,58 @@ describe("SignInPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
+  });
+
+  it("does not render the demo button when the flag is unset", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "");
+    render(<SignInPage />);
+    expect(screen.queryByRole("button", { name: /demo account/i })).not.toBeInTheDocument();
+  });
+
+  it("does not render the demo button when the flag is not exactly 'true'", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "false");
+    render(<SignInPage />);
+    expect(screen.queryByRole("button", { name: /demo account/i })).not.toBeInTheDocument();
+  });
+
+  it("renders the demo button when the flag is on", () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
+    render(<SignInPage />);
+    expect(screen.getByRole("button", { name: /continue with demo account/i })).toBeInTheDocument();
+  });
+
+  it("demo-logs in, stores the token, and redirects like a normal login", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
+    const demoLogin = vi.spyOn(api, "demoLogin").mockResolvedValue({
+      access_token: "demotok",
+      user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
+    });
+
+    render(<SignInPage />);
+    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"));
+    expect(demoLogin).toHaveBeenCalledTimes(1);
+    expect(document.cookie).toContain("sc_token=demotok");
+  });
+
+  it("sends a not-yet-onboarded demo user to /onboarding", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
+    vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user: { ...baseUser } });
+
+    render(<SignInPage />);
+    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/onboarding"));
+  });
+
+  it("shows an error when demo login fails", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
+    vi.spyOn(api, "demoLogin").mockRejectedValue(new Error("demo login is not enabled"));
+
+    render(<SignInPage />);
+    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+
+    expect(await screen.findByText(/demo login is not enabled/i)).toBeInTheDocument();
   });
 });

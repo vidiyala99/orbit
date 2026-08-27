@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import TodayPage from "../page";
-import { PlanT, UserT } from "@/lib/types";
+import { PlanT, RoomT, UserT } from "@/lib/types";
 
 const cookieValue = vi.fn<() => string | undefined>();
 vi.mock("next/headers", () => ({
@@ -9,8 +9,10 @@ vi.mock("next/headers", () => ({
 }));
 
 const fetchNearbyPlans = vi.fn();
+const fetchNearbyRooms = vi.fn();
 vi.mock("@/lib/api", () => ({
   fetchNearbyPlans: (...args: unknown[]) => fetchNearbyPlans(...args),
+  fetchNearbyRooms: (...args: unknown[]) => fetchNearbyRooms(...args),
   joinWaitlist: vi.fn(),
   fetchWaitlistCount: vi.fn(),
 }));
@@ -18,7 +20,10 @@ vi.mock("@/lib/api", () => ({
 const requireOnboarded = vi.fn();
 vi.mock("@/lib/requireOnboarded", () => ({ requireOnboarded: () => requireOnboarded() }));
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/today",
+}));
 
 function makeUser(over: Partial<UserT> = {}): UserT {
   return {
@@ -54,11 +59,29 @@ const plan: PlanT = {
   ends_at: new Date(Date.now() + 3600000).toISOString(),
 };
 
+function makeRoom(over: Partial<RoomT> = {}): RoomT {
+  return {
+    id: "r1",
+    creator_id: "u2",
+    name: "Austin Founders",
+    purpose: "cowork",
+    visibility: "public",
+    lat: 30.26,
+    lon: -97.74,
+    created_at: "2026-08-01T00:00:00Z",
+    member_count: 3,
+    is_member: false,
+    ...over,
+  };
+}
+
 beforeEach(() => {
   cookieValue.mockReset();
   fetchNearbyPlans.mockReset();
+  fetchNearbyRooms.mockReset();
   requireOnboarded.mockReset();
   fetchNearbyPlans.mockResolvedValue([]);
+  fetchNearbyRooms.mockResolvedValue([]);
   requireOnboarded.mockResolvedValue(null);
 });
 
@@ -83,12 +106,33 @@ describe("TodayPage navigation", () => {
   });
 });
 
+describe("TodayPage section navs", () => {
+  it("shows the four sections in both nav shells, with Wall current", async () => {
+    cookieValue.mockReturnValue("tok");
+    requireOnboarded.mockResolvedValue(makeUser());
+    await renderPage();
+    for (const label of [/sections/i, /main/i]) {
+      const nav = within(screen.getByRole("navigation", { name: label }));
+      expect(nav.getByRole("link", { name: /wall/i })).toHaveAttribute("aria-current", "page");
+      expect(nav.getByRole("link", { name: /^map$/i })).toHaveAttribute("href", "/map");
+      expect(nav.getByRole("link", { name: /^rooms$/i })).toHaveAttribute("href", "/rooms");
+      expect(nav.getByRole("link", { name: /^chats$/i })).toHaveAttribute("href", "/chats");
+    }
+  });
+
+  it("hides the tab bar from anonymous visitors", async () => {
+    cookieValue.mockReturnValue(undefined);
+    await renderPage();
+    expect(screen.queryByRole("link", { name: /wall/i })).not.toBeInTheDocument();
+  });
+});
+
 describe("TodayPage greeting", () => {
   it("greets a signed-in user by first name", async () => {
     cookieValue.mockReturnValue("tok");
     requireOnboarded.mockResolvedValue(makeUser());
     await renderPage();
-    expect(screen.getByText(/hey maya/i)).toBeInTheDocument();
+    expect(screen.getByText(/hey,\s*maya/i)).toBeInTheDocument();
   });
 
   it("shows the generic subtitle for anonymous visitors", async () => {
@@ -143,6 +187,62 @@ describe("TodayPage calendar banner", () => {
     cookieValue.mockReturnValue(undefined);
     await renderPage();
     expect(screen.queryByText(/connect google calendar/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("TodayPage desktop layout", () => {
+  it("widens past the mobile column and splits into main + rail when signed in", async () => {
+    cookieValue.mockReturnValue("tok");
+    requireOnboarded.mockResolvedValue(makeUser());
+    await renderPage();
+    expect(screen.getByRole("main").className).toMatch(/md:max-w-6xl/);
+    expect(screen.getByTestId("today-split").className).toMatch(
+      /md:grid-cols-\[minmax\(0,1fr\)_300px\]/,
+    );
+  });
+
+  it("widens without a rail when signed out", async () => {
+    cookieValue.mockReturnValue(undefined);
+    await renderPage();
+    expect(screen.getByRole("main").className).toMatch(/md:max-w-2xl/);
+    expect(screen.queryByRole("complementary", { name: /rooms near you/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("TodayPage rooms rail", () => {
+  it("lists nearby rooms with member counts and a link to browse", async () => {
+    cookieValue.mockReturnValue("tok");
+    requireOnboarded.mockResolvedValue(makeUser());
+    fetchNearbyRooms.mockResolvedValue([makeRoom(), makeRoom({ id: "r2", name: "Study Hall", member_count: 1 })]);
+    await renderPage();
+    const rail = within(screen.getByRole("complementary", { name: /rooms near you/i }));
+    expect(rail.getByRole("link", { name: /austin founders/i })).toHaveAttribute("href", "/rooms/r1");
+    expect(rail.getByText(/3 members/i)).toBeInTheDocument();
+    expect(rail.getByText(/1 member$/i)).toBeInTheDocument();
+    expect(rail.getByRole("link", { name: /browse rooms/i })).toHaveAttribute("href", "/rooms");
+  });
+
+  it("shows an empty rail card when there are no rooms nearby", async () => {
+    cookieValue.mockReturnValue("tok");
+    requireOnboarded.mockResolvedValue(makeUser());
+    await renderPage();
+    const rail = within(screen.getByRole("complementary", { name: /rooms near you/i }));
+    expect(rail.getByText(/no rooms near you yet/i)).toBeInTheDocument();
+  });
+
+  it("still renders the wall when the rooms lookup fails", async () => {
+    cookieValue.mockReturnValue("tok");
+    requireOnboarded.mockResolvedValue(makeUser());
+    fetchNearbyRooms.mockRejectedValue(new Error("boom"));
+    fetchNearbyPlans.mockResolvedValue([plan]);
+    await renderPage();
+    expect(screen.getByText("Coffee chat")).toBeInTheDocument();
+  });
+
+  it("does not look up rooms for anonymous visitors", async () => {
+    cookieValue.mockReturnValue(undefined);
+    await renderPage();
+    expect(fetchNearbyRooms).not.toHaveBeenCalled();
   });
 });
 

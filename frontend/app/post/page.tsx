@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createPlan } from "@/lib/api";
 import { getClientToken } from "@/lib/auth";
+import SectionNav from "@/components/SectionNav";
 import { EventCandidateT } from "@/lib/types";
 
 const ACTIVITY_FRAGMENTS: Record<string, string> = {
@@ -88,9 +89,26 @@ function errorMessage(err: unknown): string {
   return "Could not post plan";
 }
 
-const CHIP = "btn-press rounded-full border px-3 py-2 font-body text-xs transition-colors";
-const CHIP_ON = "border-accent bg-accent text-card";
-const CHIP_OFF = "border-rule bg-white text-ink";
+const CHIP =
+  "btn-press rounded-full border px-[15px] py-[9px] text-[12.5px] font-semibold transition-colors duration-150";
+const CHIP_ON = "border-accent bg-accent text-white";
+const CHIP_OFF = "border-rule bg-surface text-ink hover:border-accent hover:bg-accent-soft";
+
+/** The numbered step label from the mockup: a soft accent disc plus a small
+ *  bold caption, used as the legend of each fieldset. */
+function StepLabel({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <legend className="flex items-center gap-1.5 text-[11px] font-bold text-ink3">
+      <span
+        aria-hidden="true"
+        className="flex h-4 w-4 items-center justify-center rounded-full bg-accent-soft text-[9.5px] font-extrabold text-accent"
+      >
+        {n}
+      </span>
+      {children}
+    </legend>
+  );
+}
 
 export default function PostPlanPage() {
   const router = useRouter();
@@ -170,15 +188,18 @@ export default function PostPlanPage() {
   }
 
   return (
-    <main className="flex justify-center px-6 py-8">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <Link href="/today" className="font-display text-xs font-bold text-rule">
+    <main className="flex min-h-screen justify-center bg-ground px-[18px] pb-28 pt-4 md:pb-10 md:pt-16">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm pb-10">
+        <Link
+          href="/today"
+          className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink"
+        >
           ← Today
         </Link>
 
         {prefill && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-card border border-dashed border-rule px-3 py-2">
-            <p className="font-mono text-[11px] text-rule">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-accent-soft px-3.5 py-2.5">
+            <p className="text-[11px] font-medium text-ink2">
               From {prefill.source === "calendar" ? "Calendar" : "Inbox"}: {prefill.title}
               {prefill.starts_at && prefill.ends_at
                 ? `, ${formatTime(prefill.starts_at)}–${formatTime(prefill.ends_at)}`
@@ -187,51 +208,43 @@ export default function PostPlanPage() {
             <button
               type="button"
               onClick={clearPrefill}
-              className="shrink-0 font-mono text-[11px] text-accent"
+              className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink transition-shadow hover:shadow-card"
             >
               Not this one
             </button>
           </div>
         )}
 
-        <div className="relative mt-4 rotate-[-1deg] rounded-card bg-card p-5 shadow-[3px_6px_14px_rgba(0,0,0,0.32)]">
-          <span
-            className="absolute -top-2 left-8 h-3.5 w-3.5 rounded-full bg-accent shadow-[0_2px_3px_rgba(0,0,0,.35)]"
-            aria-hidden="true"
-          />
-          <h1 className="font-hand text-2xl text-ink">Pin a plan</h1>
+        <div className="mt-3 rounded-card bg-surface p-4 shadow-card">
+          <h1 className="text-[15px] font-bold text-ink">Pin a plan</h1>
           <p
             data-testid="plan-preview"
-            className="mt-3 font-display text-base font-bold leading-snug text-ink"
+            className="mt-2 text-[13px] font-medium leading-relaxed text-ink2"
           >
-            <span className={activity ? "text-accent" : "text-ink2"}>
+            <span className={activity ? "font-bold text-accent" : "text-ink3"}>
               {activity ? ACTIVITY_FRAGMENTS[activity] : "Your plan"}
             </span>
             {", "}
-            <span className={openness ? "text-accent" : "text-ink2"}>
+            <span className={openness ? "font-bold text-accent" : "text-ink3"}>
               {openness ? OPENNESS_FRAGMENTS[openness] : "how open you are"}
             </span>
             {" — around for the next "}
-            <span className="text-accent">{durationLabel(minutes)}</span>
+            <span className="font-bold text-accent">{durationLabel(minutes)}</span>
             {"."}
-            {trimmedDetail && <span className="font-body font-normal"> {trimmedDetail}</span>}
+            {trimmedDetail && <span className="font-normal"> {trimmedDetail}</span>}
           </p>
         </div>
 
-        <fieldset className="mt-6">
-          <legend className="font-mono text-[10px] uppercase tracking-wide text-rule">
-            1 — What are you up to?
-          </legend>
-          <div className="mt-2 grid grid-cols-2 gap-2">
+        <fieldset className="mt-5">
+          <StepLabel n={1}>What are you up to?</StepLabel>
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {ACTIVITIES.map((a) => (
               <button
                 key={a.key}
                 type="button"
                 aria-pressed={activity === a.key}
                 onClick={() => setActivity(a.key)}
-                className={`btn-press rounded-card border px-3 py-4 font-display text-sm font-semibold transition-colors ${
-                  activity === a.key ? "border-accent bg-accent text-card" : "border-rule bg-card text-ink"
-                }`}
+                className={`${CHIP} ${activity === a.key ? CHIP_ON : CHIP_OFF}`}
               >
                 {a.label}
               </button>
@@ -239,11 +252,9 @@ export default function PostPlanPage() {
           </div>
         </fieldset>
 
-        <fieldset className="mt-6">
-          <legend className="font-mono text-[10px] uppercase tracking-wide text-rule">
-            2 — How open are you?
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <fieldset className="mt-5">
+          <StepLabel n={2}>How open are you?</StepLabel>
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {OPENNESSES.map((o) => (
               <button
                 key={o.key}
@@ -258,11 +269,9 @@ export default function PostPlanPage() {
           </div>
         </fieldset>
 
-        <fieldset className="mt-6">
-          <legend className="font-mono text-[10px] uppercase tracking-wide text-rule">
-            3 — How long are you around?
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <fieldset className="mt-5">
+          <StepLabel n={3}>How long are you around?</StepLabel>
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {DURATIONS.map((d) => (
               <button
                 key={d.minutes}
@@ -282,7 +291,7 @@ export default function PostPlanPage() {
           onClick={toggleDetail}
           aria-expanded={showDetail}
           aria-controls="detail"
-          className="mt-6 font-mono text-[11px] text-accent"
+          className="mt-5 rounded-full text-[12px] font-semibold text-accent transition-colors hover:text-ink"
         >
           <span aria-hidden="true">{showDetail ? "− " : "+ "}</span>
           Add a detail (optional)
@@ -299,14 +308,14 @@ export default function PostPlanPage() {
               onChange={(e) => setDetail(e.target.value)}
               maxLength={500}
               placeholder="Blue laptop, corner table."
-              className="h-16 w-full rounded border border-rule bg-white p-2 font-body text-sm text-ink"
+              className="field h-20 w-full rounded-field border border-rule bg-surface p-3 text-sm text-ink placeholder:text-ink3"
             />
-            <p className="text-right font-mono text-[10px] text-rule">{detail.length}/500</p>
+            <p className="text-right font-mono text-[10px] text-ink3">{detail.length}/500</p>
           </div>
         )}
 
         {error && (
-          <p className="mt-3 font-mono text-[10px] text-accent" role="alert">
+          <p className="mt-3 text-[12px] font-semibold text-accent" role="alert">
             {error}
           </p>
         )}
@@ -314,11 +323,13 @@ export default function PostPlanPage() {
         <button
           type="submit"
           disabled={submitting || !activity || !openness}
-          className="btn-press mt-5 w-full rounded-full bg-ink py-3 font-display font-semibold text-card disabled:cursor-not-allowed disabled:opacity-60"
+          className="lift btn-press mt-[22px] w-full rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none motion-reduce:transition-none"
         >
           {submitting ? "Pinning..." : "Pin it"}
         </button>
       </form>
+
+      <SectionNav />
     </main>
   );
 }

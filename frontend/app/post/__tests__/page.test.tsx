@@ -1,13 +1,16 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import PostPlanPage from "../page";
 
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, refresh: vi.fn() }),
+  usePathname: () => "/post",
+}));
 
 const createPlan = vi.fn();
 vi.mock("@/lib/api", () => ({ createPlan: (...args: unknown[]) => createPlan(...args) }));
-vi.mock("@/lib/auth", () => ({ getClientToken: () => "tok" }));
+vi.mock("@/lib/auth", () => ({ getClientToken: () => "tok", clearClientToken: vi.fn() }));
 
 function mockGeolocation() {
   Object.defineProperty(navigator, "geolocation", {
@@ -142,6 +145,19 @@ describe("PostPlanPage composer", () => {
 
     expect(await screen.findByText("createPlan failed: 422")).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe("PostPlanPage section navs", () => {
+  it("shows the four sections in both nav shells", () => {
+    render(<PostPlanPage />);
+    for (const label of [/sections/i, /main/i]) {
+      const nav = within(screen.getByRole("navigation", { name: label }));
+      expect(nav.getByRole("link", { name: /wall/i })).toHaveAttribute("href", "/today");
+      expect(nav.getByRole("link", { name: /^map$/i })).toHaveAttribute("href", "/map");
+      expect(nav.getByRole("link", { name: /^rooms$/i })).toHaveAttribute("href", "/rooms");
+      expect(nav.getByRole("link", { name: /^chats$/i })).toHaveAttribute("href", "/chats");
+    }
   });
 });
 

@@ -20,27 +20,29 @@ export default function MarketingNav({ active }: { active: Page }) {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-10 border-b border-rule bg-card">
+    <nav className="sticky top-0 z-10 border-b border-rule bg-ground/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-8 lg:py-5">
-        <Link href="/" className="flex items-center gap-1.5 font-display text-sm font-bold text-ink lg:gap-2 lg:text-lg">
+        <Link href="/" className="flex items-center gap-[7px] rounded-full text-sm font-bold text-ink lg:gap-2 lg:text-lg">
           <span className="h-2 w-2 rounded-full bg-accent lg:h-2.5 lg:w-2.5" aria-hidden="true" />
           StayConnected
         </Link>
 
-        <div className="hidden items-center gap-4 font-mono text-[10px] uppercase text-ink2 md:flex lg:gap-8 lg:text-xs">
+        <div className="hidden items-center gap-5 text-[12px] font-medium text-ink2 md:flex lg:gap-8 lg:text-sm">
           {LINKS.map((link) => (
             <Link
               key={link.page}
               href={link.href}
               aria-current={link.page === active ? "page" : undefined}
-              className={link.page === active ? "font-bold text-accent" : ""}
+              className={`rounded-full transition-colors hover:text-ink ${
+                link.page === active ? "font-bold text-accent" : ""
+              }`}
             >
               {link.label}
             </Link>
           ))}
           <Link
             href={signedIn ? "/today" : "/sign-in"}
-            className="btn-press rounded-full border border-rule px-3 py-1.5 font-bold text-ink lg:px-4 lg:py-2"
+            className="btn-press rounded-full border border-rule bg-surface px-4 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:px-5 lg:py-2 lg:text-sm"
           >
             {signedIn ? "Today" : "Sign in"}
           </Link>
@@ -51,7 +53,7 @@ export default function MarketingNav({ active }: { active: Page }) {
           aria-label="Menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="btn-press rounded-full border border-rule px-3 py-1.5 font-mono text-[10px] uppercase text-ink md:hidden"
+          className="btn-press rounded-full border border-rule bg-surface px-4 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft md:hidden"
         >
           Menu
         </button>
@@ -60,19 +62,21 @@ export default function MarketingNav({ active }: { active: Page }) {
       <div
         data-testid="mobile-drawer"
         hidden={!open}
-        className="absolute left-0 right-0 top-full flex flex-col gap-3 border-b border-rule bg-card p-4 font-mono text-xs uppercase text-ink2 md:hidden"
+        className="absolute left-0 right-0 top-full flex flex-col gap-3.5 border-b border-rule bg-surface p-4 text-[13px] font-medium text-ink2 shadow-card md:hidden"
       >
         {LINKS.map((link) => (
           <Link
             key={link.page}
             href={link.href}
             aria-current={link.page === active ? "page" : undefined}
-            className={link.page === active ? "font-bold text-accent" : ""}
+            className={`rounded-full transition-colors hover:text-ink ${
+                link.page === active ? "font-bold text-accent" : ""
+              }`}
           >
             {link.label}
           </Link>
         ))}
-        <Link href={signedIn ? "/today" : "/sign-in"} className="font-bold text-accent">
+        <Link href={signedIn ? "/today" : "/sign-in"} className="rounded-full font-bold text-accent">
           {signedIn ? "Today" : "Sign in"}
         </Link>
       </div>

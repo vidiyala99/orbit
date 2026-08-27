@@ -80,17 +80,17 @@ export default function CalendarEventBanner({
   if (!googleCalendarConnected) {
     if (ribbonHidden) return null;
     return (
-      <div className="mx-4 mb-4 flex items-center justify-between gap-3 rounded-card border border-dashed border-rule px-3 py-2">
-        <p className="font-mono text-[11px] text-rule">
+      <div className="mx-[18px] mb-3.5 flex items-center justify-between gap-2.5 rounded-xl bg-accent-soft px-3.5 py-[11px]">
+        <p className="text-xs font-medium leading-snug text-ink2">
           Connect Google Calendar to auto-fill plans for events you&apos;re attending.
         </p>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={() => {
               window.location.href = calendarConnectUrl(token);
             }}
-            className="btn-press rounded-full border border-rule px-3 py-1 font-mono text-[11px] text-accent"
+            className="btn-press rounded-full bg-surface px-3 py-1.5 text-[11.5px] font-semibold text-ink transition-shadow hover:shadow-card"
           >
             Connect
           </button>
@@ -101,7 +101,7 @@ export default function CalendarEventBanner({
               sessionStorage.setItem(DISMISSED_KEY, "1");
               setRibbonHidden(true);
             }}
-            className="font-mono text-xs text-rule"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-sm leading-none text-ink3 transition-colors hover:bg-white/60 hover:text-ink"
           >
             ×
           </button>
@@ -126,53 +126,51 @@ export default function CalendarEventBanner({
   }
 
   return (
-    <div className="mx-4 mb-4">
-      <div className="relative rotate-[-1deg] rounded-card bg-card py-3 shadow-[2px_4px_8px_rgba(0,0,0,0.28)]">
-        <span
-          className="absolute -top-1.5 left-4 h-2.5 w-2.5 rounded-full bg-accent shadow-[0_2px_3px_rgba(0,0,0,0.35)]"
-          aria-hidden="true"
-        />
-        <p className="px-3 font-mono text-[10px] uppercase tracking-wide text-rule">
+    <div className="mx-[18px] mb-3">
+      <div className="rounded-card bg-surface p-4 shadow-card">
+        <p className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">
           On your radar today
         </p>
-        <p className="mt-0.5 px-3 font-display font-bold text-ink">
+        <p className="mt-1 text-[15px] font-bold text-ink">
           {single ? candidates[0].title : "Pick one to pin"}
         </p>
 
         {candidates.map((c) => (
           <div
             key={candidateId(c)}
-            className={`flex items-center justify-between gap-3 px-3 py-2 ${
-              single ? "" : "mt-2 border-t border-dashed border-rule"
+            className={`flex items-center justify-between gap-3 py-2 ${
+              single ? "" : "mt-2 border-t border-rule pt-2.5"
             }`}
           >
             <div className="min-w-0">
-              {!single && (
-                <p className="truncate font-display text-sm font-bold text-ink">{c.title}</p>
-              )}
-              <p className="flex items-center gap-1.5 font-mono text-[11px] text-ink2">
+              {!single && <p className="truncate text-[13px] font-semibold text-ink">{c.title}</p>}
+              <p className="flex items-center gap-1.5 text-[11px] text-ink2">
                 <span
-                  className={`rounded px-1 py-0.5 text-[9px] uppercase tracking-wide ${
-                    c.source === "calendar" ? "bg-rule/30 text-ink2" : "bg-accent/15 text-accent"
+                  className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] ${
+                    c.source === "calendar" ? "bg-rule/60 text-ink2" : "bg-accent-soft text-accent"
                   }`}
                 >
                   {c.source === "calendar" ? "Calendar" : "Inbox"}
                 </span>
-                {metaLine(c)}
+                <span className="truncate font-mono">{metaLine(c)}</span>
               </p>
             </div>
             <button
               type="button"
               onClick={() => pin(c)}
-              className="btn-press shrink-0 whitespace-nowrap rounded-full bg-ink px-3 py-1 font-display text-xs font-semibold text-card"
+              className="lift btn-press shrink-0 whitespace-nowrap rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-ground shadow-raised hover:shadow-raised-hover"
             >
               Pin this →
             </button>
           </div>
         ))}
 
-        <div className="px-3 pt-1 text-right">
-          <button type="button" onClick={skipAll} className="font-mono text-[11px] text-rule">
+        <div className="pt-1 text-right">
+          <button
+            type="button"
+            onClick={skipAll}
+            className="rounded-full text-[11px] font-medium text-ink3 transition-colors hover:text-ink"
+          >
             {single ? "Not going / skip" : "Not seeing your plans, dismiss for today"}
           </button>
         </div>

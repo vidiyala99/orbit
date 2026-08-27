@@ -29,7 +29,7 @@ export default function WaitlistForm() {
 
   if (count !== null) {
     return (
-      <p className="font-mono text-xs text-accent lg:text-base">
+      <p className="inline-block rounded-full bg-accent-soft px-4 py-2 text-[13px] font-bold text-accent lg:text-base">
         You&apos;re on the list — {count} {count === 1 ? "person" : "people"} so far
       </p>
     );
@@ -44,16 +44,16 @@ export default function WaitlistForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
-        className="rounded-full border border-rule bg-white px-3 py-1.5 text-xs text-ink lg:px-5 lg:py-3.5 lg:text-lg"
+        className="field min-w-0 rounded-full border border-rule bg-surface px-4 py-2.5 text-xs text-ink placeholder:text-ink3 lg:px-5 lg:py-3.5 lg:text-lg"
       />
       <button
         type="submit"
         disabled={submitting}
-        className="btn-press rounded-full bg-accent px-4 py-1.5 font-display text-xs font-semibold text-card lg:px-7 lg:py-3.5 lg:text-lg"
+        className="lift btn-press whitespace-nowrap rounded-full bg-accent px-5 py-2.5 text-xs font-bold text-white shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 lg:px-7 lg:py-3.5 lg:text-lg"
       >
         {submitting ? "Joining..." : "Join the waitlist"}
       </button>
-      {error && <p className="font-mono text-[10px] text-accent lg:text-sm">{error}</p>}
+      {error && <p className="text-[11px] font-semibold text-accent lg:text-sm">{error}</p>}
     </form>
   );
 }

@@ -117,46 +117,38 @@ export default function OnboardingPage() {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-board px-6 py-16 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px]" />
+      <main className="flex min-h-screen items-center justify-center bg-ground px-6 py-16" />
     );
   }
 
   if (done) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-board px-6 py-16 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px]">
-        <div className="relative w-full max-w-sm rotate-[-1deg] rounded-card bg-card p-6 text-center shadow-[3px_6px_14px_rgba(0,0,0,0.32)] lg:max-w-md lg:p-9">
-          <span
-            className="absolute -top-2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-accent shadow-[0_2px_3px_rgba(0,0,0,.35)]"
-            aria-hidden="true"
-          />
-          <h1 className="font-hand text-2xl text-ink">You&apos;re all set</h1>
+      <main className="flex min-h-screen items-center justify-center bg-ground px-6 py-16">
+        <div className="w-full max-w-sm rounded-card bg-surface p-6 text-center shadow-card lg:max-w-md lg:p-8">
+          <h1 className="text-[23px] font-extrabold tracking-[-0.3px] text-ink">You&apos;re all set</h1>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-board px-6 py-16 [background-image:radial-gradient(rgba(0,0,0,.12)_1px,transparent_1px)] [background-size:7px_7px]">
+    <main className="flex min-h-screen items-center justify-center bg-ground px-6 py-16">
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-sm rotate-[-1deg] rounded-card bg-card p-6 shadow-[3px_6px_14px_rgba(0,0,0,0.32)] lg:max-w-md lg:p-9"
+        className="w-full max-w-sm rounded-card bg-surface p-6 shadow-card lg:max-w-md lg:p-8"
       >
-        <span
-          className="absolute -top-2 left-8 h-3.5 w-3.5 rounded-full bg-accent shadow-[0_2px_3px_rgba(0,0,0,.35)]"
-          aria-hidden="true"
-        />
-        <Link href="/" className="font-display text-xs font-bold text-ink2 lg:text-sm">
+        <Link href="/" className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
           ← StayConnected
         </Link>
-        <p className="mt-3 font-mono text-[10px] uppercase tracking-wide text-ink2 lg:text-xs">
+        <p className="mt-3 text-[11px] font-bold text-ink3">
           Step {step} of {TOTAL_STEPS}
         </p>
 
         {step === 1 && (
           <div key="step-1" className="motion-safe:animate-[bubbleIn_200ms_ease-out]">
-            <h1 className="mt-2 font-hand text-2xl text-ink">What&apos;s your name?</h1>
+            <h1 className="mt-2 text-[23px] font-extrabold tracking-[-0.3px] text-ink">What&apos;s your name?</h1>
 
-            <label className="mt-5 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="first_name">
+            <label className="mt-5 block text-[11px] font-bold text-ink3" htmlFor="first_name">
               First name
             </label>
             <input
@@ -168,10 +160,10 @@ export default function OnboardingPage() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="mt-1 w-full rounded border border-rule bg-white px-3 py-2 text-sm text-ink lg:text-base"
+              className="field mt-1.5 w-full rounded-field border border-rule bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink3 lg:text-base"
             />
 
-            <label className="mt-3 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="last_name">
+            <label className="mt-3 block text-[11px] font-bold text-ink3" htmlFor="last_name">
               Last name
             </label>
             <input
@@ -183,16 +175,16 @@ export default function OnboardingPage() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="mt-1 w-full rounded border border-rule bg-white px-3 py-2 text-sm text-ink lg:text-base"
+              className="field mt-1.5 w-full rounded-field border border-rule bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink3 lg:text-base"
             />
           </div>
         )}
 
         {step === 2 && (
           <div key="step-2" className="motion-safe:animate-[bubbleIn_200ms_ease-out]">
-            <h1 className="mt-2 font-hand text-2xl text-ink">Where are you based?</h1>
+            <h1 className="mt-2 text-[23px] font-extrabold tracking-[-0.3px] text-ink">Where are you based?</h1>
 
-            <label className="mt-5 block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]" htmlFor="city">
+            <label className="mt-5 block text-[11px] font-bold text-ink3" htmlFor="city">
               City
             </label>
             <input
@@ -204,21 +196,21 @@ export default function OnboardingPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               required
-              className="mt-1 w-full min-w-0 truncate rounded border border-rule bg-white px-3 py-2 text-sm text-ink lg:text-base"
+              className="field mt-1.5 w-full min-w-0 truncate rounded-field border border-rule bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink3 lg:text-base"
             />
           </div>
         )}
 
         {step === 3 && (
           <div key="step-3" className="motion-safe:animate-[bubbleIn_200ms_ease-out]">
-            <h1 className="mt-2 font-hand text-2xl text-ink">What&apos;s been frustrating?</h1>
-            <p className="mt-1 font-body text-xs text-ink2 lg:text-sm">Pick everything that applies</p>
+            <h1 className="mt-2 text-[23px] font-extrabold tracking-[-0.3px] text-ink">What&apos;s been frustrating?</h1>
+            <p className="mt-1.5 text-[13px] font-medium text-ink2 lg:text-sm">Pick everything that applies</p>
 
             <div className="mt-4 space-y-2">
               {PAIN_POINTS.map((option) => (
                 <label
                   key={option.key}
-                  className="flex cursor-pointer items-start gap-2 font-body text-sm text-ink"
+                  className="flex cursor-pointer items-start gap-2 text-sm font-medium text-ink"
                 >
                   <input
                     type="checkbox"
@@ -234,7 +226,7 @@ export default function OnboardingPage() {
             {painPoints.includes("other") && (
               <div className="mt-2">
                 <label
-                  className="block font-mono text-[9px] uppercase tracking-wide text-ink2 lg:text-[10px]"
+                  className="block text-[11px] font-bold text-ink3"
                   htmlFor="pain_point_other"
                 >
                   Tell us more (optional)
@@ -246,7 +238,7 @@ export default function OnboardingPage() {
                   maxLength={200}
                   value={painPointOther}
                   onChange={(e) => setPainPointOther(e.target.value)}
-                  className="mt-1 w-full rounded border border-rule bg-white px-3 py-2 text-sm text-ink lg:text-base"
+                  className="field mt-1.5 w-full rounded-field border border-rule bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink3 lg:text-base"
                 />
               </div>
             )}
@@ -254,12 +246,12 @@ export default function OnboardingPage() {
         )}
 
         {stepError && (
-          <p className="mt-3 font-mono text-[10px] text-accent lg:text-xs" role="alert">
+          <p className="mt-3 text-[12px] font-semibold text-accent" role="alert">
             {stepError}
           </p>
         )}
         {submitError && (
-          <p className="mt-3 font-mono text-[10px] text-accent lg:text-xs" role="alert">
+          <p className="mt-3 text-[12px] font-semibold text-accent" role="alert">
             {submitError}
           </p>
         )}
@@ -269,7 +261,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="btn-press flex-1 rounded-full border border-rule py-3 font-display text-sm font-semibold text-ink lg:py-3.5 lg:text-base"
+              className="btn-press flex-1 rounded-full border border-rule bg-surface py-3.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:text-base"
             >
               Back
             </button>
@@ -278,7 +270,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={handleNext}
-              className="btn-press flex-1 rounded-full bg-ink py-3 font-display text-sm font-semibold text-card disabled:cursor-not-allowed disabled:opacity-60 lg:py-3.5 lg:text-base"
+              className="lift btn-press flex-1 rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none lg:text-base"
             >
               Next
             </button>
@@ -286,7 +278,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="btn-press flex-1 rounded-full bg-ink py-3 font-display text-sm font-semibold text-card disabled:cursor-not-allowed disabled:opacity-60 lg:py-3.5 lg:text-base"
+              className="lift btn-press flex-1 rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none lg:text-base"
             >
               {submitting ? "Saving…" : "Save profile"}
             </button>

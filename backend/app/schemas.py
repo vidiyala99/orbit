@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 class UserOut(BaseModel):
     id: uuid.UUID
@@ -74,6 +74,148 @@ class PlanOut(BaseModel):
     class Config:
         from_attributes = True
 
+# Rooms: persistent spaces for a stated purpose. Like Plan's activity/openness,
+# the keys are fixed and validated here rather than in the DB.
+ROOM_PURPOSE_KEYS = {"cowork", "coffee_chat", "study_group", "job_hunting", "other"}
+ROOM_VISIBILITY_KEYS = {"public", "private"}
+
+class RoomCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    purpose: str
+    visibility: str
+    # Both or neither: a room is pinned to one venue, or it's "anywhere nearby".
+    lat: float | None = None
+    lon: float | None = None
+
+    @field_validator("purpose")
+    @classmethod
+    def _valid_purpose(cls, value: str) -> str:
+        if value not in ROOM_PURPOSE_KEYS:
+            raise ValueError(f"invalid purpose: {value}")
+        return value
+
+    @field_validator("visibility")
+    @classmethod
+    def _valid_visibility(cls, value: str) -> str:
+        if value not in ROOM_VISIBILITY_KEYS:
+            raise ValueError(f"invalid visibility: {value}")
+        return value
+
+    @model_validator(mode="after")
+    def _lat_lon_together(self) -> "RoomCreate":
+        if (self.lat is None) != (self.lon is None):
+            raise ValueError("lat and lon must both be set or both be null")
+        return self
+
+class RoomOut(BaseModel):
+    id: uuid.UUID
+    creator_id: uuid.UUID
+    name: str
+    purpose: str
+    visibility: str
+    lat: float | None
+    lon: float | None
+    created_at: datetime
+    # Not on the ORM row: computed per-request by the router for the caller.
+    member_count: int
+    is_member: bool
+
+class RoomMemberAdd(BaseModel):
+    user_id: uuid.UUID
+
+class TimeProposalConfirmationOut(BaseModel):
+    id: uuid.UUID
+    proposal_id: uuid.UUID
+    room_member_id: uuid.UUID
+    # Not on the row (confirmations are keyed on membership): resolved by the
+    # router so the UI can show who's in without a second lookup.
+    user_id: uuid.UUID
+    confirmed_at: datetime
+
+class TimeProposalCreate(BaseModel):
+    starts_at: datetime
+    ends_at: datetime
+    # Optional prose posted alongside the proposal card in the room thread.
+    body: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def _ends_after_starts(self) -> "TimeProposalCreate":
+        if self.ends_at <= self.starts_at:
+            raise ValueError("ends_at must be after starts_at")
+        return self
+
+class TimeProposalOut(BaseModel):
+    id: uuid.UUID
+    room_id: uuid.UUID
+    proposer_id: uuid.UUID
+    starts_at: datetime
+    ends_at: datetime
+    status: str
+    confirmed_at: datetime | None
+    created_at: datetime
+    # Per-request facts, like RoomOut.member_count: who has confirmed so far,
+    # how many members that has to reach, and whether the caller is one of them.
+    confirmations: list[TimeProposalConfirmationOut]
+    member_count: int
+    confirmed_by_me: bool
+
+# Room chat. `kind` discriminates plain text from rendered cards; clients may
+# only post the first two — a time_proposal card is written by the server when
+# the proposal itself is created, so a card can never point at nothing.
+ROOM_MESSAGE_CREATE_KINDS = {"text", "plan_share"}
+
+class RoomMessageCreate(BaseModel):
+    kind: str = "text"
+    body: str | None = Field(default=None, max_length=2000)
+    plan_id: uuid.UUID | None = None
+
+    @field_validator("kind")
+    @classmethod
+    def _valid_kind(cls, value: str) -> str:
+        if value not in ROOM_MESSAGE_CREATE_KINDS:
+            raise ValueError(f"invalid kind: {value}")
+        return value
+
+    @model_validator(mode="after")
+    def _kind_matches_payload(self) -> "RoomMessageCreate":
+        body = (self.body or "").strip()
+        if self.kind == "text":
+            if not body:
+                raise ValueError("a text message needs a body")
+            if self.plan_id is not None:
+                raise ValueError("a text message cannot carry a plan_id")
+        if self.kind == "plan_share" and self.plan_id is None:
+            raise ValueError("a plan_share message needs a plan_id")
+        self.body = body or None
+        return self
+
+class RoomMessageOut(BaseModel):
+    id: uuid.UUID
+    room_id: uuid.UUID
+    sender_id: uuid.UUID
+    kind: str
+    body: str | None
+    plan_id: uuid.UUID | None
+    time_proposal_id: uuid.UUID | None
+    created_at: datetime
+    # The referenced entity, inlined so a card renders in one round trip.
+    plan: PlanOut | None = None
+    time_proposal: TimeProposalOut | None = None
+
+class BusyBlockOut(BaseModel):
+    starts_at: datetime
+    ends_at: datetime
+
+class MemberAvailabilityOut(BaseModel):
+    user_id: uuid.UUID
+    # False when the member never connected Google Calendar, or their grant is
+    # dead — either way the day view shows them as "unknown", not "free".
+    connected: bool
+    busy: list[BusyBlockOut]
+
+class RoomAvailabilityOut(BaseModel):
+    members: list[MemberAvailabilityOut]
+
 class ThreadCreate(BaseModel):
     other_user_id: uuid.UUID
 
@@ -102,8 +244,24 @@ class MessageOut(BaseModel):
     class Config:
         from_attributes = True
 
+class ThreadParticipantOut(BaseModel):
+    """The other side of a DM thread, as shown on an inbox row."""
+    id: uuid.UUID
+    first_name: str | None
+    last_name: str | None
+    avatar_url: str | None
+
+    class Config:
+        from_attributes = True
+
+class ThreadSummaryOut(ThreadOut):
+    created_at: datetime
+    other_user: ThreadParticipantOut
+    # None when the thread was started but nobody has sent anything yet.
+    last_message: MessageOut | None
+
 class ReportCreate(BaseModel):
-    target_type: str = Field(pattern="^(plan|message|user)$")
+    target_type: str = Field(pattern="^(plan|message|user|room)$")
     target_id: uuid.UUID
     reason: str = Field(min_length=1, max_length=500)
 

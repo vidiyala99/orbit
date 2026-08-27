@@ -1,4 +1,18 @@
-import { EventCandidateT, MessageT, PlanT, StampT, ThreadT, UserT } from "./types";
+import {
+  EventCandidateT,
+  MessageT,
+  PlanT,
+  RoomAvailabilityT,
+  RoomMessageT,
+  RoomPurposeT,
+  RoomT,
+  RoomVisibilityT,
+  StampT,
+  ThreadSummaryT,
+  ThreadT,
+  TimeProposalT,
+  UserT,
+} from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
@@ -43,6 +57,15 @@ export async function startThread(otherUserId: string, token: string): Promise<T
     body: JSON.stringify({ other_user_id: otherUserId }),
   });
   if (!res.ok) throw new Error(`startThread failed: ${res.status}`);
+  return res.json();
+}
+
+/** The caller's inbox, most-recent-activity first. */
+export async function fetchMyThreads(token: string): Promise<ThreadSummaryT[]> {
+  const res = await fetch(`${API_BASE}/threads`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`fetchMyThreads failed: ${res.status}`);
   return res.json();
 }
 
@@ -138,6 +161,14 @@ export async function login(
   return res.json();
 }
 
+/** Signs in as the seeded demo account. 404s unless the backend has demo login
+ *  enabled, so it's only surfaced behind NEXT_PUBLIC_DEMO_LOGIN_ENABLED. */
+export async function demoLogin(): Promise<{ access_token: string; user: UserT }> {
+  const res = await fetch(`${API_BASE}/auth/demo-login`, { method: "POST" });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Demo login failed");
+  return res.json();
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   const res = await fetch(`${API_BASE}/auth/request-password-reset`, {
     method: "POST",
@@ -214,5 +245,153 @@ export async function createPlan(
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error(`createPlan failed: ${res.status}`);
+  return res.json();
+}
+
+export async function createRoom(
+  input: {
+    name: string;
+    purpose: RoomPurposeT;
+    visibility: RoomVisibilityT;
+    lat?: number;
+    lon?: number;
+  },
+  token: string,
+): Promise<RoomT> {
+  const res = await fetch(`${API_BASE}/rooms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(`createRoom failed: ${res.status}`);
+  return res.json();
+}
+
+/** Returns public rooms plus private rooms the caller belongs to. Rooms with no
+ *  coordinates are "anywhere nearby" and always come back, regardless of radius. */
+export async function fetchNearbyRooms(
+  lat: number, lon: number, radiusM: number, token: string,
+): Promise<RoomT[]> {
+  const url = new URL(`${API_BASE}/rooms`);
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lon));
+  url.searchParams.set("radius_m", String(radiusM));
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`fetchNearbyRooms failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRoom(id: string, token: string): Promise<RoomT> {
+  const res = await fetch(`${API_BASE}/rooms/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`fetchRoom failed: ${res.status}`);
+  return res.json();
+}
+
+/** Public rooms only — private rooms are joined by an existing member adding you. */
+export async function joinRoom(id: string, token: string): Promise<RoomT> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/join`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`joinRoom failed: ${res.status}`);
+  return res.json();
+}
+
+export async function addRoomMember(id: string, userId: string, token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/members`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error(`addRoomMember failed: ${res.status}`);
+}
+
+export async function leaveRoom(id: string, token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/leave`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`leaveRoom failed: ${res.status}`);
+}
+
+/** Oldest-first, with each card's plan/proposal inlined. Members only. */
+export async function fetchRoomMessages(id: string, token: string): Promise<RoomMessageT[]> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/messages`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`fetchRoomMessages failed: ${res.status}`);
+  return res.json();
+}
+
+/** Text only — `plan_share` and `time_proposal` cards are written server-side
+ *  by the endpoints that create the thing they point at. */
+export async function postRoomMessage(
+  id: string, body: string, token: string,
+): Promise<RoomMessageT> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ kind: "text", body }),
+  });
+  if (!res.ok) throw new Error(`postRoomMessage failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRoomProposals(id: string, token: string): Promise<TimeProposalT[]> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/proposals`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`fetchRoomProposals failed: ${res.status}`);
+  return res.json();
+}
+
+/** Also writes the proposal's card into the room thread, server-side. */
+export async function createRoomProposal(
+  id: string,
+  input: { starts_at: string; ends_at: string; body?: string },
+  token: string,
+): Promise<TimeProposalT> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/proposals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(`createRoomProposal failed: ${res.status}`);
+  return res.json();
+}
+
+/** Idempotent — confirming twice returns the same proposal. */
+export async function confirmRoomProposal(
+  id: string, proposalId: string, token: string,
+): Promise<TimeProposalT> {
+  const res = await fetch(`${API_BASE}/rooms/${id}/proposals/${proposalId}/confirm`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`confirmRoomProposal failed: ${res.status}`);
+  return res.json();
+}
+
+/** Day boundaries come from the browser, like `fetchEventCandidates` — the
+ *  server doesn't know the viewer's timezone. */
+export async function fetchRoomAvailability(
+  id: string, dayStart: string, dayEnd: string, token: string,
+): Promise<RoomAvailabilityT> {
+  const url = new URL(`${API_BASE}/rooms/${id}/availability`);
+  url.searchParams.set("day_start", dayStart);
+  url.searchParams.set("day_end", dayEnd);
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`fetchRoomAvailability failed: ${res.status}`);
   return res.json();
 }

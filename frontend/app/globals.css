@@ -3,16 +3,16 @@
 
 :root {
   color-scheme: light;
-  caret-color: #B8461A;
+  caret-color: #5B7A5B;
 }
 
 ::selection {
-  background: rgba(184, 70, 26, 0.25);
-  color: #201D18;
+  background: rgba(91, 122, 91, 0.22);
+  color: #2F332C;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #DDD5C4;
+  background: #E7E4DC;
 }
 
 a {
@@ -20,35 +20,94 @@ a {
   text-decoration-thickness: 1px;
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #5B7A5B;
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
+/* Every interactive element gets the same visible ring; nothing anywhere
+   sets outline:none without this replacing it. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #B8461A;
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #5B7A5B;
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.btn-press:active {
-  transform: scale(0.97);
-  transition: transform 100ms ease-out;
+/* Text fields read their focus as a filled ring rather than an outline, so the
+   field itself looks "active" and not annotated. */
+.field {
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.field:focus {
+  outline: none;
+  border-color: #5B7A5B;
+  box-shadow: 0 0 0 3px rgba(91, 122, 91, 0.18);
+}
+.field:focus-visible {
+  outline: none;
 }
 
-@keyframes stampPress {
-  0% { transform: rotate(-3deg) scale(0.6); opacity: 0; }
-  100% { transform: rotate(-3deg) scale(1); opacity: 1; }
+/* MOTION — cards lift 2px on hover, press settles back in. Transform/opacity
+   only, so it stays on the compositor. */
+.lift {
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.btn-press:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
 }
 
-@keyframes pinIn {
-  0% { transform: rotate(0deg) scale(0.7); opacity: 0; }
-  100% { transform: rotate(var(--pin-rotate, -1.5deg)) scale(1); opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .lift:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+
+/* Live dot: a soft ring expands out of it. The ring is its own element so the
+   animation is transform + opacity, never box-shadow. */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #5B7A5B;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(91, 122, 91, 0.4);
+  animation: liveRing 2.2s ease-out infinite;
+}
+
+@keyframes liveRing {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(3.4); opacity: 0; }
 }
 
 @keyframes bubbleIn {
   0% { transform: translateY(8px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes riseIn {
+  0% { transform: translateY(10px) scale(0.98); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes stampPress {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -57,5 +116,7 @@ input:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .live-dot::after {
+    display: none;
+  }
 }
-
