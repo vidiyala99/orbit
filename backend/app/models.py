@@ -230,6 +230,22 @@ class Stamp(Base):
     user_b_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+class FollowUp(Base):
+    """A reminder to follow up after a Stamp, so a real meeting doesn't
+    quietly go cold. One FollowUp per Stamp (the note/reminder for that
+    specific meeting), created when the note is saved post-stamp.
+    """
+    __tablename__ = "follow_ups"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    stamp_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("stamps.id"))
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    remind_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Enum-ish value validated at the Pydantic layer, not in the DB
+    # (same convention as Plan.activity / Room.purpose):
+    #   status: pending | done | snoozed
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
 class Report(Base):
     __tablename__ = "reports"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
