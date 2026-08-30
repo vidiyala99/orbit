@@ -82,6 +82,23 @@ class Plan(Base):
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
+class Presence(Base):
+    """Ambient "open to meeting" signal for in-venue matching.
+
+    Distinct from Plan: no text describing an activity, just "I'm here and
+    open right now." Short-lived (expires_at is a few hours out, not days),
+    created when a user toggles on and effectively deleted by expiry rather
+    than by an explicit toggle-off row mutation.
+    """
+    __tablename__ = "presence"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    lat: Mapped[float] = mapped_column(Float)
+    lon: Mapped[float] = mapped_column(Float)
+    location: Mapped[str] = mapped_column(Geography(geometry_type="POINT", srid=4326))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
 class Room(Base):
     """A persistent (not time-boxed, unlike Plan) space for a stated purpose."""
     __tablename__ = "rooms"
