@@ -33,3 +33,25 @@ def test_duplicate_email_rejected(db_session):
     db_session.add(User(email="dup@example.com"))
     with pytest.raises(IntegrityError):
         db_session.commit()
+
+def test_user_bio_and_intent_tags_default_to_none(db_session):
+    user = User(email="blank@example.com")
+    db_session.add(user)
+    db_session.commit()
+
+    fetched = db_session.query(User).filter_by(id=user.id).one()
+    assert fetched.bio_text is None
+    assert fetched.intent_tags is None
+
+def test_user_bio_and_intent_tags_persist(db_session):
+    user = User(
+        email="priya-bio@example.com",
+        bio_text="Building healthcare AI, raising a seed round.",
+        intent_tags=["co_founder", "customers"],
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    fetched = db_session.query(User).filter_by(id=user.id).one()
+    assert fetched.bio_text == "Building healthcare AI, raising a seed round."
+    assert fetched.intent_tags == ["co_founder", "customers"]

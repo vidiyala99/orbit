@@ -33,6 +33,13 @@ class User(Base):
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     google_calendar_refresh_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
     google_calendar_connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Self-written, not scraped from LinkedIn (against its ToS and brittle).
+    # Used for in-venue matching similarity (see bio_embedding).
+    bio_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Enum-ish values validated at the Pydantic layer, not in the DB
+    # (same convention as Plan.activity / Room.purpose):
+    #   co_founder | customers | investors | friends | other
+    intent_tags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
