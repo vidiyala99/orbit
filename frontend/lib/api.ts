@@ -1,7 +1,9 @@
 import {
   EventCandidateT,
+  MatchCandidateT,
   MessageT,
   PlanT,
+  PresenceT,
   RoomAvailabilityT,
   RoomMessageT,
   RoomPurposeT,
@@ -381,6 +383,37 @@ export async function confirmRoomProposal(
 
 /** Day boundaries come from the browser, like `fetchEventCandidates` — the
  *  server doesn't know the viewer's timezone. */
+export async function togglePresenceOn(
+  lat: number, lon: number, token: string,
+): Promise<PresenceT> {
+  const res = await fetch(`${API_BASE}/presence`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ lat, lon }),
+  });
+  if (!res.ok) throw new Error(`togglePresenceOn failed: ${res.status}`);
+  return res.json();
+}
+
+export async function togglePresenceOff(token: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/presence`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`togglePresenceOff failed: ${res.status}`);
+}
+
+/** 404 means the caller isn't currently present themselves — there's no
+ *  origin point to rank candidates against. */
+export async function fetchNearbyCandidates(token: string): Promise<MatchCandidateT[]> {
+  const res = await fetch(`${API_BASE}/presence/nearby`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`fetchNearbyCandidates failed: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchRoomAvailability(
   id: string, dayStart: string, dayEnd: string, token: string,
 ): Promise<RoomAvailabilityT> {

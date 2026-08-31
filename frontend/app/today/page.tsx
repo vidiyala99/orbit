@@ -5,6 +5,7 @@ import { RoomT } from "@/lib/types";
 import { requireOnboarded } from "@/lib/requireOnboarded";
 import SectionNav from "@/components/SectionNav";
 import CalendarEventBanner from "@/components/CalendarEventBanner";
+import EventRoomView from "@/components/EventRoomView";
 import PlanFeed from "@/components/PlanFeed";
 import WaitlistForm from "@/components/WaitlistForm";
 import UserMenu from "@/components/UserMenu";
@@ -124,6 +125,8 @@ export default async function TodayPage() {
               googleCalendarConnected={Boolean(user?.google_calendar_connected)}
             />
           )}
+
+          {token && <EventRoomView token={token} />}
 
           <PlanFeed plans={plans} signedIn={Boolean(token)} />
         </div>

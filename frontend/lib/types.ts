@@ -135,3 +135,23 @@ export type ThreadSummaryT = {
 };
 
 export type StampT = { confirmed: boolean; confirmed_at: string | null };
+
+export type PresenceT = {
+  id: string;
+  user_id: string;
+  lat: number;
+  lon: number;
+  started_at: string;
+  expires_at: string;
+};
+
+/** One ranked row from `GET /presence/nearby`: a nearby, currently-present
+ *  user scored against the caller's own bio_embedding + intent_tags. */
+export type MatchCandidateT = {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  headline: string | null;
+  intent_tags: string[] | null;
+  match_score: number;
+};
