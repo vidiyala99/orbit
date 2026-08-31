@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,7 +8,9 @@ from app.config import Settings, settings
 from app.db import get_db
 from app.main import app
 from app.models import (
+    EMBEDDING_DIM,
     Plan,
+    Presence,
     Room,
     RoomMember,
     RoomMessage,
@@ -147,3 +150,53 @@ def test_demo_login_refreshes_stale_plans_so_they_are_live(client, db_session, d
         "at": datetime.now(timezone.utc).isoformat(),
     }, headers={"Authorization": f"Bearer {token}"}).json()
     assert len(live) >= 2
+
+
+# ------------------------------------------------------------ presence/bio
+
+@patch("app.demo.generate_bio_embedding")
+def test_demo_login_seeds_bio_and_live_presence_for_companions(mock_embed, client, db_session, demo_enabled):
+    mock_embed.side_effect = lambda text: [hash(text) % 100 / 100.0] * EMBEDDING_DIM
+    resp = client.post("/auth/demo-login")
+    token = resp.json()["access_token"]
+    auth = {"Authorization": f"Bearer {token}"}
+
+    companions = db_session.query(User).filter(User.email != "demo@stayconnected.app").all()
+    assert len(companions) >= 2
+    assert all(c.bio_text for c in companions)
+    assert all(c.bio_embedding is not None for c in companions)
+    assert all(c.intent_tags for c in companions)
+
+    now = datetime.now(timezone.utc)
+    live_presence = db_session.query(Presence).filter(Presence.expires_at > now).all()
+    assert len(live_presence) >= 2
+
+    toggled_on = client.post("/presence", json={"lat": 37.3861, "lon": -122.0839}, headers=auth)
+    assert toggled_on.status_code == 201
+    nearby = client.get("/presence/nearby", headers=auth).json()
+    assert len(nearby) >= 2
+    assert nearby == sorted(nearby, key=lambda c: c["match_score"], reverse=True)
+
+
+@patch("app.demo.generate_bio_embedding")
+def test_demo_login_twice_does_not_duplicate_companion_presence(mock_embed, client, db_session, demo_enabled):
+    mock_embed.return_value = [0.5] * EMBEDDING_DIM
+    client.post("/auth/demo-login")
+    after_first = db_session.query(Presence).count()
+
+    client.post("/auth/demo-login")
+    assert db_session.query(Presence).count() == after_first
+
+
+@patch("app.demo.generate_bio_embedding")
+def test_demo_login_refreshes_stale_companion_presence(mock_embed, client, db_session, demo_enabled):
+    mock_embed.return_value = [0.5] * EMBEDDING_DIM
+    client.post("/auth/demo-login")
+    long_ago = datetime.now(timezone.utc) - timedelta(hours=5)
+    for presence in db_session.query(Presence).all():
+        presence.expires_at = long_ago
+    db_session.commit()
+
+    client.post("/auth/demo-login")
+    now = datetime.now(timezone.utc)
+    assert db_session.query(Presence).filter(Presence.expires_at > now).count() >= 2

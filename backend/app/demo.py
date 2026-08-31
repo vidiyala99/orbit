@@ -10,8 +10,10 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
+from .embeddings import generate_bio_embedding
 from .models import (
     Plan,
+    Presence,
     Room,
     RoomMember,
     RoomMessage,
@@ -20,6 +22,9 @@ from .models import (
     User,
 )
 from .routers.plans import _assemble_plan_text, _snap
+
+# expiry margin so a demo run doesn't fall over an actual boundary mid-click.
+PRESENCE_TTL = timedelta(hours=2)
 
 DEMO_EMAIL = "demo@stayconnected.app"
 DEMO_CITY = "Mountain View, CA"
@@ -33,6 +38,23 @@ COMPANIONS = [
     (0, "demo-priya@stayconnected.app", "Priya", "Raman"),
     (1, "demo-marcus@stayconnected.app", "Marcus", "Ellis"),
 ]
+
+# For the in-venue matching demo: real bios/tags for the demo user and its
+# companions, so toggling Presence has an actual field of candidates to rank
+# instead of an empty room. Priya's bio deliberately echoes the demo user's
+# ("AI", "seed") so she ranks above Marcus on bio_embedding similarity.
+DEMO_BIO = "Building an AI platform for small-business networking, pre-seed."
+DEMO_INTENT_TAGS = ["co_founder", "investors"]
+COMPANION_BIOS = {
+    "demo-priya@stayconnected.app": (
+        "Healthcare AI startup, raising a seed round, looking for a technical co-founder.",
+        ["co_founder", "customers"],
+    ),
+    "demo-marcus@stayconnected.app": (
+        "Angel investor, mostly SaaS and marketplaces, ex-VP Sales at a fintech.",
+        ["investors"],
+    ),
+}
 
 # owner: 0 = the demo user, 1 = Priya, 2 = Marcus.
 PLAN_SEEDS = [
@@ -90,6 +112,35 @@ def _get_or_create_user(db: Session, email: str, first: str, last: str) -> User:
     user.onboarded_at = user.onboarded_at or now
     db.flush()
     return user
+
+
+def _seed_bio(db: Session, user: User, bio_text: str, intent_tags: list[str]) -> None:
+    # Only call the embedding provider when the bio actually changed (or has
+    # never been generated) so a repeat demo-login doesn't re-hit OpenAI.
+    if user.bio_text == bio_text and user.bio_embedding is not None:
+        user.intent_tags = intent_tags
+        db.flush()
+        return
+    user.bio_text = bio_text
+    user.intent_tags = intent_tags
+    user.bio_embedding = generate_bio_embedding(bio_text)
+    db.flush()
+
+
+def _seed_presence(db: Session, user: User, lat: float, lon: float, now: datetime) -> None:
+    """Idempotent, and refreshed forward on every call — same "always live"
+    convention as _seed_plan."""
+    presence = db.query(Presence).filter(Presence.user_id == user.id).one_or_none()
+    lat, lon = _snap(lat), _snap(lon)
+    if presence is None:
+        presence = Presence(
+            user_id=user.id, lat=lat, lon=lon,
+            location=f"SRID=4326;POINT({lon} {lat})",
+            started_at=now,
+        )
+        db.add(presence)
+    presence.expires_at = now + PRESENCE_TTL
+    db.flush()
 
 
 def _seed_plan(db: Session, owner: User, seed: dict, now: datetime) -> Plan:
@@ -223,6 +274,16 @@ def get_or_create_demo_user(db: Session) -> User:
     plans = [_seed_plan(db, people[s["owner"]], s, now) for s in PLAN_SEEDS]
     rooms = {s["name"]: _seed_room(db, demo, s, people) for s in ROOM_SEEDS}
     _seed_room_chat(db, rooms[CHATTY_ROOM], people, plans[0], now)
+
+    # In-venue matching demo: give the demo user and companions real bios, and
+    # put the companions live in Presence so toggling Presence on has an
+    # actual field of candidates to rank. The demo user's own Presence is left
+    # for them to toggle on themselves — that's the interactive demo moment.
+    _seed_bio(db, demo, DEMO_BIO, DEMO_INTENT_TAGS)
+    for companion in people[1:]:
+        bio_text, intent_tags = COMPANION_BIOS[companion.email]
+        _seed_bio(db, companion, bio_text, intent_tags)
+        _seed_presence(db, companion, DEMO_LAT, DEMO_LON, now)
 
     db.commit()
     db.refresh(demo)
