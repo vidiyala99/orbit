@@ -40,6 +40,7 @@ class User(Base):
     # (same convention as Plan.activity / Room.purpose):
     #   co_founder | customers | investors | friends | other
     intent_tags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    bio_embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

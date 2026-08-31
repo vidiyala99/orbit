@@ -104,3 +104,23 @@ def test_followup_defaults_to_pending(db_session):
     assert fetched.stamp_id == stamp.id
     assert fetched.note == "Wants intro to a hospital system contact"
     assert fetched.status == "pending"
+
+def test_user_bio_embedding_persists(db_session):
+    user = User(
+        email="embed@example.com",
+        bio_text="Building healthcare AI, raising a seed round.",
+        bio_embedding=[0.1, 0.2, 0.3],
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    fetched = db_session.query(User).filter_by(id=user.id).one()
+    assert list(fetched.bio_embedding) == pytest.approx([0.1, 0.2, 0.3])
+
+def test_user_bio_embedding_defaults_to_none(db_session):
+    user = User(email="no-embed@example.com")
+    db_session.add(user)
+    db_session.commit()
+
+    fetched = db_session.query(User).filter_by(id=user.id).one()
+    assert fetched.bio_embedding is None
