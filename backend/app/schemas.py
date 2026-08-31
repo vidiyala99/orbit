@@ -76,6 +76,29 @@ class PlanOut(BaseModel):
     class Config:
         from_attributes = True
 
+class PresenceCreate(BaseModel):
+    lat: float
+    lon: float
+
+class PresenceOut(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    lat: float
+    lon: float
+    started_at: datetime
+    expires_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MatchCandidateOut(BaseModel):
+    user_id: uuid.UUID
+    first_name: str | None
+    last_name: str | None
+    headline: str | None
+    intent_tags: list[str] | None
+    match_score: float
+
 # Rooms: persistent spaces for a stated purpose. Like Plan's activity/openness,
 # the keys are fixed and validated here rather than in the DB.
 ROOM_PURPOSE_KEYS = {"cowork", "coffee_chat", "study_group", "job_hunting", "other"}
