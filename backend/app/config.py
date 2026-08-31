@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     resend_from_email: str = "StayConnected <noreply@stayconnected.app>"
 
+    openai_api_key: str = ""
+
     google_client_id: str = ""
     google_client_secret: str = ""
     # The one redirect URI allow-listed in the Google Cloud Console. Every

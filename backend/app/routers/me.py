@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..db import get_db
+from ..embeddings import generate_bio_embedding
 from ..geocoding import geocode_city
 from ..models import User
 from ..schemas import OnboardingRequest, UserOut
@@ -28,6 +29,9 @@ def onboard_me(
     user.city = body.city
     user.pain_points = body.pain_points
     user.pain_point_other = body.pain_point_other if "other" in body.pain_points else None
+    user.bio_text = body.bio_text
+    user.intent_tags = body.intent_tags
+    user.bio_embedding = generate_bio_embedding(body.bio_text) if body.bio_text else None
 
     geocoded = geocode_city(body.city)
     if geocoded is not None:

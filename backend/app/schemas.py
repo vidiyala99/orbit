@@ -18,6 +18,8 @@ class UserOut(BaseModel):
     lon: float | None
     pain_points: list[str] | None
     pain_point_other: str | None
+    bio_text: str | None
+    intent_tags: list[str] | None
     onboarded_at: datetime | None
     # Read off the user row but never sent to the client — only the derived
     # boolean below is. The refresh token itself is never exposed at all.
@@ -273,6 +275,7 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=8, max_length=255)
 
 PAIN_POINT_KEYS = {"cold_outreach", "dont_know_who", "no_time", "no_followthrough", "other"}
+INTENT_TAG_KEYS = {"co_founder", "customers", "investors", "friends", "other"}
 
 class OnboardingRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=60)
@@ -280,6 +283,8 @@ class OnboardingRequest(BaseModel):
     city: str = Field(min_length=1, max_length=120)
     pain_points: list[str] = Field(min_length=1)
     pain_point_other: str | None = Field(default=None, max_length=200)
+    bio_text: str | None = Field(default=None, max_length=2000)
+    intent_tags: list[str] | None = Field(default=None)
 
     @field_validator("pain_points")
     @classmethod
@@ -287,6 +292,16 @@ class OnboardingRequest(BaseModel):
         invalid = set(value) - PAIN_POINT_KEYS
         if invalid:
             raise ValueError(f"invalid pain point(s): {', '.join(sorted(invalid))}")
+        return value
+
+    @field_validator("intent_tags")
+    @classmethod
+    def _valid_intent_tags(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return value
+        invalid = set(value) - INTENT_TAG_KEYS
+        if invalid:
+            raise ValueError(f"invalid intent tag(s): {', '.join(sorted(invalid))}")
         return value
 
 class LoginRequest(BaseModel):

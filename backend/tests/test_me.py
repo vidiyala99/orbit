@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.db import get_db
@@ -126,6 +127,108 @@ def test_onboarding_rejects_missing_required_fields(mock_geocode, db_session):
     })
 
     assert resp.status_code == 422
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.me.generate_bio_embedding")
+@patch("app.routers.me.geocode_city")
+def test_onboarding_generates_bio_embedding_when_bio_text_provided(mock_geocode, mock_embed, db_session):
+    mock_geocode.return_value = (30.2672, -97.7431)
+    fake_vector = [0.02] * 1536
+    mock_embed.return_value = fake_vector
+    user = User(email="onboard_bio1@example.com")
+    db_session.add(user)
+    db_session.commit()
+    client = _onboarding_client(db_session, user)
+
+    resp = client.patch("/me/onboarding", json={
+        "first_name": "Priya",
+        "last_name": "Shah",
+        "city": "Austin, TX",
+        "pain_points": ["cold_outreach"],
+        "bio_text": "Building healthcare AI, raising a seed round.",
+        "intent_tags": ["co_founder", "investors"],
+    })
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["bio_text"] == "Building healthcare AI, raising a seed round."
+    assert body["intent_tags"] == ["co_founder", "investors"]
+    mock_embed.assert_called_once_with("Building healthcare AI, raising a seed round.")
+    db_session.refresh(user)
+    assert list(user.bio_embedding) == pytest.approx(fake_vector)
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.me.generate_bio_embedding")
+@patch("app.routers.me.geocode_city")
+def test_onboarding_without_bio_text_leaves_embedding_null(mock_geocode, mock_embed, db_session):
+    mock_geocode.return_value = (30.2672, -97.7431)
+    user = User(email="onboard_bio2@example.com")
+    db_session.add(user)
+    db_session.commit()
+    client = _onboarding_client(db_session, user)
+
+    resp = client.patch("/me/onboarding", json={
+        "first_name": "Priya",
+        "last_name": "Shah",
+        "city": "Austin, TX",
+        "pain_points": ["cold_outreach"],
+    })
+
+    assert resp.status_code == 200
+    assert not mock_embed.called
+    db_session.refresh(user)
+    assert user.bio_embedding is None
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.me.generate_bio_embedding")
+@patch("app.routers.me.geocode_city")
+def test_onboarding_succeeds_when_embedding_call_fails(mock_geocode, mock_embed, db_session):
+    mock_geocode.return_value = (30.2672, -97.7431)
+    mock_embed.return_value = None  # provider outage, per app/embeddings.py contract
+    user = User(email="onboard_bio3@example.com")
+    db_session.add(user)
+    db_session.commit()
+    client = _onboarding_client(db_session, user)
+
+    resp = client.patch("/me/onboarding", json={
+        "first_name": "Priya",
+        "last_name": "Shah",
+        "city": "Austin, TX",
+        "pain_points": ["cold_outreach"],
+        "bio_text": "Building healthcare AI, raising a seed round.",
+    })
+
+    assert resp.status_code == 200
+    assert resp.json()["bio_text"] == "Building healthcare AI, raising a seed round."
+    db_session.refresh(user)
+    assert user.bio_embedding is None
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.me.geocode_city")
+def test_onboarding_rejects_invalid_intent_tags(mock_geocode, db_session):
+    user = User(email="onboard_bio4@example.com")
+    db_session.add(user)
+    db_session.commit()
+    client = _onboarding_client(db_session, user)
+
+    resp = client.patch("/me/onboarding", json={
+        "first_name": "Dev",
+        "last_name": "Kulkarni",
+        "city": "Austin, TX",
+        "pain_points": ["no_time"],
+        "intent_tags": ["not_a_real_tag"],
+    })
+
+    assert resp.status_code == 422
+    assert not mock_geocode.called
 
     app.dependency_overrides.clear()
 
