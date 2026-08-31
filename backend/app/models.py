@@ -5,7 +5,11 @@ from sqlalchemy import String, ForeignKey, DateTime, Boolean, Text, UniqueConstr
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geography
+from pgvector.sqlalchemy import Vector
 from .db import Base
+
+# text-embedding-3-small's output size (see app/embeddings.py).
+EMBEDDING_DIM = 1536
 
 def _uuid() -> uuid.UUID:
     return uuid.uuid4()
@@ -40,7 +44,7 @@ class User(Base):
     # (same convention as Plan.activity / Room.purpose):
     #   co_founder | customers | investors | friends | other
     intent_tags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    bio_embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
+    bio_embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

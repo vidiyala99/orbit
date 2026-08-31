@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy.exc import IntegrityError
-from app.models import User, Plan, Presence, Thread, Stamp, FollowUp
+from app.models import User, Plan, Presence, Thread, Stamp, FollowUp, EMBEDDING_DIM
 
 def test_create_user_and_plan(db_session):
     user = User(email="priya@example.com")
@@ -106,16 +106,17 @@ def test_followup_defaults_to_pending(db_session):
     assert fetched.status == "pending"
 
 def test_user_bio_embedding_persists(db_session):
+    vector = [0.1] * EMBEDDING_DIM
     user = User(
         email="embed@example.com",
         bio_text="Building healthcare AI, raising a seed round.",
-        bio_embedding=[0.1, 0.2, 0.3],
+        bio_embedding=vector,
     )
     db_session.add(user)
     db_session.commit()
 
     fetched = db_session.query(User).filter_by(id=user.id).one()
-    assert list(fetched.bio_embedding) == pytest.approx([0.1, 0.2, 0.3])
+    assert list(fetched.bio_embedding) == pytest.approx(vector)
 
 def test_user_bio_embedding_defaults_to_none(db_session):
     user = User(email="no-embed@example.com")
@@ -124,3 +125,9 @@ def test_user_bio_embedding_defaults_to_none(db_session):
 
     fetched = db_session.query(User).filter_by(id=user.id).one()
     assert fetched.bio_embedding is None
+
+def test_user_bio_embedding_rejects_wrong_dimension(db_session):
+    user = User(email="badvec@example.com", bio_embedding=[0.1, 0.2, 0.3])
+    db_session.add(user)
+    with pytest.raises(Exception):
+        db_session.commit()
