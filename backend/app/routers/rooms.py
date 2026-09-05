@@ -1,13 +1,12 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from geoalchemy2.elements import WKTElement
-from geoalchemy2.functions import ST_DWithin
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..db import get_db
+from ..geo import apply_radius_filter, wkt_point
 from ..models import Room, RoomMember, User
 from ..categories import apply_category_filter
 from ..schemas import RoomCreate, RoomMemberAdd, RoomOut
@@ -101,7 +100,7 @@ def create_room(
         lat=lat,
         lon=lon,
         # NULL location means "anywhere nearby" — the room isn't tied to a venue.
-        location=None if lat is None else f"SRID=4326;POINT({lon} {lat})",
+        location=None if lat is None else wkt_point(lon, lat),
     )
     db.add(room)
     db.flush()
@@ -122,11 +121,15 @@ def list_rooms(
     user: User = Depends(get_current_user),
 ):
     my_room_ids = _my_room_ids(db, user.id)
-    point = WKTElement(f"POINT({lon} {lat})", srid=4326)
-    query = db.query(Room).filter(
-        # Located rooms are filtered by radius; unlocated ones aren't tied to a
-        # place, so no radius can exclude them.
-        Room.location.is_(None) | ST_DWithin(Room.location, point, radius_m)
+    query = apply_radius_filter(
+        db.query(Room),
+        lat_col=Room.lat,
+        lon_col=Room.lon,
+        location_col=Room.location,
+        lat=lat,
+        lon=lon,
+        radius_m=radius_m,
+        allow_unlocated=True,
     )
     query = apply_category_filter(
         query, category=category, text_columns=[Room.name],

@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from .embeddings import generate_bio_embedding
+from .geo import wkt_point
+from .pg_extensions import get_capabilities
 from .models import (
     Plan,
     Presence,
@@ -169,7 +171,12 @@ def _seed_bio(db: Session, user: User, bio_text: str, intent_tags: list[str]) ->
         return
     user.bio_text = bio_text
     user.intent_tags = intent_tags
-    user.bio_embedding = generate_bio_embedding(bio_text)
+    # pgvector is optional on free Render Postgres — skip the write so
+    # demo-login still completes when the column is plain JSON / unused.
+    if get_capabilities().vector:
+        user.bio_embedding = generate_bio_embedding(bio_text)
+    else:
+        user.bio_embedding = None
     db.flush()
 
 
@@ -181,13 +188,13 @@ def _seed_presence(db: Session, user: User, lat: float, lon: float, now: datetim
     if presence is None:
         presence = Presence(
             user_id=user.id, lat=lat, lon=lon,
-            location=f"SRID=4326;POINT({lon} {lat})",
+            location=wkt_point(lon, lat),
             started_at=now,
         )
         db.add(presence)
     presence.lat = lat
     presence.lon = lon
-    presence.location = f"SRID=4326;POINT({lon} {lat})"
+    presence.location = wkt_point(lon, lat)
     presence.expires_at = now + PRESENCE_TTL
     db.flush()
 
@@ -208,13 +215,13 @@ def _seed_plan(db: Session, owner: User, seed: dict, now: datetime) -> Plan:
             detail=seed["detail"],
             lat=lat,
             lon=lon,
-            location=f"SRID=4326;POINT({lon} {lat})",
+            location=wkt_point(lon, lat),
         )
         db.add(plan)
     # Re-window and re-pin on every call so a later city pick stays live.
     plan.lat = lat
     plan.lon = lon
-    plan.location = f"SRID=4326;POINT({lon} {lat})"
+    plan.location = wkt_point(lon, lat)
     plan.starts_at = starts_at
     plan.ends_at = ends_at
     plan.text = _assemble_plan_text(
@@ -237,14 +244,14 @@ def _seed_room(db: Session, demo: User, seed: dict, people: list[User]) -> Room:
             visibility=seed["visibility"],
             lat=None if lat is None else _snap(lat),
             lon=None if lon is None else _snap(lon),
-            location=None if lat is None else f"SRID=4326;POINT({_snap(lon)} {_snap(lat)})",
+            location=None if lat is None else wkt_point(_snap(lon), _snap(lat)),
         )
         db.add(room)
         db.flush()
     elif lat is not None and lon is not None:
         room.lat = _snap(lat)
         room.lon = _snap(lon)
-        room.location = f"SRID=4326;POINT({_snap(lon)} {_snap(lat)})"
+        room.location = wkt_point(_snap(lon), _snap(lat))
 
     for index in [0, *seed["members"]]:
         user = people[index]

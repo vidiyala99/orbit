@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { demoLogin } from "@/lib/api";
 import { getClientToken, setClientToken } from "@/lib/auth";
+import { DEMO_OFFLINE_TOKEN } from "@/lib/demoFixtures";
 import { isDemoLoginEnabled } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
@@ -28,12 +29,15 @@ export default function DemoEnterButton({
     setSubmitting(true);
     setError(null);
     try {
-      if (getClientToken()) {
-        router.push(next);
-        return;
+      if (!getClientToken()) {
+        try {
+          const { access_token } = await demoLogin();
+          setClientToken(access_token);
+        } catch (err) {
+          setClientToken(DEMO_OFFLINE_TOKEN);
+          setError(errorMessage(err));
+        }
       }
-      const { access_token } = await demoLogin();
-      setClientToken(access_token);
       router.push(next);
     } catch (err) {
       setError(errorMessage(err));

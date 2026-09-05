@@ -173,13 +173,25 @@ export async function login(
 export async function demoLogin(
   location?: { lat: number; lon: number; city: string },
 ): Promise<{ access_token: string; user: UserT }> {
-  const res = await fetch(`${API_BASE}/auth/demo-login`, {
-    method: "POST",
-    headers: location ? { "Content-Type": "application/json" } : undefined,
-    body: location ? JSON.stringify(location) : undefined,
-  });
-  if (!res.ok) throw new Error((await res.json()).detail ?? "Demo login failed");
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const res = await fetch(`${API_BASE}/auth/demo-login`, {
+      method: "POST",
+      headers: location ? { "Content-Type": "application/json" } : undefined,
+      body: location ? JSON.stringify(location) : undefined,
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error((await res.json()).detail ?? "Demo login failed");
+    return res.json();
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Demo login timed out. Opening the local demo.");
+    }
+    throw err instanceof Error ? err : new Error("Demo login failed");
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

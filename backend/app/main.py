@@ -1,20 +1,29 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .db import engine, ensure_postgres_extensions
+from .db import engine
+from .pg_extensions import ensure_postgres_extensions
 from .routers import (
     plans, rooms, room_messages, scheduling, threads, stamps, moderation, chat_ws, me,
     waitlist, auth, calendar, presence, research,
 )
 
+log = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    with engine.connect() as connection:
-        ensure_postgres_extensions(connection)
-        connection.commit()
+    # Extensions are optional. A missing PostGIS/vector must not take /health down.
+    try:
+        with engine.connect() as connection:
+            ensure_postgres_extensions(connection)
+            connection.commit()
+    except Exception:
+        log.exception("Startup DB probe failed; serving /health anyway")
     yield
 
 

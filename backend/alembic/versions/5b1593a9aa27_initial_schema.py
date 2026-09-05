@@ -9,7 +9,8 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import geoalchemy2
+
+from app.alembic_types import location_column
 
 
 # revision identifiers, used by Alembic.
@@ -48,7 +49,7 @@ def upgrade() -> None:
     sa.Column('text', sa.Text(), nullable=False),
     sa.Column('lat', sa.Float(), nullable=False),
     sa.Column('lon', sa.Float(), nullable=False),
-    sa.Column('location', geoalchemy2.types.Geography(geometry_type='POINT', srid=4326, from_text='ST_GeogFromText', name='geography', nullable=False), nullable=False),
+    location_column(nullable=False),
     sa.Column('starts_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('ends_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),

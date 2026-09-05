@@ -5,7 +5,8 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 
 from app.database_url import resolve_database_url
-from app.db import Base, ensure_postgres_extensions
+from app.db import Base
+from app.pg_extensions import ensure_postgres_extensions
 from app import models  # noqa: F401 — registers all tables on Base.metadata
 
 # this is the Alembic Config object, which provides

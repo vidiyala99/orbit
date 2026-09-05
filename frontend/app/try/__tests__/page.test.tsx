@@ -99,17 +99,38 @@ describe("Try page", () => {
     fireEvent.click(screen.getByRole("button", { name: /^tech$/i }));
 
     expect(await screen.findByRole("heading", { name: /tech in mountain view/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^map$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /nearby events/i })).toBeInTheDocument();
-    expect(screen.getByText(/ai \/ startup hack table/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/ai \/ startup hack table/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /people nearby/i })).toBeInTheDocument();
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a cafe/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^rooms$/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/create a room/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create room/i })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(api.fetchNearbyPlans).toHaveBeenCalled();
       expect(api.fetchPeopleAround).toHaveBeenCalled();
     });
+  });
+
+  it("fills the board from fixtures when the API fails", async () => {
+    vi.spyOn(api, "demoLogin").mockRejectedValue(new Error("API down"));
+    vi.spyOn(api, "fetchNearbyPlans").mockRejectedValue(new Error("API down"));
+    vi.spyOn(api, "fetchNearbyRooms").mockRejectedValue(new Error("API down"));
+    vi.spyOn(api, "fetchPeopleAround").mockRejectedValue(new Error("API down"));
+
+    render(<TryPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /mountain view, ca/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^tech$/i }));
+
+    expect(await screen.findByRole("heading", { name: /tech in mountain view/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^map$/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/hack table/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
+    expect(screen.getByText(/working in a café/i)).toBeInTheDocument();
+    expect(screen.getByText(/at a hackathon/i)).toBeInTheDocument();
+    expect(screen.getByText(/just exploring/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create room/i })).toBeInTheDocument();
   });
 });
