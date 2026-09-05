@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { PlanT, RoomT } from "@/lib/types";
+import { NearbyPersonT, PlanT, RoomT } from "@/lib/types";
 import { memberLabel } from "@/lib/rooms";
 
 /** There is no events data source yet (that's the unbuilt Luma integration), so
@@ -16,7 +16,7 @@ export type MapEventT = {
   meta: string;
 };
 
-type KindT = "plan" | "event" | "room";
+type KindT = "plan" | "event" | "room" | "person";
 
 type MarkerT = {
   key: string;
@@ -29,21 +29,20 @@ type MarkerT = {
   lon: number | null;
 };
 
-const FILTERS: { kind: KindT; label: string }[] = [
+const BASE_FILTERS: { kind: KindT; label: string }[] = [
   { kind: "plan", label: "Plans" },
   { kind: "event", label: "Events" },
   { kind: "room", label: "Rooms" },
 ];
 
-/** Three pin kinds, three tones drawn from the palette — no off-token colours.
- *  Plans get the accent because they are the time-sensitive thing. */
 const DOT_CLASS: Record<KindT, string> = {
   plan: "bg-accent text-white",
   event: "bg-ink3 text-white",
   room: "bg-ink text-ground",
+  person: "bg-accent text-white",
 };
 
-const GLYPH: Record<KindT, string> = { plan: "☕", event: "★", room: "▦" };
+const GLYPH: Record<KindT, string> = { plan: "☕", event: "★", room: "▦", person: "●" };
 
 /** Events have no page of their own yet (no data source either), so only plans
  *  and rooms get an action on the detail card. */
@@ -78,14 +77,24 @@ function minutesLeft(endsAt: string): string {
   return mins > 0 ? `${mins} min left` : "wrapping up";
 }
 
-function toMarkers(plans: PlanT[], rooms: RoomT[], events: MapEventT[]): MarkerT[] {
+function personName(person: NearbyPersonT): string {
+  return [person.first_name, person.last_name].filter(Boolean).join(" ") || "Someone";
+}
+
+function toMarkers(
+  plans: PlanT[],
+  rooms: RoomT[],
+  events: MapEventT[],
+  people: NearbyPersonT[],
+  compact: boolean,
+): MarkerT[] {
   return [
     ...plans.map((p) => ({
       key: `plan-${p.id}`,
       kind: "plan" as const,
       id: p.id,
-      title: p.text,
-      meta: `Plan · ${minutesLeft(p.ends_at)}`,
+      title: compact ? p.detail || p.text : p.text,
+      meta: compact ? minutesLeft(p.ends_at) : `Plan · ${minutesLeft(p.ends_at)}`,
       glyph: GLYPH.plan,
       lat: p.lat,
       lon: p.lon,
@@ -95,7 +104,7 @@ function toMarkers(plans: PlanT[], rooms: RoomT[], events: MapEventT[]): MarkerT
       kind: "event" as const,
       id: e.id,
       title: e.title,
-      meta: `Event · ${e.meta}`,
+      meta: compact ? e.meta : `Event · ${e.meta}`,
       glyph: GLYPH.event,
       lat: e.lat,
       lon: e.lon,
@@ -105,10 +114,22 @@ function toMarkers(plans: PlanT[], rooms: RoomT[], events: MapEventT[]): MarkerT
       kind: "room" as const,
       id: r.id,
       title: r.name,
-      meta: `Room · ${r.visibility === "public" ? "Public" : "Private"} · ${memberLabel(r.member_count)}`,
+      meta: compact
+        ? memberLabel(r.member_count)
+        : `Room · ${r.visibility === "public" ? "Public" : "Private"} · ${memberLabel(r.member_count)}`,
       glyph: GLYPH.room,
       lat: r.lat,
       lon: r.lon,
+    })),
+    ...people.map((p) => ({
+      key: `person-${p.user_id}`,
+      kind: "person" as const,
+      id: p.user_id,
+      title: personName(p),
+      meta: p.status,
+      glyph: GLYPH.person,
+      lat: p.lat,
+      lon: p.lon,
     })),
   ];
 }
@@ -117,18 +138,27 @@ export default function MapBoard({
   plans,
   rooms,
   events,
+  people = [],
   center,
+  compact = false,
 }: {
   plans: PlanT[];
   rooms: RoomT[];
   events: MapEventT[];
+  people?: NearbyPersonT[];
   center: { lat: number; lon: number };
+  compact?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [hidden, setHidden] = useState<KindT[]>([]);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const markers = toMarkers(plans, rooms, events).filter((m) => !hidden.includes(m.kind));
+  const filters = people.length
+    ? [...BASE_FILTERS, { kind: "person" as const, label: "People" }]
+    : BASE_FILTERS;
+  const markers = toMarkers(plans, rooms, events, people, compact).filter(
+    (m) => !hidden.includes(m.kind),
+  );
   // Filtering out the selected marker's kind should take its card with it.
   const detail = markers.find((m) => m.key === selected) ?? null;
   const detailHref = detail ? markerHref(detail) : null;
@@ -149,12 +179,20 @@ export default function MapBoard({
        the width — order is flipped with `order-*` so neither is duplicated. */
     <div
       data-testid="map-split"
-      className="flex flex-1 flex-col md:grid md:grid-cols-[290px_minmax(0,1fr)] md:items-start md:gap-4 md:px-[18px]"
+      className={
+        compact
+          ? "flex flex-1 flex-col"
+          : "flex flex-1 flex-col md:grid md:grid-cols-[290px_minmax(0,1fr)] md:items-start md:gap-4 md:px-[18px]"
+      }
     >
       {/* The schematic map is inset as a card rather than run edge-to-edge, so
           it reads as one object pinned to the board. */}
       <div className="order-1 mb-1 shrink-0 px-[18px] md:order-2 md:mb-0 md:px-0">
-        <div className="relative h-[250px] overflow-hidden rounded-card bg-surface shadow-card md:h-[70vh]">
+        <div
+          className={`relative overflow-hidden rounded-card bg-surface shadow-card ${
+            compact ? "h-[58vh] min-h-[320px] md:h-[68vh]" : "h-[250px] md:h-[70vh]"
+          }`}
+        >
           <div
             aria-hidden="true"
             className="absolute inset-0 [background-image:repeating-linear-gradient(0deg,transparent,transparent_46px,rgba(124,139,110,0.16)_46px,rgba(124,139,110,0.16)_47px),repeating-linear-gradient(90deg,transparent,transparent_64px,rgba(124,139,110,0.16)_64px,rgba(124,139,110,0.16)_65px)]"
@@ -173,7 +211,7 @@ export default function MapBoard({
           />
 
           <div className="absolute left-2.5 top-2.5 z-10 flex gap-1.5">
-            {FILTERS.map((f) => {
+            {filters.map((f) => {
               const on = !hidden.includes(f.kind);
               return (
                 <button
@@ -237,7 +275,9 @@ export default function MapBoard({
           {detail && (
             <div
               data-testid="map-detail"
-              className="absolute right-3 top-3 z-20 hidden w-[230px] rounded-card bg-surface p-3 shadow-raised md:block"
+              className={`absolute z-20 w-[230px] rounded-card bg-surface p-3 shadow-raised ${
+                compact ? "bottom-3 left-3 right-3 w-auto md:bottom-auto md:left-auto md:right-3 md:top-3 md:w-[230px]" : "right-3 top-3 hidden md:block"
+              }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <span className="min-w-0 text-[13.5px] font-bold leading-snug text-ink">
@@ -268,13 +308,49 @@ export default function MapBoard({
 
       <div
         data-testid="nearby-list"
-        className="order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
+        className={
+          compact
+            ? "order-2 px-[18px] pb-2 pt-3"
+            : "order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
+        }
       >
-        <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">
-          What&apos;s happening now
-        </p>
+        {!compact && (
+          <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">
+            What&apos;s happening now
+          </p>
+        )}
         {markers.length === 0 ? (
           <p className="text-[13px] text-ink2">Nothing pinned near you yet.</p>
+        ) : compact ? (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {markers.map((m) => {
+              const on = selected === m.key;
+              return (
+                <div
+                  key={m.key}
+                  ref={(el) => {
+                    itemRefs.current[m.key] = el;
+                  }}
+                  data-testid={`item-${m.key}`}
+                  aria-current={on}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelected(m.key)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setSelected(m.key);
+                  }}
+                  className={`lift btn-press w-[148px] shrink-0 cursor-pointer rounded-card bg-surface p-3 ${
+                    on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card"
+                  }`}
+                >
+                  <p className="truncate text-[13px] font-bold text-ink">{m.title}</p>
+                  <p className="mt-1 inline-flex max-w-full truncate rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-bold text-accent">
+                    {m.meta}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           markers.map((m) => {
             const on = selected === m.key;

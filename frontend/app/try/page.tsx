@@ -19,7 +19,6 @@ import {
 import {
   LOCATIONS,
   clearOrbitTheme,
-  personStatus,
   readOrbitLocation,
   readOrbitTheme,
   writeOrbitLocation,
@@ -28,8 +27,6 @@ import {
   type ThemeKey,
 } from "@/lib/orbit";
 import { NearbyPersonT, PlanT, RoomT } from "@/lib/types";
-import PlanCard from "@/components/PlanCard";
-import RoomsBrowser from "@/components/RoomsBrowser";
 import CreateRoomField from "@/components/CreateRoomField";
 import MapBoard, { type MapEventT } from "@/components/MapBoard";
 
@@ -271,24 +268,31 @@ export default function TryPage() {
   }
 
   const themeLabel = CATEGORIES.find((c) => c.key === theme)?.label ?? "Nearby";
-  const mapEvents: MapEventT[] = plans
-    .filter((p) => p.activity === "event")
-    .map((p) => ({
-      id: p.id,
-      title: p.detail || p.text,
-      lat: p.lat,
-      lon: p.lon,
-      meta: p.detail || p.text,
-    }));
+  const mapEvents: MapEventT[] = plans.map((p) => ({
+    id: p.id,
+    title: p.detail || p.text.split("—")[0].trim(),
+    lat: p.lat,
+    lon: p.lon,
+    meta: "Event",
+  }));
+  const mapPeople = people.map((person, i) => ({
+    ...person,
+    lat: person.lat + (i - 1) * 0.004,
+    lon: person.lon + (i - 1) * 0.005,
+  }));
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-ground pb-28 md:max-w-6xl">
-      <header className="px-[18px] pt-6">
-        <p className="text-[13px] font-semibold text-ink3">Orbit</p>
-        <h1 className="mt-1 text-[23px] font-extrabold tracking-[-0.3px] text-ink">
-          {themeLabel} in {location?.city}
-        </h1>
-        <div className="mt-3 flex gap-2">
+    <main className="flex min-h-screen flex-col bg-ground">
+      <header className="flex items-center justify-between gap-3 px-[18px] py-3">
+        <div>
+          <h1 className="text-[16px] font-extrabold tracking-[-0.2px] text-ink">
+            {themeLabel} in {location?.city}
+          </h1>
+          <p className="text-[11px] font-medium text-ink3">
+            {loadingBoard ? "Pinning…" : "Map of events and people"}
+          </p>
+        </div>
+        <div className="flex gap-1.5">
           <button
             type="button"
             onClick={() => {
@@ -296,9 +300,9 @@ export default function TryPage() {
               setTheme(null);
               setStep("theme");
             }}
-            className="btn-press rounded-full border border-rule bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink"
+            className="btn-press rounded-full border border-rule bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink"
           >
-            Change theme
+            Theme
           </button>
           <button
             type="button"
@@ -307,77 +311,32 @@ export default function TryPage() {
               setTheme(null);
               setStep("location");
             }}
-            className="btn-press rounded-full border border-rule bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink"
+            className="btn-press rounded-full border border-rule bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink"
           >
-            Change location
+            Place
           </button>
         </div>
       </header>
 
       {location && (
-        <section className="mt-5" aria-label="Map">
-          <h2 className="px-[18px] text-[13px] font-bold uppercase tracking-[0.04em] text-ink3">
-            Map
-          </h2>
-          <div className="mt-3">
-            <MapBoard
-              plans={plans}
-              rooms={rooms}
-              events={mapEvents}
-              center={{ lat: location.lat, lon: location.lon }}
-            />
-          </div>
+        <section aria-label="Map" className="flex-1">
+          <h2 className="sr-only">Map</h2>
+          <MapBoard
+            plans={[]}
+            rooms={rooms}
+            events={mapEvents}
+            people={mapPeople}
+            center={{ lat: location.lat, lon: location.lon }}
+            compact
+          />
         </section>
       )}
 
-      <section className="mt-6 px-[18px]">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-ink3">
-          Nearby events
-        </h2>
-        {loadingBoard && plans.length === 0 ? (
-          <p className="mt-3 text-[13px] text-ink2">Looking around…</p>
-        ) : (
-          <div className="mt-3 flex flex-col gap-3">
-            {plans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="mt-8 px-[18px]">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.04em] text-ink3">
-          People nearby
-        </h2>
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {people.map((person) => (
-            <li key={person.user_id} className="rounded-card bg-surface p-4 shadow-card">
-              <p className="text-[14px] font-semibold text-ink">
-                {person.first_name ?? "Someone"} {person.last_name ?? ""}
-              </p>
-              <p className="mt-1 inline-flex rounded-full bg-accent-soft px-2.5 py-1 text-[12px] font-bold text-accent">
-                {personStatus(person.status)}
-              </p>
-              <p className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-accent">
-                <span className="live-dot" aria-hidden="true" />
-                HERE NOW
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="px-[18px] text-[13px] font-bold uppercase tracking-[0.04em] text-ink3">
-          Rooms
-        </h2>
-        {location && (
-          <div className="mt-3 px-[18px]">
-            <CreateRoomField lat={location.lat} lon={location.lon} />
-          </div>
-        )}
-        <RoomsBrowser initialRooms={rooms} />
-      </section>
+      {location && (
+        <div className="sticky bottom-0 z-20 border-t border-rule bg-ground/95 px-[18px] py-3 backdrop-blur">
+          <CreateRoomField lat={location.lat} lon={location.lon} />
+        </div>
+      )}
     </main>
   );
 }

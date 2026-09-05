@@ -172,6 +172,33 @@ describe("MapBoard detail card", () => {
   });
 });
 
+describe("MapBoard people pins", () => {
+  it("renders a person pin and a People filter when people are passed", () => {
+    render(
+      <MapBoard
+        plans={[]}
+        rooms={[]}
+        events={[]}
+        people={[
+          {
+            user_id: "u3",
+            first_name: "Priya",
+            last_name: "Raman",
+            status: "Working in a café",
+            lat: 37.39,
+            lon: -122.08,
+          },
+        ]}
+        center={CENTER}
+      />,
+    );
+    expect(screen.getByTestId("pin-person-u3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /people/i })).toBeInTheDocument();
+    expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
+    expect(screen.getByText(/working in a café/i)).toBeInTheDocument();
+  });
+});
+
 describe("MapBoard filters", () => {
   it("hides both the pin and the list item for a toggled-off kind", () => {
     renderBoard();
