@@ -52,27 +52,19 @@ const room = {
   is_member: true,
 };
 
-const person = {
-  user_id: "u3",
-  first_name: "Priya",
-  last_name: "Raman",
-  headline: "Working in a cafe",
-  intent_tags: ["co_founder"],
-  match_score: 0.8,
-};
-
 describe("Try page", () => {
   beforeEach(() => {
     document.cookie = "sc_token=; path=/; max-age=0";
     sessionStorage.clear();
+    Element.prototype.scrollIntoView = vi.fn();
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user });
     vi.spyOn(api, "fetchNearbyPlans").mockResolvedValue([plan]);
     vi.spyOn(api, "fetchNearbyRooms").mockResolvedValue([room]);
     vi.spyOn(api, "fetchPeopleAround").mockResolvedValue([
       {
-        user_id: person.user_id,
-        first_name: person.first_name,
-        last_name: person.last_name,
+        user_id: "u3",
+        first_name: "Priya",
+        last_name: "Raman",
         status: "Working in a cafe",
         lat: 37.3861,
         lon: -122.0839,
@@ -80,33 +72,23 @@ describe("Try page", () => {
     ]);
   });
 
-  it("demo-logs in, then location → theme → events, people, create room", async () => {
+  it("demo-logs in, then location → theme → interactive map", async () => {
     render(<TryPage />);
 
     expect(await screen.findByRole("heading", { name: /pick a location/i })).toBeInTheDocument();
-    expect(api.demoLogin).toHaveBeenCalled();
-
     fireEvent.click(screen.getByRole("button", { name: /mountain view, ca/i }));
-
     expect(await screen.findByRole("heading", { name: /pick a theme/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^tech$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^design$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^food$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^music$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^sports$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^outdoors$/i })).toBeInTheDocument();
-
     fireEvent.click(screen.getByRole("button", { name: /^tech$/i }));
 
     expect(await screen.findByRole("heading", { name: /tech in mountain view/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^map$/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /nearby events/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/ai \/ startup hack table/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /people nearby/i })).toBeInTheDocument();
+    expect(screen.getByTestId("map-split")).toBeInTheDocument();
+    expect(screen.getByTestId("pin-you")).toBeInTheDocument();
+    expect(await screen.findByTestId("pin-person-u3")).toBeInTheDocument();
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a cafe/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^rooms$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create room/i })).toBeInTheDocument();
+    expect(screen.queryByText(/at an event, open to chat/i)).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(api.fetchNearbyPlans).toHaveBeenCalled();
@@ -114,7 +96,7 @@ describe("Try page", () => {
     });
   });
 
-  it("fills the board from fixtures when the API fails", async () => {
+  it("fills the map from fixtures when the API fails", async () => {
     vi.spyOn(api, "demoLogin").mockRejectedValue(new Error("API down"));
     vi.spyOn(api, "fetchNearbyPlans").mockRejectedValue(new Error("API down"));
     vi.spyOn(api, "fetchNearbyRooms").mockRejectedValue(new Error("API down"));
@@ -124,9 +106,7 @@ describe("Try page", () => {
     fireEvent.click(await screen.findByRole("button", { name: /mountain view, ca/i }));
     fireEvent.click(await screen.findByRole("button", { name: /^tech$/i }));
 
-    expect(await screen.findByRole("heading", { name: /tech in mountain view/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^map$/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/hack table/i).length).toBeGreaterThan(0);
+    expect(await screen.findByTestId("map-split")).toBeInTheDocument();
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a café/i)).toBeInTheDocument();
     expect(screen.getByText(/at a hackathon/i)).toBeInTheDocument();
