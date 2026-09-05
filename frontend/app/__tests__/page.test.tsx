@@ -17,5 +17,10 @@ describe("Home page", () => {
     expect(screen.queryByText(/four taps/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/networking used to run on luck/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /how it works/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/map what's live around you/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/google oauth maze/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/research the room/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/time-boxed plan/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/one tap into the demo/i)).not.toBeInTheDocument();
   });
 });

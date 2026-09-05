@@ -1,8 +1,7 @@
 # Orbit
 
-Presence & Plans: post a time-boxed plan pinned to a location, discover plans
-nearby, research the room (Linkup), message the poster, mutually confirm an
-in-person "stamp" once met.
+Presence & Plans: pick a location and theme, see nearby events and people,
+create a room, message, mutually confirm an in-person "stamp" once met.
 
 **User-facing name is Orbit.** Demo login is ON by default (hackathon).
 

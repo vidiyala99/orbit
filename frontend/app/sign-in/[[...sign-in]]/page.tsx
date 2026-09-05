@@ -80,7 +80,7 @@ export default function SignInPage() {
           ← Orbit
         </Link>
         <h1 className="mt-3 text-[23px] font-extrabold tracking-[-0.3px] text-ink lg:text-[26px]">Welcome back</h1>
-        <p className="mt-1.5 text-[13px] font-medium text-ink2 lg:text-sm">One tap onto the map — no Google required</p>
+        <p className="mt-1.5 text-[13px] font-medium text-ink2 lg:text-sm">Meet people around what you&apos;re into.</p>
 
         {demoEnabled && (
           <button

@@ -8,16 +8,16 @@ const PLAN_TEXT = "Grabbing coffee near University Ave, happy to talk shop.";
 
 const STEPS = [
   {
-    n: 1, title: "See the map",
-    desc: "After Try it out, pick a category and land on a nearby shortlist — plans and rooms pinned to a place.",
+    n: 1, title: "Pick a location",
+    desc: "Try it out, then choose a city — or use your location.",
   },
   {
-    n: 2, title: "Organize an event",
-    desc: "Post a time-boxed plan at a cafe, cowork, or side event. One tap from the map. People nearby can message you before you arrive.",
+    n: 2, title: "Pick a theme",
+    desc: "Tech, Design, Food, Music, Sports, or Outdoors.",
   },
   {
-    n: 3, title: "Research the room",
-    desc: "Linkup deep research sits on the map and every plan — who typically attends, who's relevant, and how to open. Then leave with a stamp, not just an add.",
+    n: 3, title: "Meet nearby",
+    desc: "See events, people with a status, and start a room.",
   },
 ];
 

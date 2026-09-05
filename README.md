@@ -69,7 +69,7 @@ Blueprint: `render.yaml` (service name **`orbit-api`**).
 
 ### 3. Try it
 
-`https://<vercel>/` → **Try it out** → category chip → `/map?category=…` → rooms.
+`https://<vercel>/` → **Try it out** → location → theme → events / people / rooms.
 
 ## Local
 

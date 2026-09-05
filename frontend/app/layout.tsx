@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
+const LINE = "Meet people around what you're into.";
+
 export const metadata: Metadata = {
   title: "Orbit",
-  description: "Meet people around what you're into.",
+  description: LINE,
+  openGraph: { title: "Orbit", description: LINE },
+  twitter: { title: "Orbit", description: LINE },
 };
 
 /** One face carries the whole product; weight does the hierarchy. Mono is
