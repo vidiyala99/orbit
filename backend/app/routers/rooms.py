@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..db import get_db
 from ..models import Room, RoomMember, User
+from ..categories import apply_category_filter
 from ..schemas import RoomCreate, RoomMemberAdd, RoomOut
 from .plans import _snap
 
@@ -116,6 +117,7 @@ def list_rooms(
     lat: float,
     lon: float,
     radius_m: int,
+    category: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -125,6 +127,10 @@ def list_rooms(
         # Located rooms are filtered by radius; unlocated ones aren't tied to a
         # place, so no radius can exclude them.
         Room.location.is_(None) | ST_DWithin(Room.location, point, radius_m)
+    )
+    query = apply_category_filter(
+        query, category=category, text_columns=[Room.name],
+        kind_column=Room.purpose, kind_key="purpose",
     )
     visible = Room.visibility == "public"
     if my_room_ids:

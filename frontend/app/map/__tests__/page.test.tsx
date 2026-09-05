@@ -132,6 +132,17 @@ describe("MapPage data", () => {
     expect(screen.getByRole("heading", { name: /research this event/i })).toBeInTheDocument();
   });
 
+  it("filters the shortlist by category and links to rooms", async () => {
+    fetchNearbyPlans.mockResolvedValue([plan]);
+    render(await MapPage({ searchParams: Promise.resolve({ category: "tech" }) }));
+    expect(fetchNearbyPlans.mock.calls[0][5]).toBe("tech");
+    expect(fetchNearbyRooms.mock.calls[0][4]).toBe("tech");
+    expect(screen.getByRole("heading", { name: /tech nearby/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /change category/i })).toHaveAttribute("href", "/explore");
+    expect(screen.getByRole("link", { name: /find people/i })).toHaveAttribute("href", "/today");
+    expect(screen.getByRole("link", { name: /create a room/i })).toHaveAttribute("href", "/rooms");
+  });
+
   it("renders both nav shells with Map current", async () => {
     await renderPage();
     for (const label of [/sections/i, /main/i]) {

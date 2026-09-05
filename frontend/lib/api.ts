@@ -16,8 +16,9 @@ import {
   TimeProposalT,
   UserT,
 } from "./types";
+import { resolveApiBase } from "./apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
+const API_BASE = resolveApiBase();
 
 /** The backend's own User row for the current session, keyed off our self-issued
  *  JWT. Its `id` is what `Message.sender_id` references. */
@@ -30,13 +31,14 @@ export async function fetchMe(token: string): Promise<UserT> {
 /** Discovery is public — `token` is optional and, when present, only used to
  *  personalize results (e.g. hiding plans from blocked users). */
 export async function fetchNearbyPlans(
-  lat: number, lon: number, radiusM: number, at: string, token?: string,
+  lat: number, lon: number, radiusM: number, at: string, token?: string, category?: string,
 ): Promise<PlanT[]> {
   const url = new URL(`${API_BASE}/plans`);
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lon));
   url.searchParams.set("radius_m", String(radiusM));
   url.searchParams.set("at", at);
+  if (category) url.searchParams.set("category", category);
 
   const res = await fetch(url.toString(), {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -273,12 +275,13 @@ export async function createRoom(
 /** Returns public rooms plus private rooms the caller belongs to. Rooms with no
  *  coordinates are "anywhere nearby" and always come back, regardless of radius. */
 export async function fetchNearbyRooms(
-  lat: number, lon: number, radiusM: number, token: string,
+  lat: number, lon: number, radiusM: number, token: string, category?: string,
 ): Promise<RoomT[]> {
   const url = new URL(`${API_BASE}/rooms`);
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lon));
   url.searchParams.set("radius_m", String(radiusM));
+  if (category) url.searchParams.set("category", category);
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },

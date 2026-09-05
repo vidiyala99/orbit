@@ -76,6 +76,36 @@ PLAN_SEEDS = [
         "lat": DEMO_LAT - 0.006, "lon": DEMO_LON + 0.003,
         "starts_in": 15, "minutes": 60,
     },
+    {
+        "owner": 0, "activity": "event", "openness": "actively_meeting",
+        "detail": "AI / startup hack table — looking for a technical co-founder.",
+        "lat": DEMO_LAT + 0.003, "lon": DEMO_LON + 0.001,
+        "starts_in": -10, "minutes": 180,
+    },
+    {
+        "owner": 1, "activity": "event", "openness": "open_to_chat",
+        "detail": "Figma design critique at the cowork loft.",
+        "lat": DEMO_LAT + 0.005, "lon": DEMO_LON - 0.002,
+        "starts_in": -15, "minutes": 120,
+    },
+    {
+        "owner": 2, "activity": "event", "openness": "open_to_chat",
+        "detail": "Vinyl listening hour — bring one record.",
+        "lat": DEMO_LAT - 0.003, "lon": DEMO_LON - 0.004,
+        "starts_in": 20, "minutes": 90,
+    },
+    {
+        "owner": 1, "activity": "event", "openness": "actively_meeting",
+        "detail": "Lunch run from Castro, easy 5k.",
+        "lat": DEMO_LAT + 0.001, "lon": DEMO_LON + 0.004,
+        "starts_in": 30, "minutes": 75,
+    },
+    {
+        "owner": 0, "activity": "event", "openness": "open_to_chat",
+        "detail": "Walk the bay trail after work.",
+        "lat": DEMO_LAT - 0.004, "lon": DEMO_LON + 0.005,
+        "starts_in": 45, "minutes": 90,
+    },
 ]
 
 CHATTY_ROOM = "Peninsula Regulars"
@@ -87,6 +117,10 @@ ROOM_SEEDS = [
      "lat": DEMO_LAT + 0.002, "lon": DEMO_LON + 0.002, "members": [2]},
     {"name": "Job Hunt Support Circle", "purpose": "job_hunting", "visibility": "private",
      "lat": None, "lon": None, "members": [1]},
+    {"name": "Design critique Thursdays", "purpose": "other", "visibility": "public",
+     "lat": DEMO_LAT + 0.003, "lon": DEMO_LON - 0.001, "members": [1]},
+    {"name": "Pickup soccer + music after", "purpose": "other", "visibility": "public",
+     "lat": DEMO_LAT - 0.002, "lon": DEMO_LON + 0.003, "members": [2]},
 ]
 
 # (sender, body) — the prose around the two cards in the chatty room.

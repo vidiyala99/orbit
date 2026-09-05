@@ -5,6 +5,7 @@ import Link from "next/link";
 import { demoLogin, fetchMe, login } from "@/lib/api";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { afterAuthPath, isDemoLoginEnabled } from "@/lib/routes";
+import { resolveApiBase } from "@/lib/apiBase";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not sign in";
@@ -88,7 +89,7 @@ export default function SignInPage() {
             disabled={demoSubmitting}
             className="lift btn-press mt-5 w-full rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 lg:text-base"
           >
-            {demoSubmitting ? "Entering…" : "Enter demo"}
+            {demoSubmitting ? "Entering…" : "Try it out"}
           </button>
         )}
 
@@ -137,7 +138,7 @@ export default function SignInPage() {
         </button>
 
         <a
-          href={`${process.env.NEXT_PUBLIC_API_BASE}/auth/google`}
+          href={`${resolveApiBase()}/auth/google`}
           className="btn-press mt-3 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-medium text-ink3 transition-colors hover:border-accent hover:text-ink lg:text-base"
         >
           Continue with Google

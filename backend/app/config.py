@@ -1,8 +1,23 @@
-from pydantic_settings import BaseSettings
+import os
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .database_url import resolve_database_url
+
+
+def _settings_env_file() -> str | None:
+    # Process env wins. A leftover .env with localhost:5434 must not override
+    # Render's DATABASE_URL (or even be consulted when DATABASE_URL is set).
+    if os.environ.get("DATABASE_URL") or os.environ.get("RENDER"):
+        return None
+    return ".env"
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+psycopg://stayconnected:localdev@localhost:5434/stayconnected"
+    model_config = SettingsConfigDict(env_file=_settings_env_file(), extra="ignore")
+
+    database_url: str = ""
     frontend_origin: str = "http://localhost:3000"
 
     jwt_secret: str = "dev-only-insecure-secret-change-me"
@@ -32,8 +47,10 @@ class Settings(BaseSettings):
     # Set DEMO_LOGIN_ENABLED=false to hide POST /auth/demo-login.
     demo_login_enabled: bool = True
 
-    class Config:
-        env_file = ".env"
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _database_url_from_env(cls, value: str) -> str:
+        return resolve_database_url(value or None)
 
 
 settings = Settings()

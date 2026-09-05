@@ -9,12 +9,10 @@ are the same architecture, polished for a one-tap judge path.
 ## 60-second demo
 
 1. Open the deployed frontend (Vercel).
-2. Tap **Enter demo**. No Google OAuth.
-3. You land on **Map** — pins for live plans/rooms.
-4. Tap **Organize an event** to post a time-boxed plan.
-5. Tap **Run deep research** (Linkup) on the map or any plan.
-6. Open **Wall** → **I'm here** to see EventRoom matches with a "why meet" line
-   (Nebius Token Factory).
+2. Tap **Try it out**. Demo login happens behind the button.
+3. Pick a category chip (Tech, Design, Food, Music, Sports, Outdoors).
+4. Land on the nearby shortlist (`/map?category=…`) — plans and rooms for that vibe.
+5. Tap **Find people** (Event Room) or **Create a room**.
 
 Locally: `./scripts/setup.sh` then `./scripts/dev.sh`, open
 `http://localhost:3000`, same taps. Backend is `:8001`.
@@ -75,7 +73,7 @@ Blueprint: `render.yaml` (service name **`orbit-api`**).
 
 ### 3. Try it
 
-`https://<vercel>/` → **Enter demo** → `/map`.
+`https://<vercel>/` → **Try it out** → category chip → `/map?category=…` → rooms.
 
 ## Local
 

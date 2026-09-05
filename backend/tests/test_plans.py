@@ -201,3 +201,36 @@ def test_discovery_hides_plans_from_users_who_blocked_me(db_session):
     ids = [p["id"] for p in client.get("/plans", params=params).json()]
     assert plan["id"] not in ids
     app.dependency_overrides.clear()
+
+
+def test_discovery_filters_by_category(db_session):
+    from app.db import get_db
+    app.dependency_overrides[get_db] = lambda: db_session
+    _override_user(db_session, "category_user")
+    client = TestClient(app)
+
+    now = datetime.now(timezone.utc)
+    ends = now + timedelta(hours=2)
+    shared = {
+        "openness": "open_to_chat",
+        "lat": 37.4419,
+        "lon": -122.1430,
+        "starts_at": now.isoformat(),
+        "ends_at": ends.isoformat(),
+    }
+    coffee = client.post("/plans", json={
+        **shared, "activity": "coffee", "detail": "Philz on Castro.",
+    }).json()
+    cowork = client.post("/plans", json={
+        **shared, "activity": "cowork", "detail": "AI startup cowork upstairs.",
+    }).json()
+
+    params = {"lat": 37.4419, "lon": -122.1430, "radius_m": 2000, "at": now.isoformat()}
+    food_ids = [p["id"] for p in client.get("/plans", params={**params, "category": "food"}).json()]
+    tech_ids = [p["id"] for p in client.get("/plans", params={**params, "category": "tech"}).json()]
+
+    assert coffee["id"] in food_ids
+    assert cowork["id"] not in food_ids
+    assert cowork["id"] in tech_ids
+    assert coffee["id"] not in tech_ids
+    app.dependency_overrides.clear()

@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 const onboarded = {
   id: "u1",
-  email: "demo@stayconnected.app",
+    email: "demo@orbit.app",
   email_verified_at: "2026-01-01T00:00:00Z",
   headline: null,
   linkedin_url: null,
@@ -34,17 +34,17 @@ describe("DemoEnterButton", () => {
     vi.unstubAllEnvs();
   });
 
-  it("is shown by default and lands onboarded users on the map", async () => {
+  it("is shown by default and lands on category chips", async () => {
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user: onboarded });
     render(<DemoEnterButton />);
-    fireEvent.click(screen.getByRole("button", { name: /enter demo/i }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/map"));
+    fireEvent.click(screen.getByRole("button", { name: /try it out/i }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/explore"));
     expect(document.cookie).toContain("sc_token=demotok");
   });
 
   it("hides when the flag is explicitly false", () => {
     vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "false");
     render(<DemoEnterButton />);
-    expect(screen.queryByRole("button", { name: /enter demo/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /try it out/i })).not.toBeInTheDocument();
   });
 });

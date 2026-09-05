@@ -9,7 +9,7 @@ const PLAN_TEXT = "Grabbing coffee near University Ave, happy to talk shop.";
 const STEPS = [
   {
     n: 1, title: "See the map",
-    desc: "The first screen after Enter demo. Live plans and rooms around you, pinned to a place — no feed to hunt through.",
+    desc: "After Try it out, pick a category and land on a nearby shortlist — plans and rooms pinned to a place.",
   },
   {
     n: 2, title: "Organize an event",

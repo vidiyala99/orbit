@@ -1,5 +1,5 @@
-/** Signed-in home. Map is the primary surface — not the Wall. */
-export const APP_HOME = "/map";
+/** After Try it out: category chips, then the map shortlist. */
+export const APP_HOME = "/explore";
 
 export function afterAuthPath(user: { onboarded_at?: string | null }): string {
   return user.onboarded_at ? APP_HOME : "/onboarding";

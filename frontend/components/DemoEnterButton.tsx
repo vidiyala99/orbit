@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { demoLogin } from "@/lib/api";
-import { setClientToken } from "@/lib/auth";
-import { afterAuthPath, isDemoLoginEnabled } from "@/lib/routes";
+import { getClientToken, setClientToken } from "@/lib/auth";
+import { isDemoLoginEnabled } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not enter demo";
@@ -11,10 +11,12 @@ function errorMessage(err: unknown): string {
 
 export default function DemoEnterButton({
   className,
-  label = "Enter demo",
+  label = "Try it out",
+  next = "/explore",
 }: {
   className?: string;
   label?: string;
+  next?: string;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -26,9 +28,13 @@ export default function DemoEnterButton({
     setSubmitting(true);
     setError(null);
     try {
-      const { access_token, user } = await demoLogin();
+      if (getClientToken()) {
+        router.push(next);
+        return;
+      }
+      const { access_token } = await demoLogin();
       setClientToken(access_token);
-      router.push(afterAuthPath(user));
+      router.push(next);
     } catch (err) {
       setError(errorMessage(err));
     } finally {

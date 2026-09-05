@@ -37,7 +37,7 @@ describe("SignUpPage", () => {
     expect(document.cookie).toContain("sc_token=tok123");
   });
 
-  it("redirects to /map when the returned user is already onboarded", async () => {
+  it("redirects to /explore when the returned user is already onboarded", async () => {
     vi.spyOn(api, "signup").mockResolvedValue({
       access_token: "tok123",
       user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
@@ -48,16 +48,16 @@ describe("SignUpPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/map"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/explore"));
   });
 
-  it("redirects an already signed-in, onboarded user to /map without rendering the form", async () => {
+  it("redirects an already signed-in, onboarded user to /explore without rendering the form", async () => {
     document.cookie = "sc_token=tok789; path=/";
     vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 
     render(<SignUpPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/map"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/explore"));
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
   });
 

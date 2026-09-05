@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetchMe, signup } from "@/lib/api";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { afterAuthPath } from "@/lib/routes";
+import { resolveApiBase } from "@/lib/apiBase";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not create account";
@@ -119,7 +120,7 @@ export default function SignUpPage() {
         </div>
 
         <a
-          href={`${process.env.NEXT_PUBLIC_API_BASE}/auth/google`}
+          href={`${resolveApiBase()}/auth/google`}
           className="btn-press mt-4 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:text-base"
         >
           Continue with Google

@@ -1,13 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
+from .db import engine, ensure_postgres_extensions
 from .routers import (
     plans, rooms, room_messages, scheduling, threads, stamps, moderation, chat_ws, me,
     waitlist, auth, calendar, presence, research,
 )
 
-app = FastAPI(title="Orbit API")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    with engine.connect() as connection:
+        ensure_postgres_extensions(connection)
+        connection.commit()
+    yield
+
+
+app = FastAPI(title="Orbit API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

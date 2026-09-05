@@ -8,6 +8,7 @@ from ..db import get_db
 from ..auth import get_current_user, get_optional_user
 from ..models import Block, Plan, User
 from ..schemas import PlanCreate, PlanOut
+from ..categories import apply_category_filter
 from ..filters import contains_blocked_content
 
 router = APIRouter(prefix="/plans", tags=["plans"])
@@ -100,6 +101,7 @@ def create_plan(body: PlanCreate, db: Session = Depends(get_db), user: User = De
 @router.get("", response_model=list[PlanOut])
 def discover_plans(
     lat: float, lon: float, radius_m: int, at: datetime,
+    category: str | None = None,
     db: Session = Depends(get_db), user: User | None = Depends(get_optional_user),
 ):
     point = WKTElement(f"POINT({lon} {lat})", srid=4326)
@@ -107,6 +109,10 @@ def discover_plans(
         db.query(Plan)
         .filter(ST_DWithin(Plan.location, point, radius_m))
         .filter(Plan.starts_at <= at, Plan.ends_at >= at)
+    )
+    query = apply_category_filter(
+        query, category=category, text_columns=[Plan.text, Plan.detail],
+        kind_column=Plan.activity, kind_key="activity",
     )
     if user is not None:
         hidden = _blocked_user_ids(db, user.id)
