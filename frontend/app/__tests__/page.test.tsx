@@ -8,20 +8,14 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Home page", () => {
-  it("renders the Orbit headline and Try it out CTA", async () => {
-    const ui = await Page();
-    render(ui);
-    expect(
-      screen.getByRole("heading", { name: /bring people together around what's happening nearby/i }),
-    ).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /try it out/i }).length).toBeGreaterThan(0);
-  });
-
-  it("describes the category-to-nearby funnel", async () => {
-    const ui = await Page();
-    render(ui);
-    expect(screen.getByText(/pick a category/i)).toBeInTheDocument();
-    expect(screen.getByText(/see what's nearby/i)).toBeInTheDocument();
-    expect(screen.getByText(/find people or start a room/i)).toBeInTheDocument();
+  it("is Orbit, one line, and Try it out — no headline stack", () => {
+    render(<Page />);
+    expect(screen.getByRole("heading", { name: /^orbit$/i })).toBeInTheDocument();
+    expect(screen.getByText(/meet people around what you're into/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try it out/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /bring people together/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/four taps/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/networking used to run on luck/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /how it works/i })).not.toBeInTheDocument();
   });
 });

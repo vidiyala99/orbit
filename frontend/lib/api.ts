@@ -167,9 +167,16 @@ export async function login(
 }
 
 /** Signs in as the seeded demo account. 404s unless the backend has demo login
- *  enabled, so it's only surfaced behind NEXT_PUBLIC_DEMO_LOGIN_ENABLED. */
-export async function demoLogin(): Promise<{ access_token: string; user: UserT }> {
-  const res = await fetch(`${API_BASE}/auth/demo-login`, { method: "POST" });
+ *  enabled, so it's only surfaced behind NEXT_PUBLIC_DEMO_LOGIN_ENABLED.
+ *  Optional city pin moves the seeded nearby world with the picker. */
+export async function demoLogin(
+  location?: { lat: number; lon: number; city: string },
+): Promise<{ access_token: string; user: UserT }> {
+  const res = await fetch(`${API_BASE}/auth/demo-login`, {
+    method: "POST",
+    headers: location ? { "Content-Type": "application/json" } : undefined,
+    body: location ? JSON.stringify(location) : undefined,
+  });
   if (!res.ok) throw new Error((await res.json()).detail ?? "Demo login failed");
   return res.json();
 }

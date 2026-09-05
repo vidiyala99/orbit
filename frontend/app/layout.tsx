@@ -3,9 +3,8 @@ import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Orbit — see who's nearby",
-  description:
-    "Map what's live around you, post a time-boxed plan, and research the room. Built for Burning Token.",
+  title: "Orbit",
+  description: "Meet people around what you're into.",
 };
 
 /** One face carries the whole product; weight does the hierarchy. Mono is

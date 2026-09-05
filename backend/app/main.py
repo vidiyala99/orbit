@@ -20,9 +20,11 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Orbit API", lifespan=lifespan)
 
+_cors_origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=_cors_origins,
+    allow_origin_regex=r"https://.*\.(onrender\.com|vercel\.app)|http://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

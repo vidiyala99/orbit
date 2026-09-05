@@ -12,7 +12,7 @@ function errorMessage(err: unknown): string {
 export default function DemoEnterButton({
   className,
   label = "Try it out",
-  next = "/explore",
+  next = "/try",
 }: {
   className?: string;
   label?: string;

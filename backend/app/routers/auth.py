@@ -12,7 +12,7 @@ from ..db import get_db
 from ..demo import get_or_create_demo_user
 from ..models import User, EmailVerificationToken, PasswordResetToken
 from ..schemas import (
-    SignupRequest, LoginRequest, TokenOut,
+    SignupRequest, LoginRequest, DemoLoginRequest, TokenOut,
     VerifyEmailRequest, RequestPasswordResetRequest, ResetPasswordRequest, OkResponse,
     GoogleExchangeRequest,
 )
@@ -65,17 +65,19 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/demo-login", response_model=TokenOut, include_in_schema=settings.demo_login_enabled)
-def demo_login(db: Session = Depends(get_db)):
+def demo_login(body: DemoLoginRequest | None = None, db: Session = Depends(get_db)):
     """One-click sign-in as the seeded demo account, for showing the app.
 
     404 (not 403) when the flag is off, so the endpoint isn't discoverable in an
     environment that never opted in. Returns exactly what /login returns, so the
-    client treats it as an ordinary sign-in.
+    client treats it as an ordinary sign-in. An optional city pin moves the
+    seeded plans/people/rooms so the nearby board is never empty.
     """
     if not settings.demo_login_enabled:
         raise HTTPException(status_code=404, detail="Not Found")
 
-    user = get_or_create_demo_user(db)
+    loc = body or DemoLoginRequest()
+    user = get_or_create_demo_user(db, lat=loc.lat, lon=loc.lon, city=loc.city)
     return TokenOut(access_token=create_access_token(user.id), user=user)
 
 

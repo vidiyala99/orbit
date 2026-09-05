@@ -35,8 +35,9 @@ DEMO_LON = -122.0839
 # Fellow demo residents. They exist so member counts, plan authorship and
 # partial confirmations look like a real neighborhood rather than an empty one.
 COMPANIONS = [
-    (0, "demo-priya@stayconnected.app", "Priya", "Raman"),
-    (1, "demo-marcus@stayconnected.app", "Marcus", "Ellis"),
+    (0, "demo-priya@stayconnected.app", "Priya", "Raman", "Working in a cafe"),
+    (1, "demo-marcus@stayconnected.app", "Marcus", "Ellis", "At a hackathon"),
+    (2, "demo-jules@stayconnected.app", "Jules", "Okada", "Just exploring"),
 ]
 
 # For the in-venue matching demo: real bios/tags for the demo user and its
@@ -54,56 +55,62 @@ COMPANION_BIOS = {
         "Angel investor, mostly SaaS and marketplaces, ex-VP Sales at a fintech.",
         ["investors"],
     ),
+    "demo-jules@stayconnected.app": (
+        "Designer wandering new cities, always down for a walk or a gallery.",
+        ["friends"],
+    ),
 }
 
 # owner: 0 = the demo user, 1 = Priya, 2 = Marcus.
+# lat_off / lon_off are relative to the chosen city so a NYC pick still
+# has live events within the nearby radius.
 PLAN_SEEDS = [
     {
         "owner": 0, "activity": "cowork", "openness": "open_to_chat",
         "detail": "Red Rock Coffee, upstairs by the window.",
-        "lat": DEMO_LAT, "lon": DEMO_LON,
+        "lat_off": 0, "lon_off": 0,
         "starts_in": -20, "minutes": 150,
     },
     {
         "owner": 1, "activity": "coffee", "openness": "actively_meeting",
         "detail": "Philz on Castro — happy to talk job hunt.",
-        "lat": DEMO_LAT + 0.004, "lon": DEMO_LON - 0.005,
+        "lat_off": 0.004, "lon_off": -0.005,
         "starts_in": -5, "minutes": 90,
     },
     {
         "owner": 2, "activity": "meal", "openness": "heads_down",
         "detail": "Lunch at the Caltrain plaza, laptop open.",
-        "lat": DEMO_LAT - 0.006, "lon": DEMO_LON + 0.003,
+        "lat_off": -0.006, "lon_off": 0.003,
         "starts_in": 15, "minutes": 60,
     },
     {
         "owner": 0, "activity": "event", "openness": "actively_meeting",
         "detail": "AI / startup hack table — looking for a technical co-founder.",
-        "lat": DEMO_LAT + 0.003, "lon": DEMO_LON + 0.001,
+        "lat_off": 0.003, "lon_off": 0.001,
         "starts_in": -10, "minutes": 180,
     },
     {
         "owner": 1, "activity": "event", "openness": "open_to_chat",
         "detail": "Figma design critique at the cowork loft.",
-        "lat": DEMO_LAT + 0.005, "lon": DEMO_LON - 0.002,
+        "lat_off": 0.005, "lon_off": -0.002,
         "starts_in": -15, "minutes": 120,
     },
     {
         "owner": 2, "activity": "event", "openness": "open_to_chat",
         "detail": "Vinyl listening hour — bring one record.",
-        "lat": DEMO_LAT - 0.003, "lon": DEMO_LON - 0.004,
+        "lat_off": -0.003, "lon_off": -0.004,
         "starts_in": 20, "minutes": 90,
     },
     {
         "owner": 1, "activity": "event", "openness": "actively_meeting",
         "detail": "Lunch run from Castro, easy 5k.",
-        "lat": DEMO_LAT + 0.001, "lon": DEMO_LON + 0.004,
+        "lat_off": 0.001, "lon_off": 0.004,
         "starts_in": 30, "minutes": 75,
     },
     {
         "owner": 0, "activity": "event", "openness": "open_to_chat",
         "detail": "Walk the bay trail after work.",
-        "lat": DEMO_LAT - 0.004, "lon": DEMO_LON + 0.005,
+        "lat_off": -0.004, "lon_off": 0.005,
         "starts_in": 45, "minutes": 90,
     },
 ]
@@ -112,15 +119,15 @@ CHATTY_ROOM = "Peninsula Regulars"
 
 ROOM_SEEDS = [
     {"name": CHATTY_ROOM, "purpose": "cowork", "visibility": "public",
-     "lat": DEMO_LAT, "lon": DEMO_LON, "members": [1, 2]},
+     "lat_off": 0, "lon_off": 0, "members": [1, 2]},
     {"name": "Founders Cowork Wednesdays", "purpose": "cowork", "visibility": "public",
-     "lat": DEMO_LAT + 0.002, "lon": DEMO_LON + 0.002, "members": [2]},
+     "lat_off": 0.002, "lon_off": 0.002, "members": [2]},
     {"name": "Job Hunt Support Circle", "purpose": "job_hunting", "visibility": "private",
-     "lat": None, "lon": None, "members": [1]},
+     "lat_off": None, "lon_off": None, "members": [1]},
     {"name": "Design critique Thursdays", "purpose": "other", "visibility": "public",
-     "lat": DEMO_LAT + 0.003, "lon": DEMO_LON - 0.001, "members": [1]},
+     "lat_off": 0.003, "lon_off": -0.001, "members": [1]},
     {"name": "Pickup soccer + music after", "purpose": "other", "visibility": "public",
-     "lat": DEMO_LAT - 0.002, "lon": DEMO_LON + 0.003, "members": [2]},
+     "lat_off": -0.002, "lon_off": 0.003, "members": [2]},
 ]
 
 # (sender, body) — the prose around the two cards in the chatty room.
@@ -131,7 +138,11 @@ CHAT_SEEDS = [
 ]
 
 
-def _get_or_create_user(db: Session, email: str, first: str, last: str) -> User:
+def _get_or_create_user(
+    db: Session, email: str, first: str, last: str, *,
+    headline: str | None = None,
+    lat: float = DEMO_LAT, lon: float = DEMO_LON, city: str = DEMO_CITY,
+) -> User:
     user = db.query(User).filter(User.email == email).one_or_none()
     if user is None:
         user = User(email=email)
@@ -139,9 +150,10 @@ def _get_or_create_user(db: Session, email: str, first: str, last: str) -> User:
     now = datetime.now(timezone.utc)
     user.first_name = first
     user.last_name = last
-    user.city = DEMO_CITY
-    user.lat = DEMO_LAT
-    user.lon = DEMO_LON
+    user.headline = headline
+    user.city = city
+    user.lat = lat
+    user.lon = lon
     user.email_verified_at = user.email_verified_at or now
     user.onboarded_at = user.onboarded_at or now
     db.flush()
@@ -173,6 +185,9 @@ def _seed_presence(db: Session, user: User, lat: float, lon: float, now: datetim
             started_at=now,
         )
         db.add(presence)
+    presence.lat = lat
+    presence.lon = lon
+    presence.location = f"SRID=4326;POINT({lon} {lat})"
     presence.expires_at = now + PRESENCE_TTL
     db.flush()
 
@@ -196,7 +211,10 @@ def _seed_plan(db: Session, owner: User, seed: dict, now: datetime) -> Plan:
             location=f"SRID=4326;POINT({lon} {lat})",
         )
         db.add(plan)
-    # Re-window on every call so a demo run months later still shows live plans.
+    # Re-window and re-pin on every call so a later city pick stays live.
+    plan.lat = lat
+    plan.lon = lon
+    plan.location = f"SRID=4326;POINT({lon} {lat})"
     plan.starts_at = starts_at
     plan.ends_at = ends_at
     plan.text = _assemble_plan_text(
@@ -210,8 +228,8 @@ def _seed_room(db: Session, demo: User, seed: dict, people: list[User]) -> Room:
     room = db.query(Room).filter(
         Room.creator_id == demo.id, Room.name == seed["name"],
     ).one_or_none()
+    lat, lon = seed.get("lat"), seed.get("lon")
     if room is None:
-        lat, lon = seed["lat"], seed["lon"]
         room = Room(
             creator_id=demo.id,
             name=seed["name"],
@@ -223,6 +241,10 @@ def _seed_room(db: Session, demo: User, seed: dict, people: list[User]) -> Room:
         )
         db.add(room)
         db.flush()
+    elif lat is not None and lon is not None:
+        room.lat = _snap(lat)
+        room.lon = _snap(lon)
+        room.location = f"SRID=4326;POINT({_snap(lon)} {_snap(lat)})"
 
     for index in [0, *seed["members"]]:
         user = people[index]
@@ -296,17 +318,45 @@ def _seed_room_chat(
     db.flush()
 
 
-def get_or_create_demo_user(db: Session) -> User:
-    """Returns the one demo user, with its world seeded around it."""
+def get_or_create_demo_user(
+    db: Session,
+    lat: float | None = None,
+    lon: float | None = None,
+    city: str | None = None,
+) -> User:
+    """Returns the one demo user, with its world seeded around the chosen city."""
     now = datetime.now(timezone.utc)
-    demo = _get_or_create_user(db, DEMO_EMAIL, "Demo", "Guest")
+    origin_lat = DEMO_LAT if lat is None else lat
+    origin_lon = DEMO_LON if lon is None else lon
+    origin_city = city or DEMO_CITY
+
+    demo = _get_or_create_user(
+        db, DEMO_EMAIL, "Demo", "Guest",
+        headline="Just exploring",
+        lat=origin_lat, lon=origin_lon, city=origin_city,
+    )
     people = [demo] + [
-        _get_or_create_user(db, email, first, last)
-        for _, email, first, last in COMPANIONS
+        _get_or_create_user(
+            db, email, first, last,
+            headline=headline, lat=origin_lat, lon=origin_lon, city=origin_city,
+        )
+        for _, email, first, last, headline in COMPANIONS
     ]
 
-    plans = [_seed_plan(db, people[s["owner"]], s, now) for s in PLAN_SEEDS]
-    rooms = {s["name"]: _seed_room(db, demo, s, people) for s in ROOM_SEEDS}
+    plan_seeds = [
+        {**s, "lat": origin_lat + s["lat_off"], "lon": origin_lon + s["lon_off"]}
+        for s in PLAN_SEEDS
+    ]
+    room_seeds = [
+        {
+            **s,
+            "lat": None if s["lat_off"] is None else origin_lat + s["lat_off"],
+            "lon": None if s["lon_off"] is None else origin_lon + s["lon_off"],
+        }
+        for s in ROOM_SEEDS
+    ]
+    plans = [_seed_plan(db, people[s["owner"]], s, now) for s in plan_seeds]
+    rooms = {s["name"]: _seed_room(db, demo, s, people) for s in room_seeds}
     _seed_room_chat(db, rooms[CHATTY_ROOM], people, plans[0], now)
 
     # In-venue matching demo: give the demo user and companions real bios, and
@@ -317,7 +367,7 @@ def get_or_create_demo_user(db: Session) -> User:
     for companion in people[1:]:
         bio_text, intent_tags = COMPANION_BIOS[companion.email]
         _seed_bio(db, companion, bio_text, intent_tags)
-        _seed_presence(db, companion, DEMO_LAT, DEMO_LON, now)
+        _seed_presence(db, companion, origin_lat, origin_lon, now)
 
     db.commit()
     db.refresh(demo)

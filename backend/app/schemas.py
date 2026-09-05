@@ -348,6 +348,12 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class DemoLoginRequest(BaseModel):
+    """Optional pin so a picked city moves the seeded demo world with it."""
+    lat: float | None = None
+    lon: float | None = None
+    city: str | None = None
+
 class TokenOut(BaseModel):
     access_token: str
     user: UserOut

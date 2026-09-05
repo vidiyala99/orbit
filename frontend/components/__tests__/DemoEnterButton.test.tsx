@@ -34,11 +34,11 @@ describe("DemoEnterButton", () => {
     vi.unstubAllEnvs();
   });
 
-  it("is shown by default and lands on category chips", async () => {
+  it("is shown by default and lands on the location step", async () => {
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user: onboarded });
     render(<DemoEnterButton />);
     fireEvent.click(screen.getByRole("button", { name: /try it out/i }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/explore"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/try"));
     expect(document.cookie).toContain("sc_token=demotok");
   });
 

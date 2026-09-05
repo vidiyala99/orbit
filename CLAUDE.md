@@ -33,5 +33,4 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
   `stamps`, `chat_ws`, `me`, `moderation`, `waitlist`, `research`, `presence`)
 - `backend/app/{models,schemas,security,email,filters,linkup,nebius}.py`
 - `frontend/app/` — App Router pages. Signed-in home is `/map`.
-- `docs/superpowers/` — historical StayConnected design specs (architecture
-  reused; do not treat those titles as the product name)
+- `docs/superpowers/` — historical design specs (architecture reused)

@@ -199,3 +199,24 @@ def test_demo_login_refreshes_stale_companion_presence(mock_embed, client, db_se
     client.post("/auth/demo-login")
     now = datetime.now(timezone.utc)
     assert db_session.query(Presence).filter(Presence.expires_at > now).count() >= 2
+
+
+def test_demo_login_pins_world_to_a_picked_city(client, db_session, demo_enabled):
+    token = client.post("/auth/demo-login", json={
+        "lat": 40.7128, "lon": -74.006, "city": "New York, NY",
+    }).json()["access_token"]
+    user = client.get("/me", headers={"Authorization": f"Bearer {token}"}).json()
+    assert user["city"] == "New York, NY"
+    assert user["lat"] == pytest.approx(40.7128)
+    assert user["headline"] == "Just exploring"
+
+    plans = client.get("/plans", params={
+        "lat": 40.7128, "lon": -74.006, "radius_m": 5000,
+        "at": datetime.now(timezone.utc).isoformat(),
+    }, headers={"Authorization": f"Bearer {token}"}).json()
+    assert len(plans) >= 2
+    assert all(abs(p["lat"] - 40.7128) < 0.02 for p in plans)
+
+    companions = db_session.query(User).filter(User.email != "demo@stayconnected.app").all()
+    headlines = {c.headline for c in companions}
+    assert {"Working in a cafe", "At a hackathon", "Just exploring"} <= headlines

@@ -1,18 +1,14 @@
 # Orbit
 
-See who's nearby. Post a time-boxed plan. Research the room. Meet in person.
-
-This is the **Burning Token** repo. The product is **Orbit** (not StayConnected).
-The codebase was forked from StayConnected — map, plans, rooms, and EventRoom
-are the same architecture, polished for a one-tap judge path.
+Meet people around what you're into.
 
 ## 60-second demo
 
-1. Open the deployed frontend (Vercel).
-2. Tap **Try it out**. Demo login happens behind the button.
-3. Pick a category chip (Tech, Design, Food, Music, Sports, Outdoors).
-4. Land on the nearby shortlist (`/map?category=…`) — plans and rooms for that vibe.
-5. Tap **Find people** (Event Room) or **Create a room**.
+1. Open the site. Landing is Orbit, one line, **Try it out**.
+2. Tap **Try it out** — demo login happens behind the button.
+3. Pick a location.
+4. Pick a theme (Tech, Design, Food, Music, Sports, Outdoors).
+5. See nearby events, people with a status, and create a room.
 
 Locally: `./scripts/setup.sh` then `./scripts/dev.sh`, open
 `http://localhost:3000`, same taps. Backend is `:8001`.
