@@ -20,9 +20,9 @@ describe("Home page", () => {
     expect(screen.getAllByText(/priya r\./i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/hack table/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /how it works/i })).toBeInTheDocument();
-    expect(screen.getByText(/pick a location/i)).toBeInTheDocument();
-    expect(screen.getByText(/pick a theme/i)).toBeInTheDocument();
-    expect(screen.getByText(/meet on the map/i)).toBeInTheDocument();
+    expect(screen.getByText("Pick a location")).toBeInTheDocument();
+    expect(screen.getByText("Pick a theme")).toBeInTheDocument();
+    expect(screen.getByText("Meet on the map")).toBeInTheDocument();
     expect(screen.queryByText(/create a room/i)).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /try it out/i })).toHaveLength(1);
     expect(screen.queryByText(/google oauth maze/i)).not.toBeInTheDocument();
