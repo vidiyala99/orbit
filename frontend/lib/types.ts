@@ -154,4 +154,11 @@ export type MatchCandidateT = {
   headline: string | null;
   intent_tags: string[] | null;
   match_score: number;
+  why_meet?: string;
+};
+
+export type ResearchT = {
+  answer: string;
+  sources: { title: string; url: string }[];
+  provider: "linkup" | "offline";
 };

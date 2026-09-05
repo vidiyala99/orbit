@@ -98,6 +98,23 @@ class MatchCandidateOut(BaseModel):
     headline: str | None
     intent_tags: list[str] | None
     match_score: float
+    why_meet: str = ""
+
+
+class ResearchRequest(BaseModel):
+    query: str | None = None
+    plan_id: uuid.UUID | None = None
+
+
+class ResearchSource(BaseModel):
+    title: str
+    url: str = ""
+
+
+class ResearchOut(BaseModel):
+    answer: str
+    sources: list[ResearchSource] = []
+    provider: Literal["linkup", "offline"]
 
 # Rooms: persistent spaces for a stated purpose. Like Plan's activity/openness,
 # the keys are fixed and validated here rather than in the DB.

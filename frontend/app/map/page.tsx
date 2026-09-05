@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchNearbyPlans, fetchNearbyRooms } from "@/lib/api";
 import { requireOnboarded } from "@/lib/requireOnboarded";
 import SectionNav from "@/components/SectionNav";
+import EventResearchPanel from "@/components/EventResearchPanel";
 import MapBoard, { MapEventT } from "@/components/MapBoard";
 
 const FALLBACK_LAT = 37.3861;
@@ -17,6 +19,7 @@ const EVENTS: MapEventT[] = [];
 export default async function MapPage() {
   const token = (await cookies()).get("sc_token")?.value;
   if (!token) redirect("/sign-in");
+  const session = token;
 
   const user = await requireOnboarded();
   const lat = user?.lat ?? FALLBACK_LAT;
@@ -41,7 +44,22 @@ export default async function MapPage() {
           {total} {total === 1 ? "thing" : "things"} nearby
           {user?.city ? ` in ${user.city}` : ""}
         </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <Link
+            href="/post"
+            className="lift btn-press flex-1 rounded-full bg-ink py-2.5 text-center text-[13px] font-bold text-ground shadow-raised hover:shadow-raised-hover"
+          >
+            + Organize an event
+          </Link>
+        </div>
       </header>
+
+      <div className="px-[18px] pb-3">
+        <EventResearchPanel
+          token={session}
+          query={user?.city ? `events and meetups near ${user.city}` : "events and meetups nearby"}
+        />
+      </div>
 
       <MapBoard plans={plans} rooms={rooms} events={EVENTS} center={{ lat, lon }} />
       <SectionNav userInitial={user?.first_name?.charAt(0).toUpperCase()} />

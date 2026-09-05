@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchMe, fetchPlan, startThread } from "@/lib/api";
+import EventResearchPanel from "@/components/EventResearchPanel";
 import SectionNav from "@/components/SectionNav";
 
 export default async function PlanDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +24,8 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <main className="flex min-h-screen justify-center bg-ground px-[18px] pb-28 pt-6 md:pb-10 md:pt-16">
-      <div className="h-fit w-full max-w-sm rounded-card bg-surface p-4 shadow-card">
+      <div className="flex h-fit w-full max-w-sm flex-col gap-3">
+      <div className="rounded-card bg-surface p-4 shadow-card">
         <p className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">Plan</p>
         <h1 className="mt-1 text-[19px] font-extrabold leading-snug tracking-[-0.3px] text-ink">
           {plan.text}
@@ -59,6 +61,8 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ id:
             Sign in to message the poster
           </p>
         )}
+      </div>
+      {token && <EventResearchPanel token={token} planId={id} query={plan.text} />}
       </div>
 
       <SectionNav />

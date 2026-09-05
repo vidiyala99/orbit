@@ -8,16 +8,16 @@ const PLAN_TEXT = "Grabbing coffee near University Ave, happy to talk shop.";
 
 const STEPS = [
   {
-    n: 1, title: "Post where you'll be",
-    desc: "Type it like a text to a friend. Optional quick-tag chips (Need a ride, Coffee chat) get you started faster. Pinned to the board instantly, live for as long as you set.",
+    n: 1, title: "See the map",
+    desc: "The first screen after Enter demo. Live plans and rooms around you, pinned to a place — no feed to hunt through.",
   },
   {
-    n: 2, title: "Get spotted before you arrive",
-    desc: "Anyone nearby sees your card on the board — list or map. Public replies let a whole group self-organize under one post, not three separate DMs you have to broker.",
+    n: 2, title: "Organize an event",
+    desc: "Post a time-boxed plan at a cafe, cowork, or side event. One tap from the map. People nearby can message you before you arrive.",
   },
   {
-    n: 3, title: "Leave with a stamp, not just an add",
-    desc: "Either side taps \"we met\" once you actually connect. Timestamped, mutual, undeletable — the one piece of proof this wasn't another cold LinkedIn request.",
+    n: 3, title: "Research the room",
+    desc: "Linkup deep research sits on the map and every plan — who typically attends, who's relevant, and how to open. Then leave with a stamp, not just an add.",
   },
 ];
 

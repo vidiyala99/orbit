@@ -56,7 +56,7 @@ export default async function TodayPage() {
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-[7px] text-sm font-bold text-ink">
             <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
-            StayConnected
+            Orbit
           </Link>
           <div className="flex items-center gap-3 text-[11.5px] font-medium text-ink3">
             {NAV_LINKS.map((link) => (

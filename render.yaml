@@ -1,24 +1,40 @@
+# Orbit API on Render.
+#
+# Postgres MUST be PostGIS. Render's managed Postgres is vanilla until you
+# run these on the instance (psql or the Dashboard shell):
+#   CREATE EXTENSION IF NOT EXISTS postgis;
+#   CREATE EXTENSION IF NOT EXISTS vector;
+# Point DATABASE_URL at that instance (external URL from the web service).
 services:
   - type: web
-    name: stayconnected-api
+    name: orbit-api
     runtime: python
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: FRONTEND_ORIGIN
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: JWT_ALGORITHM
         value: HS256
       - key: RESEND_API_KEY
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: LINKUP_API_KEY
+        sync: false
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: NEBIUS_BASE_URL
+        value: https://api.tokenfactory.nebius.com/v1
+      - key: NEBIUS_MODEL
+        value: meta-llama/Meta-Llama-3.1-8B-Instruct
       - key: RESEND_FROM_EMAIL
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -28,6 +44,6 @@ services:
       - key: GOOGLE_REDIRECT_URI
         sync: false
       - key: DEMO_LOGIN_ENABLED
-        value: "false"
+        value: "true"
       - key: PYTHON_VERSION
         value: 3.12.6

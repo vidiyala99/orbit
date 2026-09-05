@@ -191,10 +191,10 @@ export default function PostPlanPage() {
     <main className="flex min-h-screen justify-center bg-ground px-[18px] pb-28 pt-4 md:pb-10 md:pt-16">
       <form onSubmit={handleSubmit} className="w-full max-w-sm pb-10">
         <Link
-          href="/today"
+          href="/map"
           className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink"
         >
-          ← Today
+          ← Map
         </Link>
 
         {prefill && (

@@ -126,6 +126,12 @@ describe("MapPage data", () => {
     expect(screen.getByText(/2 things nearby in austin, tx/i)).toBeInTheDocument();
   });
 
+  it("shows organize and research on the first screen", async () => {
+    await renderPage();
+    expect(screen.getByRole("link", { name: /organize an event/i })).toHaveAttribute("href", "/post");
+    expect(screen.getByRole("heading", { name: /research this event/i })).toBeInTheDocument();
+  });
+
   it("renders both nav shells with Map current", async () => {
     await renderPage();
     for (const label of [/sections/i, /main/i]) {

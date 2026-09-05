@@ -35,7 +35,7 @@ function VerifyEmailContent() {
         {status === "success" && (
           <>
             <p className="text-[19px] font-extrabold tracking-[-0.3px] text-ink lg:text-[21px]">Email verified</p>
-            <Link href="/today" className="mt-3 inline-block text-[12.5px] font-semibold text-accent">
+            <Link href="/map" className="mt-3 inline-block text-[12.5px] font-semibold text-accent">
               Back to the board
             </Link>
           </>

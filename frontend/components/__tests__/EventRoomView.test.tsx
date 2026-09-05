@@ -23,6 +23,7 @@ const priya = {
   headline: null,
   intent_tags: ["co_founder", "customers"],
   match_score: 0.92,
+  why_meet: "Overlaps with you on co-founder — worth a 30-second hello.",
 };
 
 const marcus = {
@@ -88,6 +89,7 @@ describe("EventRoomView — turning on", () => {
     expect(names[0]).toMatch(/priya/i);
     expect(screen.getByText("92% match")).toBeInTheDocument();
     expect(screen.getByText("61% match")).toBeInTheDocument();
+    expect(screen.getByText(/overlaps with you on co-founder/i)).toBeInTheDocument();
   });
 
   it("shows an inline error and never calls togglePresenceOn when geolocation is denied", async () => {

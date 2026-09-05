@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exchangeGoogleCode } from "@/lib/api";
 import { setClientToken } from "@/lib/auth";
+import { afterAuthPath } from "@/lib/routes";
 
 function GoogleCallbackContent() {
   const router = useRouter();
@@ -18,7 +19,7 @@ function GoogleCallbackContent() {
     exchangeGoogleCode(code)
       .then(({ access_token, user }) => {
         setClientToken(access_token);
-        router.push(user.onboarded_at ? "/today" : "/onboarding");
+        router.push(afterAuthPath(user));
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not sign in with Google"));
   }, [searchParams, router]);

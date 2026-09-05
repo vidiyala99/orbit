@@ -1,6 +1,7 @@
 import {
   EventCandidateT,
   MatchCandidateT,
+  ResearchT,
   MessageT,
   PlanT,
   PresenceT,
@@ -16,7 +17,7 @@ import {
   UserT,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
 
 /** The backend's own User row for the current session, keyed off our self-issued
  *  JWT. Its `id` is what `Message.sender_id` references. */
@@ -401,6 +402,20 @@ export async function togglePresenceOff(token: string): Promise<void> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`togglePresenceOff failed: ${res.status}`);
+}
+
+export async function researchEvent(
+  input: { query?: string; planId?: string },
+  token: string,
+): Promise<ResearchT> {
+  const path = input.planId ? `/plans/${input.planId}/research` : "/research";
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query: input.query ?? null, plan_id: input.planId ?? null }),
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Research failed");
+  return res.json();
 }
 
 /** 404 means the caller isn't currently present themselves — there's no

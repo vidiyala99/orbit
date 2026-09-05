@@ -4,8 +4,8 @@
  *  `icon` is a geometric glyph rather than an icon set — the app has no icon
  *  dependency and the shapes double as the map/legend vocabulary. */
 export const SECTIONS = [
-  { href: "/today", label: "Wall", icon: "●" },
   { href: "/map", label: "Map", icon: "◆" },
+  { href: "/today", label: "Wall", icon: "●" },
   { href: "/rooms", label: "Rooms", icon: "▣" },
   { href: "/chats", label: "Chats", icon: "✉" },
 ];

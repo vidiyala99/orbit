@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchMe, signup } from "@/lib/api";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
+import { afterAuthPath } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not create account";
@@ -24,7 +25,7 @@ export default function SignUpPage() {
       return;
     }
     fetchMe(token)
-      .then((user) => router.replace(user.onboarded_at ? "/today" : "/onboarding"))
+      .then((user) => router.replace(afterAuthPath(user)))
       .catch(() => {
         clearClientToken();
         setChecking(false);
@@ -38,7 +39,7 @@ export default function SignUpPage() {
     try {
       const { access_token, user } = await signup(email, password);
       setClientToken(access_token);
-      router.push(user.onboarded_at ? "/today" : "/onboarding");
+      router.push(afterAuthPath(user));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -59,7 +60,7 @@ export default function SignUpPage() {
         className="w-full max-w-sm rounded-card bg-surface p-6 shadow-card lg:max-w-md lg:p-8"
       >
         <Link href="/" className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
-          ← StayConnected
+          ← Orbit
         </Link>
         <h1 className="mt-3 text-[23px] font-extrabold tracking-[-0.3px] text-ink lg:text-[26px]">
           Post your first plan

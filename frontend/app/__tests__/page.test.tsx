@@ -1,21 +1,26 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import Page from "../page";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/",
+}));
+
 describe("Home page", () => {
-  it("renders the headline, no eyebrow, and both hero CTAs", async () => {
+  it("renders the Orbit headline and demo CTA", async () => {
     const ui = await Page();
     render(ui);
-    expect(screen.getByRole("heading", { name: /networking used to run on luck/i })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /join the waitlist/i })[0]).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /see how it works/i })).toHaveAttribute("href", "/how-it-works");
+    expect(screen.getByRole("heading", { name: /see who's nearby/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /enter demo/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /^sign in$/i })[0]).toHaveAttribute("href", "/sign-in");
   });
 
-  it("renders the three-step summary and thesis quote", async () => {
+  it("lists map, organize, and research on the first-screen path", async () => {
     const ui = await Page();
     render(ui);
-    expect(screen.getByText(/post where you'll be/i)).toBeInTheDocument();
-    expect(screen.getByText(/leave with a stamp, not just an add/i)).toBeInTheDocument();
-    expect(screen.getByText(/don't have time to go find the right people/i)).toBeInTheDocument();
+    expect(screen.getByText(/see the map/i)).toBeInTheDocument();
+    expect(screen.getByText(/organize an event/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/research the room/i).length).toBeGreaterThan(0);
   });
 });

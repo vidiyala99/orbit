@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { demoLogin, fetchMe, login } from "@/lib/api";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
+import { afterAuthPath, isDemoLoginEnabled } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not sign in";
@@ -17,7 +18,7 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
-  const demoEnabled = process.env.NEXT_PUBLIC_DEMO_LOGIN_ENABLED === "true";
+  const demoEnabled = isDemoLoginEnabled();
 
   useEffect(() => {
     const token = getClientToken();
@@ -26,7 +27,7 @@ export default function SignInPage() {
       return;
     }
     fetchMe(token)
-      .then((user) => router.replace(user.onboarded_at ? "/today" : "/onboarding"))
+      .then((user) => router.replace(afterAuthPath(user)))
       .catch(() => {
         clearClientToken();
         setChecking(false);
@@ -40,7 +41,7 @@ export default function SignInPage() {
     try {
       const { access_token, user } = await login(email, password);
       setClientToken(access_token);
-      router.push(user.onboarded_at ? "/today" : "/onboarding");
+      router.push(afterAuthPath(user));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -54,7 +55,7 @@ export default function SignInPage() {
     try {
       const { access_token, user } = await demoLogin();
       setClientToken(access_token);
-      router.push(user.onboarded_at ? "/today" : "/onboarding");
+      router.push(afterAuthPath(user));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -75,10 +76,21 @@ export default function SignInPage() {
         className="w-full max-w-sm rounded-card bg-surface p-6 shadow-card lg:max-w-md lg:p-8"
       >
         <Link href="/" className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
-          ← StayConnected
+          ← Orbit
         </Link>
         <h1 className="mt-3 text-[23px] font-extrabold tracking-[-0.3px] text-ink lg:text-[26px]">Welcome back</h1>
-        <p className="mt-1.5 text-[13px] font-medium text-ink2 lg:text-sm">Sign in to see what&apos;s live nearby</p>
+        <p className="mt-1.5 text-[13px] font-medium text-ink2 lg:text-sm">One tap onto the map — no Google required</p>
+
+        {demoEnabled && (
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={demoSubmitting}
+            className="lift btn-press mt-5 w-full rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 lg:text-base"
+          >
+            {demoSubmitting ? "Entering…" : "Enter demo"}
+          </button>
+        )}
 
         <label className="mt-5 block text-[11px] font-bold text-ink3" htmlFor="email">
           Email
@@ -119,34 +131,17 @@ export default function SignInPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="lift btn-press mt-5 w-full rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none lg:text-base"
+          className="btn-press mt-5 w-full rounded-full border border-rule bg-surface py-3.5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50 lg:text-base"
         >
-          {submitting ? "Signing in..." : "Sign in"}
+          {submitting ? "Signing in..." : "Sign in with email"}
         </button>
-
-        <div className="mt-5 flex items-center gap-3 text-[10.5px] font-semibold uppercase tracking-[0.04em] text-ink3">
-          <span className="h-px flex-1 bg-rule" />
-          or
-          <span className="h-px flex-1 bg-rule" />
-        </div>
 
         <a
           href={`${process.env.NEXT_PUBLIC_API_BASE}/auth/google`}
-          className="btn-press mt-4 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:text-base"
+          className="btn-press mt-3 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-medium text-ink3 transition-colors hover:border-accent hover:text-ink lg:text-base"
         >
           Continue with Google
         </a>
-
-        {demoEnabled && (
-          <button
-            type="button"
-            onClick={handleDemo}
-            disabled={demoSubmitting}
-            className="btn-press mt-3 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-50 lg:text-base"
-          >
-            {demoSubmitting ? "Signing in..." : "Continue with demo account"}
-          </button>
-        )}
 
         <p className="mt-5 text-center text-[13px] font-medium text-ink2 lg:text-sm">
           <Link href="/forgot-password" className="rounded-full font-bold text-accent underline decoration-accent/40 transition-colors hover:text-ink">

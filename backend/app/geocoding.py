@@ -5,7 +5,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-NOMINATIM_USER_AGENT = "StayConnected/1.0 (onboarding geocoding)"
+NOMINATIM_USER_AGENT = "Orbit/1.0 (onboarding geocoding)"
 
 
 def geocode_city(city: str) -> tuple[float, float] | None:

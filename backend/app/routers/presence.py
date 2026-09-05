@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..db import get_db
 from ..models import Presence, User
+from ..nebius import why_meet_lines
 from ..schemas import MatchCandidateOut, PresenceCreate, PresenceOut
 from .plans import _snap
 
@@ -104,6 +105,13 @@ def nearby_candidates(db: Session = Depends(get_db), user: User = Depends(get_cu
             scored.append(_to_candidate(other, tag_score))
 
     scored.sort(key=lambda c: c.match_score, reverse=True)
+    others = [other for other, _ in candidates]
+    why = why_meet_lines(user, others)
+    by_id = {c.user_id: c for c in scored}
+    for other in others:
+        row = by_id.get(other.id)
+        if row is not None:
+            row.why_meet = why.get(other.id, "")
     return scored
 
 
@@ -115,4 +123,5 @@ def _to_candidate(user: User, score: float) -> MatchCandidateOut:
         headline=user.headline,
         intent_tags=user.intent_tags,
         match_score=round(score, 4),
+        why_meet="",
     )

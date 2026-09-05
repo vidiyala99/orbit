@@ -5,9 +5,9 @@ import HowItWorksPage from "../page";
 describe("How it works page", () => {
   it("renders all three steps with their titles", () => {
     render(<HowItWorksPage />);
-    expect(screen.getByText(/post where you'll be/i)).toBeInTheDocument();
-    expect(screen.getByText(/get spotted before you arrive/i)).toBeInTheDocument();
-    expect(screen.getByText(/leave with a stamp, not just an add/i)).toBeInTheDocument();
+    expect(screen.getByText(/see the map/i)).toBeInTheDocument();
+    expect(screen.getByText(/organize an event/i)).toBeInTheDocument();
+    expect(screen.getByText(/research the room/i)).toBeInTheDocument();
   });
 
   it("shows the stamp badge illustration on step 3", () => {

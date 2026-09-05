@@ -99,6 +99,11 @@ export default function EventRoomView({ token }: { token: string }) {
                       {Math.round(c.match_score * 100)}% match
                     </span>
                   </div>
+                  {c.why_meet && (
+                    <p className="mt-1.5 text-[12.5px] font-medium leading-snug text-ink2">
+                      {c.why_meet}
+                    </p>
+                  )}
                   {c.intent_tags && c.intent_tags.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {c.intent_tags.map((tag) => (

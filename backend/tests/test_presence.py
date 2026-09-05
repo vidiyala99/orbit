@@ -116,6 +116,7 @@ def test_nearby_candidates_ranks_by_bio_similarity(db_session):
     ids = [c["user_id"] for c in body]
     assert ids == [str(close_match.id), str(far_match.id)]
     assert body[0]["match_score"] > body[1]["match_score"]
+    assert body[0]["why_meet"]
 
     app.dependency_overrides.clear()
 

@@ -44,10 +44,9 @@ def _counts(db):
 
 # ------------------------------------------------------------------ off
 
-def test_flag_defaults_to_off_when_unset_in_the_environment():
-    """Local dev sets DEMO_LOGIN_ENABLED in backend/.env; anywhere that doesn't
-    (staging, prod) must get demo login off without doing anything."""
-    assert Settings(_env_file=None).demo_login_enabled is False
+def test_flag_defaults_to_on_when_unset_in_the_environment():
+    """Hackathon lock: judges enter without setting flags or Google OAuth."""
+    assert Settings(_env_file=None).demo_login_enabled is True
 
 
 def test_demo_login_is_404_when_disabled(client, db_session, monkeypatch):

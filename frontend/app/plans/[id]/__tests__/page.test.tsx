@@ -62,9 +62,10 @@ describe("PlanDetailPage section navs", () => {
     }
   });
 
-  it("still renders the plan itself", async () => {
+  it("still renders the plan itself and visible event research", async () => {
     await renderPage();
     expect(screen.getByRole("heading", { name: "Coffee chat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /research this event/i })).toBeInTheDocument();
   });
 });
 

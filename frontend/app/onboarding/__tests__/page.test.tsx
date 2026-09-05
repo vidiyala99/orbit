@@ -133,7 +133,7 @@ describe("OnboardingPage", () => {
     );
 
     expect(await screen.findByText(/you're all set/i)).toBeInTheDocument();
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"), { timeout: 2000 });
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/map"), { timeout: 2000 });
   });
 
   it("shows an inline error on submit failure and keeps earlier step data", async () => {
@@ -157,7 +157,7 @@ describe("OnboardingPage", () => {
 
     render(<OnboardingPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/today"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/map"));
   });
 
   it("redirects to /sign-in when there is no token", async () => {

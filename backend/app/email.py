@@ -28,7 +28,7 @@ def send_verification_email(to_email: str, token: str) -> None:
     link = f"{settings.frontend_origin}/verify-email?token={token}"
     _send(
         to_email,
-        "Verify your StayConnected email",
+        "Verify your Orbit email",
         f'<p>Confirm your email to finish setting up your account.</p>'
         f'<p><a href="{link}">Verify email</a></p>',
     )
@@ -38,7 +38,7 @@ def send_password_reset_email(to_email: str, token: str) -> None:
     link = f"{settings.frontend_origin}/reset-password?token={token}"
     _send(
         to_email,
-        "Reset your StayConnected password",
+        "Reset your Orbit password",
         f'<p>Someone requested a password reset for this account. If that was you:</p>'
         f'<p><a href="{link}">Reset password</a></p>'
         f'<p>If you didn\'t request this, you can ignore this email.</p>',

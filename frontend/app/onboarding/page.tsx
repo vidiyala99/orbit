@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchMe, submitOnboarding } from "@/lib/api";
 import { getClientToken } from "@/lib/auth";
+import { APP_HOME } from "@/lib/routes";
 
 const PAIN_POINTS: { key: string; label: string }[] = [
   { key: "cold_outreach", label: "Cold outreach (email/LinkedIn) rarely gets a response" },
@@ -44,7 +45,7 @@ export default function OnboardingPage() {
     fetchMe(token)
       .then((user) => {
         if (user.onboarded_at) {
-          router.replace("/today");
+          router.replace(APP_HOME);
           return;
         }
         setChecking(false);
@@ -107,7 +108,7 @@ export default function OnboardingPage() {
         token,
       );
       setDone(true);
-      setTimeout(() => router.push("/today"), 600);
+      setTimeout(() => router.push(APP_HOME), 600);
     } catch (err) {
       setSubmitError(errorMessage(err));
     } finally {
@@ -138,7 +139,7 @@ export default function OnboardingPage() {
         className="w-full max-w-sm rounded-card bg-surface p-6 shadow-card lg:max-w-md lg:p-8"
       >
         <Link href="/" className="inline-block rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
-          ← StayConnected
+          ← Orbit
         </Link>
         <p className="mt-3 text-[11px] font-bold text-ink3">
           Step {step} of {TOTAL_STEPS}

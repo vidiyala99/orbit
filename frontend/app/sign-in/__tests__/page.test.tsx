@@ -39,13 +39,13 @@ describe("SignInPage", () => {
     render(<SignInPage />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "a@b.com" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
-    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /sign in with email/i }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/onboarding"));
     expect(document.cookie).toContain("sc_token=tok456");
   });
 
-  it("redirects to /today when the returned user is already onboarded", async () => {
+  it("redirects to /map when the returned user is already onboarded", async () => {
     vi.spyOn(api, "login").mockResolvedValue({
       access_token: "tok456",
       user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
@@ -54,18 +54,18 @@ describe("SignInPage", () => {
     render(<SignInPage />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "a@b.com" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
-    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /sign in with email/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/map"));
   });
 
-  it("redirects an already signed-in, onboarded user to /today without rendering the form", async () => {
+  it("redirects an already signed-in, onboarded user to /map without rendering the form", async () => {
     document.cookie = "sc_token=tok789; path=/";
     vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 
     render(<SignInPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/today"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/map"));
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
   });
 
@@ -100,60 +100,50 @@ describe("SignInPage", () => {
     render(<SignInPage />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "a@b.com" } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "wrong" } });
-    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /sign in with email/i }));
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
   });
 
-  it("does not render the demo button when the flag is unset", () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "");
+  it("renders the demo button by default", () => {
     render(<SignInPage />);
-    expect(screen.queryByRole("button", { name: /demo account/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /enter demo/i })).toBeInTheDocument();
   });
 
-  it("does not render the demo button when the flag is not exactly 'true'", () => {
+  it("hides the demo button only when the flag is explicitly false", () => {
     vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "false");
     render(<SignInPage />);
-    expect(screen.queryByRole("button", { name: /demo account/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /enter demo/i })).not.toBeInTheDocument();
   });
 
-  it("renders the demo button when the flag is on", () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
-    render(<SignInPage />);
-    expect(screen.getByRole("button", { name: /continue with demo account/i })).toBeInTheDocument();
-  });
-
-  it("demo-logs in, stores the token, and redirects like a normal login", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
+  it("demo-logs in, stores the token, and lands on the map", async () => {
     const demoLogin = vi.spyOn(api, "demoLogin").mockResolvedValue({
       access_token: "demotok",
       user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
     });
 
     render(<SignInPage />);
-    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /enter demo/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/today"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/map"));
     expect(demoLogin).toHaveBeenCalledTimes(1);
     expect(document.cookie).toContain("sc_token=demotok");
   });
 
   it("sends a not-yet-onboarded demo user to /onboarding", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user: { ...baseUser } });
 
     render(<SignInPage />);
-    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /enter demo/i }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/onboarding"));
   });
 
   it("shows an error when demo login fails", async () => {
-    vi.stubEnv("NEXT_PUBLIC_DEMO_LOGIN_ENABLED", "true");
     vi.spyOn(api, "demoLogin").mockRejectedValue(new Error("demo login is not enabled"));
 
     render(<SignInPage />);
-    fireEvent.click(screen.getByRole("button", { name: /continue with demo account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /enter demo/i }));
 
     expect(await screen.findByText(/demo login is not enabled/i)).toBeInTheDocument();
   });

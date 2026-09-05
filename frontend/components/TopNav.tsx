@@ -29,7 +29,7 @@ export default function TopNav({ userInitial }: { userInitial?: string }) {
           className="flex w-fit items-center gap-2 self-center text-[14.5px] font-bold tracking-[-0.2px] text-ink"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-          StayConnected
+          Orbit
         </Link>
 
         {/* `gap-4` + `px-2` on each link rather than a bare `gap-7`: same ~32px

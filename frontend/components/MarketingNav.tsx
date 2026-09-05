@@ -24,7 +24,7 @@ export default function MarketingNav({ active }: { active: Page }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-8 lg:py-5">
         <Link href="/" className="flex items-center gap-[7px] rounded-full text-sm font-bold text-ink lg:gap-2 lg:text-lg">
           <span className="h-2 w-2 rounded-full bg-accent lg:h-2.5 lg:w-2.5" aria-hidden="true" />
-          StayConnected
+          Orbit
         </Link>
 
         <div className="hidden items-center gap-5 text-[12px] font-medium text-ink2 md:flex lg:gap-8 lg:text-sm">
@@ -41,10 +41,10 @@ export default function MarketingNav({ active }: { active: Page }) {
             </Link>
           ))}
           <Link
-            href={signedIn ? "/today" : "/sign-in"}
+            href={signedIn ? "/map" : "/sign-in"}
             className="btn-press rounded-full border border-rule bg-surface px-4 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:px-5 lg:py-2 lg:text-sm"
           >
-            {signedIn ? "Today" : "Sign in"}
+            {signedIn ? "Map" : "Sign in"}
           </Link>
         </div>
 
@@ -76,8 +76,8 @@ export default function MarketingNav({ active }: { active: Page }) {
             {link.label}
           </Link>
         ))}
-        <Link href={signedIn ? "/today" : "/sign-in"} className="rounded-full font-bold text-accent">
-          {signedIn ? "Today" : "Sign in"}
+        <Link href={signedIn ? "/map" : "/sign-in"} className="rounded-full font-bold text-accent">
+          {signedIn ? "Map" : "Sign in"}
         </Link>
       </div>
     </nav>

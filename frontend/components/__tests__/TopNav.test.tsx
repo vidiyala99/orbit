@@ -16,7 +16,7 @@ beforeEach(() => {
 describe("TopNav", () => {
   it("renders the wordmark linking home", () => {
     render(<TopNav />);
-    expect(screen.getByRole("link", { name: /stayconnected/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /orbit/i })).toHaveAttribute("href", "/");
   });
 
   it("renders all four section links pointing at their routes", () => {

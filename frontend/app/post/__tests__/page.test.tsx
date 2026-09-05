@@ -33,9 +33,9 @@ beforeEach(() => {
 });
 
 describe("PostPlanPage composer", () => {
-  it("links back to /today", () => {
+  it("links back to /map", () => {
     render(<PostPlanPage />);
-    expect(screen.getByRole("link", { name: /today/i })).toHaveAttribute("href", "/today");
+    expect(screen.getByRole("link", { name: /← map/i })).toHaveAttribute("href", "/map");
   });
 
   it("assembles the preview sentence from activity, openness and duration", async () => {

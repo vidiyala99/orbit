@@ -8,7 +8,7 @@ export default function AboutPage() {
         <section className="mx-auto flex max-w-4xl flex-col items-center gap-10 px-6 py-14 md:flex-row md:items-start lg:gap-16 lg:px-10 lg:py-24">
           <div className="max-w-lg lg:max-w-xl">
             <h1 className="text-2xl font-extrabold tracking-[-0.4px] text-ink lg:text-5xl">
-              Why StayConnected exists
+              Why Orbit exists
             </h1>
             <p className="mt-4 text-sm font-medium leading-relaxed text-ink2 lg:mt-8 lg:text-xl lg:leading-relaxed">
               Cold applications rarely get a response. Cold email is unreliable. LinkedIn
@@ -17,7 +17,7 @@ export default function AboutPage() {
               people to meet, and most people don&apos;t have that time.
             </p>
             <p className="mt-4 text-sm font-medium leading-relaxed text-ink2 lg:mt-6 lg:text-xl lg:leading-relaxed">
-              StayConnected is built to reduce that time cost. Post where you&apos;ll be, and the
+              Orbit is built to reduce that time cost. Post where you&apos;ll be, and the
               people worth meeting can find you before you arrive.
             </p>
           </div>
