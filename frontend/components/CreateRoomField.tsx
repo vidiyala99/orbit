@@ -61,7 +61,7 @@ export default function CreateRoomField({
           disabled={!trimmed || submitting}
           className="btn-press rounded-full bg-ink px-4 text-[13px] font-bold text-ground disabled:opacity-50"
         >
-          {submitting ? "…" : "Create"}
+          {submitting ? "…" : "Create room"}
         </button>
       </div>
       {error && (

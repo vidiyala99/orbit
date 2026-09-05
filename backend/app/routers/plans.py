@@ -1,10 +1,9 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
-from geoalchemy2.functions import ST_DWithin, ST_Distance
-from geoalchemy2.elements import WKTElement
 from sqlalchemy.orm import Session
 from ..db import get_db
+from ..geo import apply_radius_filter, distance_order, wkt_point
 from ..auth import get_current_user, get_optional_user
 from ..models import Block, Plan, User
 from ..schemas import PlanCreate, PlanOut
@@ -89,7 +88,7 @@ def create_plan(body: PlanCreate, db: Session = Depends(get_db), user: User = De
         ),
         lat=lat,
         lon=lon,
-        location=f"SRID=4326;POINT({lon} {lat})",
+        location=wkt_point(lon, lat),
         starts_at=body.starts_at,
         ends_at=body.ends_at,
     )
@@ -104,11 +103,15 @@ def discover_plans(
     category: str | None = None,
     db: Session = Depends(get_db), user: User | None = Depends(get_optional_user),
 ):
-    point = WKTElement(f"POINT({lon} {lat})", srid=4326)
-    query = (
-        db.query(Plan)
-        .filter(ST_DWithin(Plan.location, point, radius_m))
-        .filter(Plan.starts_at <= at, Plan.ends_at >= at)
+    query = db.query(Plan).filter(Plan.starts_at <= at, Plan.ends_at >= at)
+    query = apply_radius_filter(
+        query,
+        lat_col=Plan.lat,
+        lon_col=Plan.lon,
+        location_col=Plan.location,
+        lat=lat,
+        lon=lon,
+        radius_m=radius_m,
     )
     query = apply_category_filter(
         query, category=category, text_columns=[Plan.text, Plan.detail],
@@ -118,7 +121,8 @@ def discover_plans(
         hidden = _blocked_user_ids(db, user.id)
         if hidden:
             query = query.filter(Plan.user_id.notin_(hidden))
-    return query.order_by(ST_Distance(Plan.location, point)).all()
+    order = distance_order(Plan.location, lat, lon)
+    return query.order_by(order).all() if order is not None else query.all()
 
 @router.get("/{plan_id}", response_model=PlanOut)
 def get_plan(plan_id: uuid.UUID, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):

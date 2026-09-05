@@ -1,22 +1,22 @@
 # Orbit
 
-Meet people around what you're into.
+Meet people around what's happening near you.
 
 ## 60-second demo
 
-1. Open the site. Landing is Orbit, one line, **Try it out**.
-2. Tap **Try it out** — demo login happens behind the button.
+1. Open the site. Landing explains what Orbit is, how it works, and who it's for.
+2. Tap **Try it out** — demo login happens behind the button (or a local fixture demo if the API is down).
 3. Pick a location.
 4. Pick a theme (Tech, Design, Food, Music, Sports, Outdoors).
-5. See nearby events, people with a status, and create a room.
+5. See a map, nearby events, people with a status (café / hackathon / exploring), and **Create room**.
 
 Locally: `./scripts/setup.sh` then `./scripts/dev.sh`, open
 `http://localhost:3000`, same taps. Backend is `:8001`.
 
 ## Stack
 
-- **API:** FastAPI + SQLAlchemy 2.0 + GeoAlchemy2 + Alembic, **Postgres/PostGIS**
-  (PostGIS + `vector` required — vanilla Postgres will fail migrations)
+- **API:** FastAPI + SQLAlchemy 2.0 + GeoAlchemy2 + Alembic, **Postgres**
+  (PostGIS + `vector` used when present; free Render Postgres degrades to lat/lon)
 - **Frontend:** Next.js (App Router) + TypeScript + Tailwind
 - **Auth:** cookie sessions. **Demo login is ON by default** so judges skip OAuth.
 - **Tracks:** Linkup (`LINKUP_API_KEY`), Nebius Token Factory, Render (`orbit-api`)
@@ -33,15 +33,13 @@ Blueprint: `render.yaml` (service name **`orbit-api`**).
    - Root: `backend`
    - Build: `pip install -r requirements.txt`
    - Start: `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-2. Attach **Postgres**. It must be PostGIS. On the DB:
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS postgis;
-   CREATE EXTENSION IF NOT EXISTS vector;
-   ```
+2. Attach **Postgres**. Boot tries PostGIS + `vector` and degrades to lat/lon
+   if the free instance cannot create those extensions.
 3. Set these env vars on **orbit-api**:
 
    | Key | Value |
    | --- | --- |
+   | `PYTHON_VERSION` | `3.12.6` (do not let Render use 3.14) |
    | `DATABASE_URL` | Render Postgres **external** URL (add `+psycopg` if needed: `postgresql+psycopg://…`) |
    | `FRONTEND_ORIGIN` | `https://<your-vercel-app>.vercel.app` (no trailing slash) |
    | `JWT_SECRET` | long random string |
@@ -54,7 +52,10 @@ Blueprint: `render.yaml` (service name **`orbit-api`**).
 
 4. Confirm `GET https://<orbit-api>.onrender.com/health` → `{"status":"ok"}`.
 
-### 2. Vercel — frontend
+### 2. Vercel — project `orbit`
+
+Pushing `main` redeploys the Vercel project named **`orbit`** (root **`frontend`**).
+If it does not pick up the commit: Vercel Dashboard → `orbit` → Deployments → Redeploy.
 
 1. Import `vidiyala99/orbit`, root **`frontend`**.
 2. **Required** env (Production):

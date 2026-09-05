@@ -1,10 +1,11 @@
 # Orbit API on Render.
 #
-# Postgres MUST be PostGIS. Render's managed Postgres is vanilla until you
-# run these on the instance (psql or the Dashboard shell):
-#   CREATE EXTENSION IF NOT EXISTS postgis;
-#   CREATE EXTENSION IF NOT EXISTS vector;
-# Point DATABASE_URL at that instance (external URL from the web service).
+# Pin Python 3.12.x. Native Render Python is 3.14 and SQLAlchemy 2.0.35
+# crashes on Mapped[T | None] (Union __getitem__). runtime.txt at the repo
+# root is what the live orbit-api service reads (its rootDir is empty).
+#
+# PostGIS + pgvector are optional. Boot tries CREATE EXTENSION and degrades
+# geo search to lat/lon when free Render Postgres does not ship them.
 services:
   - type: web
     name: orbit-api

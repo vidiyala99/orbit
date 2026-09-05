@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from geoalchemy2.elements import WKTElement
-from geoalchemy2.functions import ST_DWithin
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
 from ..db import get_db
+from ..geo import apply_radius_filter, wkt_point
 from ..models import Presence, User
 from ..nebius import why_meet_lines
 from ..schemas import MatchCandidateOut, NearbyPersonOut, PresenceCreate, PresenceOut
@@ -39,7 +38,7 @@ def toggle_on(body: PresenceCreate, db: Session = Depends(get_db), user: User = 
         user_id=user.id,
         lat=lat,
         lon=lon,
-        location=f"SRID=4326;POINT({lon} {lat})",
+        location=wkt_point(lon, lat),
         started_at=now,
         expires_at=now + DEFAULT_TTL,
     )
@@ -67,15 +66,21 @@ def people_around(
     """People with live presence near a picked point. Unlike /nearby, the
     caller does not have to be present — this is the funnel shortlist."""
     now = datetime.now(timezone.utc)
-    point = WKTElement(f"POINT({lon} {lat})", srid=4326)
-    rows = (
+    query = (
         db.query(Presence, User)
         .join(User, User.id == Presence.user_id)
         .filter(Presence.user_id != user.id)
         .filter(Presence.expires_at > now)
-        .filter(ST_DWithin(Presence.location, point, radius_m))
-        .all()
     )
+    rows = apply_radius_filter(
+        query,
+        lat_col=Presence.lat,
+        lon_col=Presence.lon,
+        location_col=Presence.location,
+        lat=lat,
+        lon=lon,
+        radius_m=radius_m,
+    ).all()
     return [
         NearbyPersonOut(
             user_id=other.id,
@@ -100,15 +105,21 @@ def nearby_candidates(db: Session = Depends(get_db), user: User = Depends(get_cu
     if my_presence is None:
         raise HTTPException(status_code=404, detail="you must be present to see nearby candidates")
 
-    point = WKTElement(f"POINT({my_presence.lon} {my_presence.lat})", srid=4326)
-    rows = (
+    query = (
         db.query(Presence, User)
         .join(User, User.id == Presence.user_id)
         .filter(Presence.user_id != user.id)
         .filter(Presence.expires_at > now)
-        .filter(ST_DWithin(Presence.location, point, NEARBY_RADIUS_M))
-        .all()
     )
+    rows = apply_radius_filter(
+        query,
+        lat_col=Presence.lat,
+        lon_col=Presence.lon,
+        location_col=Presence.location,
+        lat=my_presence.lat,
+        lon=my_presence.lon,
+        radius_m=NEARBY_RADIUS_M,
+    ).all()
 
     candidates = [(other, _tag_overlap_score(user.intent_tags, other.intent_tags)) for _, other in rows]
 
