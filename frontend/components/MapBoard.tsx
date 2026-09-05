@@ -153,12 +153,13 @@ export default function MapBoard({
   const [hidden, setHidden] = useState<KindT[]>([]);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const filters = people.length
+  const allMarkers = toMarkers(plans, rooms, events, people, compact);
+  const presentKinds = new Set(allMarkers.map((m) => m.kind));
+  const filters = (people.length
     ? [...BASE_FILTERS, { kind: "person" as const, label: "People" }]
-    : BASE_FILTERS;
-  const markers = toMarkers(plans, rooms, events, people, compact).filter(
-    (m) => !hidden.includes(m.kind),
-  );
+    : BASE_FILTERS
+  ).filter((f) => !compact || presentKinds.has(f.kind));
+  const markers = allMarkers.filter((m) => !hidden.includes(m.kind));
   // Filtering out the selected marker's kind should take its card with it.
   const detail = markers.find((m) => m.key === selected) ?? null;
   const detailHref = detail ? markerHref(detail) : null;
@@ -190,7 +191,7 @@ export default function MapBoard({
       <div className="order-1 mb-1 shrink-0 px-[18px] md:order-2 md:mb-0 md:px-0">
         <div
           className={`relative overflow-hidden rounded-card bg-surface shadow-card ${
-            compact ? "h-[58vh] min-h-[320px] md:h-[68vh]" : "h-[250px] md:h-[70vh]"
+            compact ? "h-[70vh] min-h-[380px] md:h-[74vh]" : "h-[250px] md:h-[70vh]"
           }`}
         >
           <div
@@ -266,6 +267,18 @@ export default function MapBoard({
                     {m.glyph}
                   </span>
                 </span>
+                {compact && (
+                  <span className="absolute left-1/2 top-[26px] z-[1] -translate-x-1/2 whitespace-nowrap rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-bold leading-none text-ink shadow-card">
+                    {m.kind === "person" ? (
+                      <>
+                        {m.title}
+                        <span className="ml-1 font-semibold text-accent">{m.meta}</span>
+                      </>
+                    ) : (
+                      m.title
+                    )}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -306,24 +319,18 @@ export default function MapBoard({
         </div>
       </div>
 
-      <div
-        data-testid="nearby-list"
-        className={
-          compact
-            ? "order-2 px-[18px] pb-2 pt-3"
-            : "order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
-        }
-      >
-        {!compact && (
+      {!compact && (
+        <div
+          data-testid="nearby-list"
+          className="order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
+        >
           <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">
             What&apos;s happening now
           </p>
-        )}
-        {markers.length === 0 ? (
-          <p className="text-[13px] text-ink2">Nothing pinned near you yet.</p>
-        ) : compact ? (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {markers.map((m) => {
+          {markers.length === 0 ? (
+            <p className="text-[13px] text-ink2">Nothing pinned near you yet.</p>
+          ) : (
+            markers.map((m) => {
               const on = selected === m.key;
               return (
                 <div
@@ -339,58 +346,30 @@ export default function MapBoard({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") setSelected(m.key);
                   }}
-                  className={`lift btn-press w-[148px] shrink-0 cursor-pointer rounded-card bg-surface p-3 ${
-                    on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card"
+                  className={`lift btn-press mb-3 flex cursor-pointer items-center gap-3 rounded-card bg-surface p-4 transition-shadow ${
+                    on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card hover:shadow-card-hover"
                   }`}
                 >
-                  <p className="truncate text-[13px] font-bold text-ink">{m.title}</p>
-                  <p className="mt-1 inline-flex max-w-full truncate rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-bold text-accent">
-                    {m.meta}
-                  </p>
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                      DOT_CLASS[m.kind]
+                    }`}
+                  >
+                    {m.glyph}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13.5px] font-semibold text-ink">
+                      {m.title}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[10.5px] text-ink3">{m.meta}</span>
+                  </span>
                 </div>
               );
-            })}
-          </div>
-        ) : (
-          markers.map((m) => {
-            const on = selected === m.key;
-            return (
-              <div
-                key={m.key}
-                ref={(el) => {
-                  itemRefs.current[m.key] = el;
-                }}
-                data-testid={`item-${m.key}`}
-                aria-current={on}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelected(m.key)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setSelected(m.key);
-                }}
-                className={`lift btn-press mb-3 flex cursor-pointer items-center gap-3 rounded-card bg-surface p-4 transition-shadow ${
-                  on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card hover:shadow-card-hover"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                    DOT_CLASS[m.kind]
-                  }`}
-                >
-                  {m.glyph}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[13.5px] font-semibold text-ink">
-                    {m.title}
-                  </span>
-                  <span className="mt-0.5 block font-mono text-[10.5px] text-ink3">{m.meta}</span>
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }

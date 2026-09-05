@@ -289,7 +289,7 @@ export default function TryPage() {
             {themeLabel} in {location?.city}
           </h1>
           <p className="text-[11px] font-medium text-ink3">
-            {loadingBoard ? "Pinning…" : "Map of events and people"}
+            {loadingBoard ? "Pinning…" : "Pins for events and people nearby"}
           </p>
         </div>
         <div className="flex gap-1.5">

@@ -172,6 +172,38 @@ describe("MapBoard detail card", () => {
   });
 });
 
+describe("MapBoard compact", () => {
+  it("is pins-only: no nearby list, people status on the pin", () => {
+    render(
+      <MapBoard
+        plans={[]}
+        rooms={[]}
+        events={[{ id: "e1", title: "Hack table", lat: 37.39, lon: -122.08, meta: "Event" }]}
+        people={[
+          {
+            user_id: "u3",
+            first_name: "Priya",
+            last_name: "Raman",
+            status: "Working in a café",
+            lat: 37.38,
+            lon: -122.09,
+          },
+        ]}
+        center={CENTER}
+        compact
+      />,
+    );
+    expect(screen.getByTestId("pin-event-e1")).toBeInTheDocument();
+    expect(screen.getByTestId("pin-person-u3")).toBeInTheDocument();
+    expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
+    expect(screen.getByText(/working in a café/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("nearby-list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /plans/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /events/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /people/i })).toBeInTheDocument();
+  });
+});
+
 describe("MapBoard people pins", () => {
   it("renders a person pin and a People filter when people are passed", () => {
     render(

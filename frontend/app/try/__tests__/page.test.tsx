@@ -85,9 +85,12 @@ describe("Try page", () => {
     expect(screen.getByTestId("map-split")).toBeInTheDocument();
     expect(screen.getByTestId("pin-you")).toBeInTheDocument();
     expect(await screen.findByTestId("pin-person-u3")).toBeInTheDocument();
+    expect(screen.getByTestId("pin-event-p1")).toBeInTheDocument();
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a cafe/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create room/i })).toBeInTheDocument();
+    expect(screen.queryByTestId("nearby-list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /nearby events/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/at an event, open to chat/i)).not.toBeInTheDocument();
 
     await waitFor(() => {
