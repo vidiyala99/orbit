@@ -172,6 +172,33 @@ def test_nearby_candidates_excludes_expired_presence(db_session):
     app.dependency_overrides.clear()
 
 
+def test_people_around_does_not_require_caller_presence(db_session):
+    now = datetime.now(timezone.utc)
+    me = _user(db_session, "around_me@example.com")
+    other = _user(
+        db_session, "around_other@example.com",
+        first_name="Priya", last_name="Raman",
+        headline="Working in a cafe",
+    )
+    db_session.add(Presence(
+        user_id=other.id, lat=37.386, lon=-122.084,
+        location="SRID=4326;POINT(-122.084 37.386)",
+        started_at=now, expires_at=now + timedelta(hours=2),
+    ))
+    db_session.commit()
+    client = _client_as(db_session, me)
+
+    resp = client.get("/presence/around", params={"lat": 37.3861, "lon": -122.0839, "radius_m": 5000})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["first_name"] == "Priya"
+    assert body[0]["status"] == "Working in a cafe"
+
+    app.dependency_overrides.clear()
+
+
 def test_nearby_candidates_excludes_self(db_session):
     now = datetime.now(timezone.utc)
     me = _user(db_session, "presence_me4@example.com")

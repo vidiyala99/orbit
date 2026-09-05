@@ -9,7 +9,7 @@ from ..auth import get_current_user
 from ..db import get_db
 from ..models import Presence, User
 from ..nebius import why_meet_lines
-from ..schemas import MatchCandidateOut, PresenceCreate, PresenceOut
+from ..schemas import MatchCandidateOut, NearbyPersonOut, PresenceCreate, PresenceOut
 from .plans import _snap
 
 router = APIRouter(prefix="/presence", tags=["presence"])
@@ -54,6 +54,39 @@ def toggle_off(db: Session = Depends(get_db), user: User = Depends(get_current_u
     db.query(Presence).filter(Presence.user_id == user.id).delete()
     db.commit()
     return Response(status_code=204)
+
+
+@router.get("/around", response_model=list[NearbyPersonOut])
+def people_around(
+    lat: float,
+    lon: float,
+    radius_m: int = 5000,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """People with live presence near a picked point. Unlike /nearby, the
+    caller does not have to be present — this is the funnel shortlist."""
+    now = datetime.now(timezone.utc)
+    point = WKTElement(f"POINT({lon} {lat})", srid=4326)
+    rows = (
+        db.query(Presence, User)
+        .join(User, User.id == Presence.user_id)
+        .filter(Presence.user_id != user.id)
+        .filter(Presence.expires_at > now)
+        .filter(ST_DWithin(Presence.location, point, radius_m))
+        .all()
+    )
+    return [
+        NearbyPersonOut(
+            user_id=other.id,
+            first_name=other.first_name,
+            last_name=other.last_name,
+            status=(other.headline or "Just exploring"),
+            lat=presence.lat,
+            lon=presence.lon,
+        )
+        for presence, other in rows
+    ]
 
 
 @router.get("/nearby", response_model=list[MatchCandidateOut])

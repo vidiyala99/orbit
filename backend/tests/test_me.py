@@ -253,3 +253,19 @@ def test_onboarding_ignores_pain_point_other_when_other_not_selected(mock_geocod
     assert resp.json()["pain_point_other"] is None
 
     app.dependency_overrides.clear()
+
+
+@patch("app.routers.me.geocode_city")
+def test_geocode_returns_coords(mock_geocode, db_session):
+    mock_geocode.return_value = (37.39, -122.08)
+    user = User(email="geo@example.com")
+    db_session.add(user)
+    db_session.commit()
+    client = _onboarding_client(db_session, user)
+
+    resp = client.get("/geocode", params={"q": "Castro, Mountain View"})
+
+    assert resp.status_code == 200
+    assert resp.json() == {"city": "Castro, Mountain View", "lat": 37.39, "lon": -122.08}
+
+    app.dependency_overrides.clear()

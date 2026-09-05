@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import {
   demoLogin,
-  fetchNearbyCandidates,
+  fetchPeopleAround,
   fetchNearbyPlans,
   fetchNearbyRooms,
-  togglePresenceOn,
+  geocodePlace,
 } from "@/lib/api";
 import { getClientToken, setClientToken } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/categories";
@@ -20,9 +20,10 @@ import {
   type OrbitLocation,
   type ThemeKey,
 } from "@/lib/orbit";
-import { MatchCandidateT, PlanT, RoomT } from "@/lib/types";
+import { NearbyPersonT, PlanT, RoomT } from "@/lib/types";
 import PlanCard from "@/components/PlanCard";
 import RoomsBrowser from "@/components/RoomsBrowser";
+import CreateRoomField from "@/components/CreateRoomField";
 
 const RADIUS_M = 5000;
 
@@ -42,9 +43,10 @@ export default function TryPage() {
 
   const [plans, setPlans] = useState<PlanT[]>([]);
   const [rooms, setRooms] = useState<RoomT[]>([]);
-  const [people, setPeople] = useState<MatchCandidateT[]>([]);
+  const [people, setPeople] = useState<NearbyPersonT[]>([]);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
+  const [custom, setCustom] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -83,16 +85,15 @@ export default function TryPage() {
     (async () => {
       try {
         const at = new Date().toISOString();
-        const [nextPlans, nextRooms] = await Promise.all([
+        const [nextPlans, nextRooms, nearby] = await Promise.all([
           fetchNearbyPlans(location.lat, location.lon, RADIUS_M, at, token, theme),
           fetchNearbyRooms(location.lat, location.lon, RADIUS_M, token, theme),
+          fetchPeopleAround(location.lat, location.lon, token, RADIUS_M),
         ]);
         if (cancelled) return;
         setPlans(nextPlans);
         setRooms(nextRooms);
-        await togglePresenceOn(location.lat, location.lon, token);
-        const nearby = await fetchNearbyCandidates(token);
-        if (!cancelled) setPeople(nearby);
+        setPeople(nearby);
       } catch (err) {
         if (!cancelled) setBoardError(errorMessage(err));
       } finally {
@@ -116,6 +117,23 @@ export default function TryPage() {
     } catch (err) {
       setBootError(errorMessage(err));
     } finally {
+      setLocating(false);
+    }
+  }
+
+  async function handleCustom(e: React.FormEvent) {
+    e.preventDefault();
+    const q = custom.trim();
+    if (!q) return;
+    const token = getClientToken();
+    if (!token) return;
+    setLocating(true);
+    setBootError(null);
+    try {
+      const found = await geocodePlace(q, token);
+      await pickLocation({ city: found.city, lat: found.lat, lon: found.lon });
+    } catch (err) {
+      setBootError(errorMessage(err));
       setLocating(false);
     }
   }
@@ -179,13 +197,34 @@ export default function TryPage() {
             </li>
           ))}
         </ul>
+        <form onSubmit={handleCustom} className="mt-5">
+          <label htmlFor="custom-place" className="text-[11px] font-bold text-ink3">
+            Neighborhood or city
+          </label>
+          <div className="mt-1.5 flex gap-2">
+            <input
+              id="custom-place"
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder="Castro, Mountain View"
+              className="field min-w-0 flex-1 rounded-field border border-rule bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink3"
+            />
+            <button
+              type="submit"
+              disabled={!custom.trim() || locating}
+              className="btn-press rounded-full bg-ink px-4 text-[13px] font-bold text-ground disabled:opacity-50"
+            >
+              Go
+            </button>
+          </div>
+        </form>
         <button
           type="button"
           disabled={locating}
           onClick={useMyLocation}
           className="mt-4 text-center text-[13px] font-semibold text-accent"
         >
-          {locating ? "Pinning…" : "Use my location"}
+          {locating ? "Pinning…" : "Use my pin"}
         </button>
         {bootError && (
           <p className="mt-3 text-[12px] font-semibold text-accent" role="alert">
@@ -297,7 +336,7 @@ export default function TryPage() {
                   {person.first_name ?? "Someone"} {person.last_name ?? ""}
                 </p>
                 <p className="mt-0.5 text-[13px] font-medium text-ink2">
-                  {personStatus(person.headline)}
+                  {personStatus(person.status)}
                 </p>
                 <p className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-accent">
                   <span className="live-dot" aria-hidden="true" />
@@ -313,6 +352,11 @@ export default function TryPage() {
         <h2 className="px-[18px] text-[13px] font-bold uppercase tracking-[0.04em] text-ink3">
           Rooms
         </h2>
+        {location && (
+          <div className="mt-3 px-[18px]">
+            <CreateRoomField lat={location.lat} lon={location.lon} />
+          </div>
+        )}
         <RoomsBrowser initialRooms={rooms} />
       </section>
     </main>

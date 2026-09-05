@@ -157,6 +157,15 @@ export type MatchCandidateT = {
   why_meet?: string;
 };
 
+export type NearbyPersonT = {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  status: string;
+  lat: number;
+  lon: number;
+};
+
 export type ResearchT = {
   answer: string;
   sources: { title: string; url: string }[];

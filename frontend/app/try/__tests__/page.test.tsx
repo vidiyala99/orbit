@@ -68,15 +68,16 @@ describe("Try page", () => {
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user });
     vi.spyOn(api, "fetchNearbyPlans").mockResolvedValue([plan]);
     vi.spyOn(api, "fetchNearbyRooms").mockResolvedValue([room]);
-    vi.spyOn(api, "togglePresenceOn").mockResolvedValue({
-      id: "pr1",
-      user_id: "u1",
-      lat: 37.3861,
-      lon: -122.0839,
-      started_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 3600000).toISOString(),
-    });
-    vi.spyOn(api, "fetchNearbyCandidates").mockResolvedValue([person]);
+    vi.spyOn(api, "fetchPeopleAround").mockResolvedValue([
+      {
+        user_id: person.user_id,
+        first_name: person.first_name,
+        last_name: person.last_name,
+        status: "Working in a cafe",
+        lat: 37.3861,
+        lon: -122.0839,
+      },
+    ]);
   });
 
   it("demo-logs in, then location → theme → events, people, create room", async () => {
@@ -104,12 +105,11 @@ describe("Try page", () => {
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a cafe/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^rooms$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /new room/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/create a room/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(api.fetchNearbyPlans).toHaveBeenCalled();
-      expect(api.togglePresenceOn).toHaveBeenCalled();
-      expect(api.fetchNearbyCandidates).toHaveBeenCalled();
+      expect(api.fetchPeopleAround).toHaveBeenCalled();
     });
   });
 });

@@ -101,6 +101,21 @@ class MatchCandidateOut(BaseModel):
     why_meet: str = ""
 
 
+class NearbyPersonOut(BaseModel):
+    user_id: uuid.UUID
+    first_name: str | None
+    last_name: str | None
+    status: str
+    lat: float
+    lon: float
+
+
+class GeocodeOut(BaseModel):
+    city: str
+    lat: float
+    lon: float
+
+
 class ResearchRequest(BaseModel):
     query: str | None = None
     plan_id: uuid.UUID | None = None

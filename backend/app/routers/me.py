@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..auth import get_current_user
@@ -8,7 +8,7 @@ from ..db import get_db
 from ..embeddings import generate_bio_embedding
 from ..geocoding import geocode_city
 from ..models import User
-from ..schemas import OnboardingRequest, UserOut
+from ..schemas import GeocodeOut, OnboardingRequest, UserOut
 
 router = APIRouter(tags=["me"])
 
@@ -44,3 +44,13 @@ def onboard_me(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.get("/geocode", response_model=GeocodeOut)
+def geocode_place(q: str = Query(min_length=1, max_length=120), user: User = Depends(get_current_user)):
+    del user
+    result = geocode_city(q)
+    if result is None:
+        raise HTTPException(status_code=404, detail="could not find that place")
+    lat, lon = result
+    return GeocodeOut(city=q.strip(), lat=lat, lon=lon)

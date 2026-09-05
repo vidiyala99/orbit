@@ -1,6 +1,7 @@
 import {
   EventCandidateT,
   MatchCandidateT,
+  NearbyPersonT,
   ResearchT,
   MessageT,
   PlanT,
@@ -430,6 +431,35 @@ export async function researchEvent(
 
 /** 404 means the caller isn't currently present themselves — there's no
  *  origin point to rank candidates against. */
+export async function fetchPeopleAround(
+  lat: number, lon: number, token: string, radiusM = 5000,
+): Promise<NearbyPersonT[]> {
+  const url = new URL(`${API_BASE}/presence/around`);
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lon));
+  url.searchParams.set("radius_m", String(radiusM));
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`fetchPeopleAround failed: ${res.status}`);
+  return res.json();
+}
+
+export async function geocodePlace(
+  q: string,
+  token: string,
+): Promise<{ city: string; lat: number; lon: number }> {
+  const url = new URL(`${API_BASE}/geocode`);
+  url.searchParams.set("q", q);
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not find that place");
+  return res.json();
+}
+
 export async function fetchNearbyCandidates(token: string): Promise<MatchCandidateT[]> {
   const res = await fetch(`${API_BASE}/presence/nearby`, {
     headers: { Authorization: `Bearer ${token}` },
