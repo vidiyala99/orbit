@@ -18,7 +18,7 @@ export default async function MapPage({
   searchParams,
 }: {
   searchParams?: Promise<{ category?: string }>;
-}) {
+} = {}) {
   const token = (await cookies()).get("sc_token")?.value;
   if (!token) redirect("/sign-in");
   const session = token;

@@ -17,9 +17,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Never read sqlalchemy.url from alembic.ini (it's a localhost placeholder).
-# Never go through Settings.env_file. Process DATABASE_URL only.
-DATABASE_URL = resolve_database_url()
+# Never read sqlalchemy.url from alembic.ini (blank / leftover localhost).
+# Never go through Settings.env_file. Process DATABASE_URL only, resolved
+# at run time so tests can point Alembic at stayconnected_test.
+def _database_url() -> str:
+    return resolve_database_url()
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -39,7 +41,7 @@ def include_object(object, name, type_, reflected, compare_to):
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=DATABASE_URL,
+        url=_database_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -50,7 +52,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = create_engine(DATABASE_URL, poolclass=pool.NullPool)
+    connectable = create_engine(_database_url(), poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         ensure_postgres_extensions(connection)

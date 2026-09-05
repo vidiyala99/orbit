@@ -20,7 +20,6 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
 
-import app.config as config_module
 from app.config import settings
 
 TEST_DATABASE_URL = settings.database_url.rsplit("/", 1)[0] + "/stayconnected_test"
@@ -34,27 +33,23 @@ ONBOARDING_REVISION = "7a2c9e5f1b34"
 
 def _alembic_config() -> Config:
     cfg = Config(_ALEMBIC_INI)
-    cfg.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
     return cfg
 
 
 @contextmanager
 def _alembic_targeting_test_db():
-    """alembic/env.py unconditionally does
-    `config.set_main_option("sqlalchemy.url", settings.database_url)`,
-    which clobbers whatever URL is passed into the Config object — so
-    pointing Alembic at the test db (rather than the real dev db on
-    :5434/stayconnected) requires patching `settings.database_url`
-    itself for the duration of the alembic command, since env.py's
-    module-level code re-executes on every `command.*` call and re-reads
-    the (module-cached) `settings` object fresh each time.
+    """alembic/env.py reads process DATABASE_URL only (never alembic.ini
+    or Settings.env_file). Point it at stayconnected_test for the upgrade.
     """
-    original = config_module.settings.database_url
-    config_module.settings.database_url = TEST_DATABASE_URL
+    original = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     try:
         yield
     finally:
-        config_module.settings.database_url = original
+        if original is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = original
 
 
 def _reset_to_blank_schema(engine) -> None:
