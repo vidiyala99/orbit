@@ -197,6 +197,33 @@ describe("MapBoard people pins", () => {
     expect(screen.getByText(/priya raman/i)).toBeInTheDocument();
     expect(screen.getByText(/working in a café/i)).toBeInTheDocument();
   });
+
+  it("hides empty kind filters in compact mode", () => {
+    render(
+      <MapBoard
+        plans={[]}
+        rooms={[]}
+        events={[
+          { id: "e1", title: "Hack table", lat: 37.39, lon: -122.08, meta: "Event" },
+        ]}
+        people={[
+          {
+            user_id: "u3",
+            first_name: "Priya",
+            last_name: "Raman",
+            status: "Working in a café",
+            lat: 37.38,
+            lon: -122.07,
+          },
+        ]}
+        center={CENTER}
+        compact
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /plans/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /events/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /people/i })).toBeInTheDocument();
+  });
 });
 
 describe("MapBoard filters", () => {

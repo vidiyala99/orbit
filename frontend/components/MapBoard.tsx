@@ -153,12 +153,13 @@ export default function MapBoard({
   const [hidden, setHidden] = useState<KindT[]>([]);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const filters = people.length
-    ? [...BASE_FILTERS, { kind: "person" as const, label: "People" }]
-    : BASE_FILTERS;
-  const markers = toMarkers(plans, rooms, events, people, compact).filter(
-    (m) => !hidden.includes(m.kind),
-  );
+  const allMarkers = toMarkers(plans, rooms, events, people, compact);
+  const presentKinds = new Set(allMarkers.map((m) => m.kind));
+  const filters = [
+    ...BASE_FILTERS,
+    ...(people.length ? [{ kind: "person" as const, label: "People" }] : []),
+  ].filter((f) => !compact || presentKinds.has(f.kind));
+  const markers = allMarkers.filter((m) => !hidden.includes(m.kind));
   // Filtering out the selected marker's kind should take its card with it.
   const detail = markers.find((m) => m.key === selected) ?? null;
   const detailHref = detail ? markerHref(detail) : null;
@@ -210,7 +211,7 @@ export default function MapBoard({
             className="absolute left-10 top-[180px] h-[55px] w-[90px] rounded-[6px] bg-ground"
           />
 
-          <div className="absolute left-2.5 top-2.5 z-10 flex gap-1.5">
+          <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-20px)] flex-wrap gap-1.5">
             {filters.map((f) => {
               const on = !hidden.includes(f.kind);
               return (

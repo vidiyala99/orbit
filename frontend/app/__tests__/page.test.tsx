@@ -8,15 +8,21 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Home page", () => {
-  it("has a clear hero, one audience line, three steps, a map preview, and one Try it out", () => {
+  it("has a hero, who it's for, three map steps, a filled preview, and one Try it out", () => {
     render(<Page />);
-    expect(screen.getByRole("heading", { name: /meet the people already at your café, hackathon, or event/i })).toBeInTheDocument();
-    expect(screen.getByText(/for people at cafés, hackathons, and events who want a real meetup/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /see who's nearby/i })).toBeInTheDocument();
+    expect(screen.getByText(/meet them in person/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /who it's for/i })).toBeInTheDocument();
+    expect(screen.getByText(/at a café or cowork/i)).toBeInTheDocument();
+    expect(screen.getByText(/at a hackathon or meetup/i)).toBeInTheDocument();
+    expect(screen.getByText(/new in town/i)).toBeInTheDocument();
     expect(screen.getByTestId("landing-preview")).toBeInTheDocument();
+    expect(screen.getAllByText(/priya r\./i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/hack table/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /how it works/i })).toBeInTheDocument();
     expect(screen.getByText(/pick a location/i)).toBeInTheDocument();
     expect(screen.getByText(/pick a theme/i)).toBeInTheDocument();
-    expect(screen.getByText(/see the map/i)).toBeInTheDocument();
+    expect(screen.getByText(/meet on the map/i)).toBeInTheDocument();
     expect(screen.queryByText(/create a room/i)).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /try it out/i })).toHaveLength(1);
     expect(screen.queryByText(/google oauth maze/i)).not.toBeInTheDocument();
