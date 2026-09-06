@@ -8,17 +8,17 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Home page", () => {
-  it("has a clear hero, one audience line, three steps, a map preview, and one Try it out", () => {
-    render(<Page />);
-    expect(screen.getByRole("heading", { name: /meet the people already at your café, hackathon, or event/i })).toBeInTheDocument();
-    expect(screen.getByText(/for people at cafés, hackathons, and events who want a real meetup/i)).toBeInTheDocument();
+  it("is a map-first cork hero with one line, pins, and one Try it out", () => {
+    const { container } = render(<Page />);
+    expect(container.querySelector("main")?.className).not.toMatch(/items-center justify-center/);
+    expect(screen.getByRole("heading", { name: /meet the people already at your café or hackathon/i })).toBeInTheDocument();
+    expect(screen.getByText(/pick a place and a theme\. see who's nearby — then walk over/i)).toBeInTheDocument();
     expect(screen.getByTestId("landing-preview")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /how it works/i })).toBeInTheDocument();
-    expect(screen.getByText(/pick a location/i)).toBeInTheDocument();
-    expect(screen.getByText(/pick a theme/i)).toBeInTheDocument();
-    expect(screen.getByText(/see the map/i)).toBeInTheDocument();
-    expect(screen.queryByText(/create a room/i)).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("preview-pin")).toHaveLength(4);
     expect(screen.getAllByRole("button", { name: /try it out/i })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: /how it works/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /who it's for/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/create a room/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/google oauth maze/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/research the room/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/time-boxed plan/i)).not.toBeInTheDocument();
