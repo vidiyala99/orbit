@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getClientToken } from "@/lib/auth";
+import { APP_HOME } from "@/lib/routes";
 
 type Page = "home" | "how-it-works" | "about";
 
@@ -41,10 +42,10 @@ export default function MarketingNav({ active }: { active: Page }) {
             </Link>
           ))}
           <Link
-            href={signedIn ? "/map" : "/sign-in"}
+            href={signedIn ? APP_HOME : "/sign-in"}
             className="btn-press rounded-full border border-rule bg-surface px-4 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:px-5 lg:py-2 lg:text-sm"
           >
-            {signedIn ? "Map" : "Sign in"}
+            {signedIn ? "Open app" : "Sign in"}
           </Link>
         </div>
 
@@ -76,8 +77,8 @@ export default function MarketingNav({ active }: { active: Page }) {
             {link.label}
           </Link>
         ))}
-        <Link href={signedIn ? "/map" : "/sign-in"} className="rounded-full font-bold text-accent">
-          {signedIn ? "Map" : "Sign in"}
+        <Link href={signedIn ? APP_HOME : "/sign-in"} className="rounded-full font-bold text-accent">
+          {signedIn ? "Open app" : "Sign in"}
         </Link>
       </div>
     </nav>

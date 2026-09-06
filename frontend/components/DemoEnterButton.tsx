@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { demoLogin } from "@/lib/api";
 import { getClientToken, setClientToken } from "@/lib/auth";
 import { DEMO_OFFLINE_TOKEN } from "@/lib/demoFixtures";
-import { isDemoLoginEnabled } from "@/lib/routes";
+import { APP_HOME, isDemoLoginEnabled } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not enter demo";
@@ -13,7 +13,7 @@ function errorMessage(err: unknown): string {
 export default function DemoEnterButton({
   className,
   label = "Try it out",
-  next = "/try",
+  next = APP_HOME,
 }: {
   className?: string;
   label?: string;
@@ -54,7 +54,7 @@ export default function DemoEnterButton({
         disabled={submitting}
         className={
           className ??
-          "lift btn-press w-full rounded-full bg-ink px-5 py-3 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 lg:px-7 lg:py-3.5 lg:text-lg"
+          "lift btn-press w-full rounded-full bg-accent px-5 py-3 text-sm font-bold text-white shadow-raised hover:bg-accent/90 hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 lg:px-7 lg:py-3.5 lg:text-lg"
         }
       >
         {submitting ? "Entering…" : label}

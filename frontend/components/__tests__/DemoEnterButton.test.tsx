@@ -34,19 +34,19 @@ describe("DemoEnterButton", () => {
     vi.unstubAllEnvs();
   });
 
-  it("still opens /try when demo login fails", async () => {
+  it("still opens /attendees when demo login fails", async () => {
     vi.spyOn(api, "demoLogin").mockRejectedValue(new Error("API down"));
     render(<DemoEnterButton />);
     fireEvent.click(screen.getByRole("button", { name: /try it out/i }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/try"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/attendees"));
     expect(document.cookie).toContain("sc_token=orbit-demo-offline");
   });
 
-  it("is shown by default and lands on the location step", async () => {
+  it("is shown by default and lands on the Slice A guest list", async () => {
     vi.spyOn(api, "demoLogin").mockResolvedValue({ access_token: "demotok", user: onboarded });
     render(<DemoEnterButton />);
     fireEvent.click(screen.getByRole("button", { name: /try it out/i }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/try"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/attendees"));
     expect(document.cookie).toContain("sc_token=demotok");
   });
 

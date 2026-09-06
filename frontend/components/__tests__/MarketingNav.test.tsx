@@ -34,16 +34,17 @@ describe("MarketingNav", () => {
     const links = screen.getAllByRole("link", { name: /sign in/i });
     expect(links).toHaveLength(2);
     links.forEach((link) => expect(link).toHaveAttribute("href", "/sign-in"));
-    expect(screen.queryByRole("link", { name: /^map$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^open app$/i })).not.toBeInTheDocument();
   });
 
-  it("shows a Map link instead of Sign in when a session token is present", async () => {
+  it("shows a quiet Open app link to /attendees when a session token is present", async () => {
     document.cookie = "sc_token=tok123; path=/";
     render(<MarketingNav active="home" />);
     fireEvent.click(screen.getByRole("button", { name: /menu/i }));
-    const links = await screen.findAllByRole("link", { name: /^map$/i });
+    const links = await screen.findAllByRole("link", { name: /^open app$/i });
     expect(links).toHaveLength(2);
-    links.forEach((link) => expect(link).toHaveAttribute("href", "/map"));
+    links.forEach((link) => expect(link).toHaveAttribute("href", "/attendees"));
     expect(screen.queryByRole("link", { name: /sign in/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^map$/i })).not.toBeInTheDocument();
   });
 });
