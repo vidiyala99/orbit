@@ -1,6 +1,7 @@
+import Link from "next/link";
 import MarketingNav from "@/components/MarketingNav";
-import DemoEnterButton from "@/components/DemoEnterButton";
 import LandingPreview from "@/components/LandingPreview";
+import { APP_HOME } from "@/lib/routes";
 
 export default function Page() {
   return (
@@ -18,7 +19,12 @@ export default function Page() {
                 Pick a place and a theme. See who&apos;s nearby — then walk over.
               </p>
               <div className="mt-6">
-                <DemoEnterButton label="Try it out" next="/try" />
+                <Link
+                  href={APP_HOME}
+                  className="lift btn-press inline-flex w-full max-w-sm items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-bold text-white shadow-raised hover:bg-accent/90 hover:shadow-raised-hover lg:px-7 lg:py-3.5 lg:text-lg"
+                >
+                  Try it out
+                </Link>
               </div>
             </div>
           </div>
