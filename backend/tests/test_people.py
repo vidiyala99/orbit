@@ -54,6 +54,21 @@ def test_demo_login_fixture_sync_lists_people_with_payloads(db_session):
         assert person["event_id"] == FIXTURE_EVENT_ID
         assert person["evidence"]
         assert all("source_id" in item and "quote" in item for item in person["evidence"])
+        assert person["priority"] in {"needs_you", "high", "later"}
+        assert isinstance(person["linkedin_connected"], bool)
+        assert isinstance(person["x_interacted"], bool)
+        if person["linkedin_connected"]:
+            assert person["linkedin_url"]
+        else:
+            assert not person["linkedin_url"]
+        if person["x_interacted"]:
+            assert person["x_url"]
+        else:
+            assert not person["x_url"]
+
+    needs_you = [p for p in people if p["priority"] == "needs_you"]
+    assert needs_you
+    assert all(p["note_payload"] and p["dm_payload"] for p in needs_you)
 
 
 def test_fixture_sync_is_idempotent(db_session):
@@ -78,6 +93,7 @@ def test_event_guests_aliases_people_filtered_by_event(db_session):
     assert len(guest_list) >= 3
     assert all(p["event_id"] == DEMO_EVENT_ID for p in guest_list)
     assert all(p.get("relevance") for p in guest_list)
+    assert all(p["priority"] in {"needs_you", "high", "later"} for p in guest_list)
 
     filtered = client.get("/people", params={"event_id": DEMO_EVENT_ID}).json()
     assert [p["id"] for p in filtered] == [p["id"] for p in guest_list]
@@ -124,6 +140,9 @@ def test_create_person_and_get_by_id(db_session):
     assert body["dm_payload"] == "Jordan — good to meet you in the hallway."
     assert body["invite_state"] == "pending"
     assert body["pending_since"] is not None
+    assert body["priority"] is None
+    assert body["linkedin_connected"] is False
+    assert body["x_interacted"] is False
 
     fetched = client.get(f"/people/{body['id']}")
     assert fetched.status_code == 200

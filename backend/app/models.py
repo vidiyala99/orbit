@@ -313,6 +313,13 @@ class Person(Base):
     note_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
     dm_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
     event_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    # Architect desk contract for Face #11. Enum-ish at the Pydantic layer:
+    #   priority: needs_you | high | later
+    priority: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # True only when this contact is already a LinkedIn connection (no scrape).
+    linkedin_connected: Mapped[bool] = mapped_column(Boolean, default=False)
+    # True only when there is an existing X interaction (no scrape).
+    x_interacted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class SyncRun(Base):

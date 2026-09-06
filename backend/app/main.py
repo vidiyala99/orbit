@@ -33,6 +33,8 @@ app = FastAPI(
         "Presence & plans, plus Slice A people/comms: "
         "`GET/POST /people`, `GET/PATCH /people/{id}`, `POST /people/import`, "
         "`GET /events/{id}/guests`, `GET/POST /sync-runs`. "
+        "Person desk fields: `priority` (`needs_you`|`high`|`later`), "
+        "`linkedin_connected`, `x_interacted`, plus `note_payload`/`dm_payload`. "
         "Demo event id: `burning-token`. See backend/README.md."
     ),
     lifespan=lifespan,

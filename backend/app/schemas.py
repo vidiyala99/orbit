@@ -413,6 +413,7 @@ class WaitlistCountOut(BaseModel):
 # Personal comms manager (Slice A). Enum-ish keys stay at this layer,
 # matching Plan.activity / Room.purpose — not DB CHECK constraints.
 INVITE_STATE_KEYS = {"pending", "accepted", "needs_message"}
+PRIORITY_KEYS = {"needs_you", "high", "later"}
 SYNC_SOURCE_KEYS = {"csv", "fixture"}
 # Stable opaque event id for the fixture guest list. Not an events table.
 DEMO_EVENT_ID = "burning-token"
@@ -446,6 +447,9 @@ class PersonCreate(BaseModel):
     note_payload: str | None = None
     dm_payload: str | None = None
     event_id: str | None = Field(default=None, max_length=120)
+    priority: str | None = None
+    linkedin_connected: bool = False
+    x_interacted: bool = False
 
     @field_validator("invite_state")
     @classmethod
@@ -454,6 +458,15 @@ class PersonCreate(BaseModel):
             return value
         if value not in INVITE_STATE_KEYS:
             raise ValueError(f"invalid invite_state: {value}")
+        return value
+
+    @field_validator("priority")
+    @classmethod
+    def _valid_priority(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if value not in PRIORITY_KEYS:
+            raise ValueError(f"invalid priority: {value}")
         return value
 
     @field_validator("name")
@@ -488,6 +501,9 @@ class PersonUpdate(BaseModel):
     note_payload: str | None = None
     dm_payload: str | None = None
     event_id: str | None = Field(default=None, max_length=120)
+    priority: str | None = None
+    linkedin_connected: bool | None = None
+    x_interacted: bool | None = None
 
     @field_validator("invite_state")
     @classmethod
@@ -496,6 +512,15 @@ class PersonUpdate(BaseModel):
             return value
         if value not in INVITE_STATE_KEYS:
             raise ValueError(f"invalid invite_state: {value}")
+        return value
+
+    @field_validator("priority")
+    @classmethod
+    def _valid_priority(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if value not in PRIORITY_KEYS:
+            raise ValueError(f"invalid priority: {value}")
         return value
 
     @field_validator("name")
@@ -533,6 +558,9 @@ class PersonOut(BaseModel):
     note_payload: str | None
     dm_payload: str | None
     event_id: str | None
+    priority: str | None
+    linkedin_connected: bool
+    x_interacted: bool
 
     class Config:
         from_attributes = True

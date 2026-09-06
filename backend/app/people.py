@@ -65,6 +65,9 @@ def person_from_create(user_id, body: PersonCreate) -> Person:
         note_payload=body.note_payload,
         dm_payload=body.dm_payload,
         event_id=body.event_id,
+        priority=body.priority,
+        linkedin_connected=body.linkedin_connected,
+        x_interacted=body.x_interacted,
     )
     apply_invite_timestamps(person, body.invite_state)
     apply_clipboard_payloads(
@@ -84,7 +87,7 @@ def apply_person_update(person: Person, body: PersonUpdate) -> None:
         "where_met", "what_talked", "relevance", "invite_state",
         "pending_since", "accepted_at", "last_touch_at", "intent",
         "note", "dm", "email_draft", "score", "note_payload", "dm_payload",
-        "event_id",
+        "event_id", "priority", "linkedin_connected", "x_interacted",
     )
     for field in assignable:
         if field in fields_set:

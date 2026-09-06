@@ -193,6 +193,8 @@ def _rows_from_csv(text: str) -> list[dict]:
                 row[field] = float(value)
             elif field == "evidence":
                 row[field] = json.loads(value)
+            elif field in ("linkedin_connected", "x_interacted"):
+                row[field] = value.lower() in ("1", "true", "yes")
             else:
                 row[field] = value
         if "name" not in row:

@@ -23,6 +23,16 @@ Demo event id (opaque string, no events table): **`burning-token`**.
 
 `invite_state`: `pending` \| `accepted` \| `needs_message`.
 
+Desk contract (Face #11), on every Person / guest row:
+
+| Field | Values |
+| --- | --- |
+| `priority` | `needs_you` \| `high` \| `later` (required on fixture people) |
+| `linkedin_connected` | boolean — `linkedin_url` is set only when true |
+| `x_interacted` | boolean — `x_url` is set only when true |
+
+Fixture seed includes at least one `needs_you` person (Alex Rivera) with both `note_payload` and `dm_payload`. No LinkedIn scrape.
+
 OpenAPI: `http://localhost:8001/docs` (or the Render URL + `/docs`).
 
 ### Curl (Face)
@@ -52,4 +62,5 @@ curl -sS -X PATCH "$API/people/$PERSON_ID" \
   -d '{"note":"Rewritten note.","dm":"Rewritten DM."}'
 ```
 
-Live Render service: `orbit-api-a8ed` (redeploy after this migration: `alembic upgrade head`).
+Live Render service: `orbit-api-a8ed` (redeploy after migrations: `alembic upgrade head`).
+Desk columns: revision `c8f1a0d3e4b2`.

@@ -147,6 +147,9 @@ def test_person_and_sync_run_persist(db_session):
         event_id="burning-token",
         evidence=[{"source_id": "fixture:test", "quote": "hello"}],
         score=0.9,
+        priority="needs_you",
+        linkedin_connected=True,
+        x_interacted=False,
     )
     run = SyncRun(user_id=user.id, source="fixture", status="ok")
     db_session.add_all([person, run])
@@ -156,4 +159,7 @@ def test_person_and_sync_run_persist(db_session):
     assert fetched.name == "Alex Rivera"
     assert fetched.note_payload == "Long note."
     assert fetched.evidence[0]["source_id"] == "fixture:test"
+    assert fetched.priority == "needs_you"
+    assert fetched.linkedin_connected is True
+    assert fetched.x_interacted is False
     assert db_session.query(SyncRun).filter_by(id=run.id).one().source == "fixture"

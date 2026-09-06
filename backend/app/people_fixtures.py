@@ -59,6 +59,10 @@ FIXTURE_PEOPLE: list[dict] = [
             },
         ],
         "event_id": FIXTURE_EVENT_ID,
+        # Needs you: both clipboard payloads + realistic LI+X flags (URLs only when true).
+        "priority": "needs_you",
+        "linkedin_connected": True,
+        "x_interacted": True,
     },
     {
         "name": "Sam Okonkwo",
@@ -96,6 +100,9 @@ FIXTURE_PEOPLE: list[dict] = [
             },
         ],
         "event_id": FIXTURE_EVENT_ID,
+        "priority": "high",
+        "linkedin_connected": False,
+        "x_interacted": True,
     },
     {
         "name": "Riley Park",
@@ -137,6 +144,9 @@ FIXTURE_PEOPLE: list[dict] = [
             },
         ],
         "event_id": FIXTURE_EVENT_ID,
+        "priority": "later",
+        "linkedin_connected": True,
+        "x_interacted": False,
     },
 ]
 
@@ -157,7 +167,18 @@ def seed_fixture_people(db: Session, user: User) -> list[Person]:
             Person.name == raw["name"],
             Person.event_id == raw["event_id"],
         ).one_or_none()
+        linkedin_url = raw["linkedin_url"] if raw["linkedin_connected"] else None
+        x_url = raw["x_url"] if raw["x_interacted"] else None
         if existing is not None:
+            existing.priority = raw["priority"]
+            existing.linkedin_connected = raw["linkedin_connected"]
+            existing.x_interacted = raw["x_interacted"]
+            existing.linkedin_url = linkedin_url
+            existing.x_url = x_url
+            if not existing.note_payload:
+                existing.note_payload = existing.note or raw["note"]
+            if not existing.dm_payload:
+                existing.dm_payload = existing.dm or raw["dm"]
             seeded.append(existing)
             continue
 
@@ -168,8 +189,8 @@ def seed_fixture_people(db: Session, user: User) -> list[Person]:
             name=raw["name"],
             role=raw["role"],
             avatar_url=raw["avatar_url"],
-            linkedin_url=raw["linkedin_url"],
-            x_url=raw["x_url"],
+            linkedin_url=linkedin_url,
+            x_url=x_url,
             email=raw["email"],
             where_met=raw["where_met"],
             what_talked=raw["what_talked"],
@@ -188,6 +209,9 @@ def seed_fixture_people(db: Session, user: User) -> list[Person]:
             note_payload=note,
             dm_payload=dm,
             event_id=raw["event_id"],
+            priority=raw["priority"],
+            linkedin_connected=raw["linkedin_connected"],
+            x_interacted=raw["x_interacted"],
         )
         db.add(person)
         seeded.append(person)
