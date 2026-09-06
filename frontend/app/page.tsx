@@ -79,11 +79,13 @@ function BookmarkIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path
-        d="M4.4 2.6h7.2c.4 0 .7.3.7.7v10.1L8 10.7l-4.3 2.7V3.3c0-.4.3-.7.7-.7Z"
+        d="M5 2.4h6v11.2L8 11.2 5 13.6V2.4Z"
         stroke="currentColor"
         strokeWidth="1.25"
-        strokeLinejoin="round"
+        strokeLinejoin="miter"
+        strokeLinecap="square"
       />
+      <path d="M6.2 4.2h3.6" stroke="currentColor" strokeWidth="1.15" strokeLinecap="square" />
     </svg>
   );
 }
@@ -196,7 +198,7 @@ function LineAvatar({ who }: { who: (typeof ROWS)[number]["avatar"] }) {
 export default function Page() {
   return (
     <main className="min-h-dvh bg-parchment text-nearink">
-      <header className="mx-auto flex max-w-[1120px] items-center justify-between px-6 py-6 sm:px-10">
+      <header className="mx-auto flex max-w-[1180px] items-center justify-between px-6 py-6 sm:px-10">
         <Link href="/" className="flex items-center gap-2.5 font-serif text-[22px] leading-none tracking-[-0.3px]">
           <span>Orbit</span>
           <OrbitMark />
@@ -217,9 +219,9 @@ export default function Page() {
         </nav>
       </header>
 
-      <section className="mx-auto grid max-w-[1120px] items-center gap-12 px-6 pb-20 pt-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16 lg:pt-10">
-        <div className="max-w-[520px]">
-          <h1 className="font-serif text-[40px] leading-[1.12] tracking-[-0.6px] sm:text-[48px]">
+      <section className="mx-auto grid max-w-[1180px] items-center gap-12 px-6 pb-20 pt-6 sm:px-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:gap-14 lg:pt-10">
+        <div className="max-w-[540px]">
+          <h1 className="font-serif text-[40px] leading-[1.12] tracking-[-0.6px] sm:text-[50px]">
             {H1}
           </h1>
           <div className="mt-6 h-px w-full bg-nearink" />
@@ -228,7 +230,7 @@ export default function Page() {
             {PROOFS.map((proof, index) => (
               <li
                 key={proof.text}
-                className={`flex items-center gap-4 py-4 ${index === 0 ? "border-t border-dotted border-nearink/70" : ""} border-b border-dotted border-nearink/70`}
+                className={`flex items-center gap-4 py-4 ${index === 0 ? "border-t border-dashed border-nearink/55" : ""} border-b border-dashed border-nearink/55`}
               >
                 <ProofIcon name={proof.icon} />
                 <p className="font-mono text-[13px] leading-snug sm:text-[14px]">{proof.text}</p>
@@ -240,23 +242,23 @@ export default function Page() {
         <figure className="min-w-0">
           <div
             data-testid="needs-you-desk"
-            className="rounded-[22px] bg-desk-wash px-5 py-6 sm:px-7 sm:py-7"
+            className="rounded-[22px] bg-desk-wash px-5 py-6 sm:px-8 sm:py-8"
           >
             <div className="flex items-baseline justify-between gap-4 font-mono">
               <p className="text-[15px] font-medium">Needs you</p>
               <p className="text-[12px] sm:text-[13px]">3 people · sorted by priority</p>
             </div>
             <div className="mt-3 h-px bg-nearink" />
-            <ul className="mt-5 flex flex-col gap-3">
+            <ul className="mt-5 flex flex-col gap-3.5">
               {ROWS.map((row) => (
                 <li
                   key={row.name}
-                  className="flex flex-wrap items-center gap-3 rounded-[12px] bg-white px-3 py-3 sm:flex-nowrap sm:px-4"
+                  className="flex flex-wrap items-center gap-3 rounded-[12px] bg-white px-3 py-3.5 sm:flex-nowrap sm:gap-4 sm:px-4"
                 >
                   <LineAvatar who={row.avatar} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-[14px] font-medium">{row.name}</p>
-                    <p className="mt-1 truncate font-mono text-[12px]">{row.met}</p>
+                  <div className="min-w-[12rem] flex-1">
+                    <p className="font-mono text-[14px] font-medium">{row.name}</p>
+                    <p className="mt-1 font-mono text-[12px] leading-snug">{row.met}</p>
                   </div>
                   <div className="ml-auto flex shrink-0 items-center gap-2">
                     <span className="inline-flex items-center bg-lake px-3 py-1.5 font-mono text-[12px] text-white">
