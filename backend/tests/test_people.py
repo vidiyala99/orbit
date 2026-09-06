@@ -23,11 +23,12 @@ def _auth_client(db_session):
 
 def test_people_routes_require_auth(db_session):
     client = next(_client(db_session))
-    assert client.get("/people").status_code == 401
-    assert client.post("/people", json={"name": "Ada"}).status_code == 401
-    assert client.get("/sync-runs").status_code == 401
-    assert client.post("/sync-runs", json={"source": "fixture"}).status_code == 401
-    assert client.get(f"/events/{DEMO_EVENT_ID}/guests").status_code == 401
+    bad = {"Authorization": "Bearer not-a-token"}
+    assert client.get("/people", headers=bad).status_code == 401
+    assert client.post("/people", json={"name": "Ada"}, headers=bad).status_code == 401
+    assert client.get("/sync-runs", headers=bad).status_code == 401
+    assert client.post("/sync-runs", json={"source": "fixture"}, headers=bad).status_code == 401
+    assert client.get(f"/events/{DEMO_EVENT_ID}/guests", headers=bad).status_code == 401
 
 
 def test_demo_login_fixture_sync_lists_people_with_payloads(db_session):
