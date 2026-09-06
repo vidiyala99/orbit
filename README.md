@@ -83,6 +83,12 @@ If it does not pick up the commit: Vercel Dashboard → `orbit` → Deployments 
 `setup.sh` copies `backend/.env.example` and `frontend/.env.local.example`.
 Demo login is on in both. Google / Resend keys are optional.
 
+## Slice A — people / comms API
+
+Fixtures-first personal comms manager (`/people`, `/events/{id}/guests`,
+`/sync-runs`). Demo event id: `burning-token`. Curl + route table:
+[`backend/README.md`](backend/README.md). No LinkedIn scrape, no auto-DM send.
+
 ## Tests
 
 ```bash

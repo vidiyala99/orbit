@@ -408,3 +408,158 @@ class WaitlistOut(BaseModel):
 
 class WaitlistCountOut(BaseModel):
     count: int
+
+
+# Personal comms manager (Slice A). Enum-ish keys stay at this layer,
+# matching Plan.activity / Room.purpose — not DB CHECK constraints.
+INVITE_STATE_KEYS = {"pending", "accepted", "needs_message"}
+SYNC_SOURCE_KEYS = {"csv", "fixture"}
+# Stable opaque event id for the fixture guest list. Not an events table.
+DEMO_EVENT_ID = "burning-token"
+
+
+class EvidenceItem(BaseModel):
+    source_id: str
+    quote: str
+
+
+class PersonCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    role: str | None = Field(default=None, max_length=160)
+    avatar_url: str | None = Field(default=None, max_length=255)
+    linkedin_url: str | None = Field(default=None, max_length=255)
+    x_url: str | None = Field(default=None, max_length=255)
+    email: str | None = Field(default=None, max_length=255)
+    where_met: str | None = Field(default=None, max_length=255)
+    what_talked: str | None = None
+    relevance: str | None = Field(default=None, max_length=280)
+    invite_state: str | None = None
+    pending_since: datetime | None = None
+    accepted_at: datetime | None = None
+    last_touch_at: datetime | None = None
+    intent: str | None = Field(default=None, max_length=160)
+    note: str | None = None
+    dm: str | None = None
+    email_draft: str | None = None
+    score: float | None = None
+    evidence: list[EvidenceItem] | None = None
+    note_payload: str | None = None
+    dm_payload: str | None = None
+    event_id: str | None = Field(default=None, max_length=120)
+
+    @field_validator("invite_state")
+    @classmethod
+    def _valid_invite_state(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if value not in INVITE_STATE_KEYS:
+            raise ValueError(f"invalid invite_state: {value}")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def _strip_name(cls, value: str) -> str:
+        name = value.strip()
+        if not name:
+            raise ValueError("name is required")
+        return name
+
+
+class PersonUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    role: str | None = Field(default=None, max_length=160)
+    avatar_url: str | None = Field(default=None, max_length=255)
+    linkedin_url: str | None = Field(default=None, max_length=255)
+    x_url: str | None = Field(default=None, max_length=255)
+    email: str | None = Field(default=None, max_length=255)
+    where_met: str | None = Field(default=None, max_length=255)
+    what_talked: str | None = None
+    relevance: str | None = Field(default=None, max_length=280)
+    invite_state: str | None = None
+    pending_since: datetime | None = None
+    accepted_at: datetime | None = None
+    last_touch_at: datetime | None = None
+    intent: str | None = Field(default=None, max_length=160)
+    note: str | None = None
+    dm: str | None = None
+    email_draft: str | None = None
+    score: float | None = None
+    evidence: list[EvidenceItem] | None = None
+    note_payload: str | None = None
+    dm_payload: str | None = None
+    event_id: str | None = Field(default=None, max_length=120)
+
+    @field_validator("invite_state")
+    @classmethod
+    def _valid_invite_state(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if value not in INVITE_STATE_KEYS:
+            raise ValueError(f"invalid invite_state: {value}")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def _strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        name = value.strip()
+        if not name:
+            raise ValueError("name is required")
+        return name
+
+
+class PersonOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    role: str | None
+    avatar_url: str | None
+    linkedin_url: str | None
+    x_url: str | None
+    email: str | None
+    where_met: str | None
+    what_talked: str | None
+    relevance: str | None
+    invite_state: str | None
+    pending_since: datetime | None
+    accepted_at: datetime | None
+    last_touch_at: datetime | None
+    intent: str | None
+    note: str | None
+    dm: str | None
+    email_draft: str | None
+    score: float | None
+    evidence: list[EvidenceItem] | None
+    note_payload: str | None
+    dm_payload: str | None
+    event_id: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class PeopleImportOut(BaseModel):
+    created: int
+    people: list[PersonOut]
+
+
+class SyncRunCreate(BaseModel):
+    source: str
+
+    @field_validator("source")
+    @classmethod
+    def _valid_source(cls, value: str) -> str:
+        if value not in SYNC_SOURCE_KEYS:
+            raise ValueError(f"invalid source: {value}")
+        return value
+
+
+class SyncRunOut(BaseModel):
+    id: uuid.UUID
+    source: str
+    status: str
+    created_at: datetime
+    error: str | None
+
+    class Config:
+        from_attributes = True
