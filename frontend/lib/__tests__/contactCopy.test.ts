@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { dm_payload, note_payload } from "../contactCopy";
+import { attendeeEmail, dm_payload, note_payload } from "../contactCopy";
 import { fixtureAttendee } from "../demoFixtures";
 
 const marcus = fixtureAttendee("marcus-ellis");
@@ -22,5 +22,9 @@ describe("contact copy", () => {
     expect(text).toContain("same problem space");
     expect(text.toLowerCase()).not.toContain("send");
     expect(text).not.toEqual(note_payload(marcus!));
+  });
+
+  it("builds a tertiary demo email for mailto", () => {
+    expect(attendeeEmail(marcus!)).toBe("marcus.ellis@orbit.demo");
   });
 });

@@ -179,6 +179,8 @@ export type ContactNoteT = {
   why: string;
 };
 
+export type AttendeePriorityT = "needs_you" | "high" | "later";
+
 export type AttendeeT = {
   id: string;
   first_name: string;
@@ -189,7 +191,12 @@ export type AttendeeT = {
   website_url: string | null;
   why_meet: string;
   avatar_url: string | null;
+  priority: AttendeePriorityT;
+  linkedin_connected: boolean;
+  x_interacted: boolean;
   note: ContactNoteT;
+  note_payload: string;
+  dm_payload: string;
 };
 
 export type EventBriefT = {
