@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import MapBoard from "../MapBoard";
+import MapBoard, { spreadPin } from "../MapBoard";
 import { PlanT, RoomT } from "@/lib/types";
 
 const CENTER = { lat: 37.3861, lon: -122.0839 };
@@ -45,6 +45,13 @@ beforeEach(() => {
 function renderBoard(plans = [makePlan()], rooms = [makeRoom()], events = []) {
   render(<MapBoard plans={plans} rooms={rooms} events={events} center={CENTER} />);
 }
+
+describe("spreadPin", () => {
+  it("nudges a pin off an occupied spot", () => {
+    const next = spreadPin(50, 50, [{ left: 50, top: 50 }], 1);
+    expect(Math.hypot(next.left - 50, next.top - 50)).toBeGreaterThan(5);
+  });
+});
 
 describe("MapBoard pins", () => {
   it("renders a pin per plan and per room", () => {
@@ -202,6 +209,24 @@ describe("MapBoard compact", () => {
 
     fireEvent.click(screen.getByTestId("pin-plan-p1"));
     expect(screen.getByTestId("pin-activity")).toHaveTextContent(/event/i);
+  });
+
+  it("spreads pins that share a coordinate so both can be tapped", () => {
+    render(
+      <MapBoard
+        plans={[
+          makePlan({ id: "p1", lat: 37.3861, lon: -122.0839 }),
+          makePlan({ id: "p2", lat: 37.3861, lon: -122.0839, activity: "event", text: "Hack table" }),
+        ]}
+        rooms={[]}
+        events={[]}
+        center={CENTER}
+        compact
+      />,
+    );
+    const a = screen.getByTestId("pin-plan-p1");
+    const b = screen.getByTestId("pin-plan-p2");
+    expect(a.style.left).not.toEqual(b.style.left);
   });
 
   it("shows an empty overlay when nothing is pinned", () => {

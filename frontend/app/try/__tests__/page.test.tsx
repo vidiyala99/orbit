@@ -102,8 +102,8 @@ describe("Try page", () => {
       expect(api.demoLogin).toHaveBeenCalled();
       expect(api.fetchNearbyPlans).toHaveBeenCalled();
       expect(api.fetchPeopleAround).toHaveBeenCalled();
-      expect(api.fetchNearbyCandidates).toHaveBeenCalled();
     });
+    expect(api.fetchNearbyCandidates).not.toHaveBeenCalled();
   });
 
   it("shows a plan's activity label when the pin is tapped", async () => {
@@ -177,5 +177,6 @@ describe("Try page", () => {
 
     await goToBoard();
     expect(await screen.findByTestId("pin-person-u9")).toBeInTheDocument();
+    expect(api.fetchNearbyCandidates).toHaveBeenCalled();
   });
 });

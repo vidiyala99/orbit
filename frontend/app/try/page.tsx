@@ -105,32 +105,38 @@ export default function TryPage() {
     setBoardError(null);
     const token = await ensureDemoSession(nextLocation);
     const at = new Date().toISOString();
-    const [planResult, roomResult, aroundResult, nearbyResult] = await Promise.allSettled([
+    const [planResult, roomResult, aroundResult] = await Promise.allSettled([
       fetchNearbyPlans(nextLocation.lat, nextLocation.lon, RADIUS_M, at, token, nextTheme),
       fetchNearbyRooms(nextLocation.lat, nextLocation.lon, RADIUS_M, token, nextTheme),
       fetchPeopleAround(nextLocation.lat, nextLocation.lon, token, RADIUS_M),
-      fetchNearbyCandidates(token),
     ]);
 
     const nextPlans = settledValue(planResult, [] as PlanT[]);
     const nextRooms = settledValue(roomResult, [] as RoomT[]);
     const around = settledValue(aroundResult, [] as NearbyPersonT[]);
-    const nearby = settledValue(nearbyResult, [] as MatchCandidateT[]);
-    const nextPeople = around.length > 0 ? around : nearbyToDots(nearby, nextLocation);
+    let nextPeople = around;
+    let nearbyFailed = false;
+    if (around.length === 0) {
+      try {
+        nextPeople = nearbyToDots(await fetchNearbyCandidates(token), nextLocation);
+      } catch (err) {
+        nearbyFailed = true;
+        if (aroundResult.status === "rejected") {
+          setBoardError(errorMessage(aroundResult.reason ?? err));
+        }
+      }
+    }
 
     setPlans(nextPlans);
     setRooms(nextRooms);
     setPeople(nextPeople);
 
     const pinsFailed = planResult.status === "rejected";
-    const peopleFailed = aroundResult.status === "rejected" && nearbyResult.status === "rejected";
-    if (pinsFailed && peopleFailed) {
-      const reason =
-        planResult.status === "rejected" ? planResult.reason : aroundResult.status === "rejected" ? aroundResult.reason : nearbyResult;
-      setBoardError(errorMessage(reason));
-    } else if (pinsFailed || aroundResult.status === "rejected") {
-      const reason = pinsFailed && planResult.status === "rejected" ? planResult.reason : aroundResult.status === "rejected" ? aroundResult.reason : null;
-      setBoardError(errorMessage(reason ?? "Could not load everything nearby."));
+    const peopleFailed = aroundResult.status === "rejected" && (around.length === 0 ? nearbyFailed : false);
+    if (pinsFailed && (peopleFailed || nextPeople.length === 0) && nextPlans.length === 0 && nextRooms.length === 0) {
+      setBoardError(errorMessage(planResult.status === "rejected" ? planResult.reason : "Could not load the board."));
+    } else if (pinsFailed) {
+      setBoardError(errorMessage(planResult.reason));
     }
     setLoadingBoard(false);
   }, []);

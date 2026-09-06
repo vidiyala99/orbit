@@ -81,6 +81,32 @@ export function project(
   };
 }
 
+const PIN_CLEARANCE = 7;
+
+/** Nudges stacked pins apart so a tap can hit each one. */
+export function spreadPin(
+  left: number,
+  top: number,
+  occupied: { left: number; top: number }[],
+  index: number,
+): { left: number; top: number } {
+  const clamp = (v: number) => Math.min(94, Math.max(6, v));
+  let nextLeft = left;
+  let nextTop = top;
+  let attempt = 0;
+  while (
+    attempt < 10 &&
+    occupied.some((spot) => Math.hypot(spot.left - nextLeft, spot.top - nextTop) < PIN_CLEARANCE)
+  ) {
+    const angle = (index + attempt) * 2.3;
+    const radius = PIN_CLEARANCE + attempt * 3;
+    nextLeft = clamp(left + Math.cos(angle) * radius);
+    nextTop = clamp(top + Math.sin(angle) * radius);
+    attempt += 1;
+  }
+  return { left: nextLeft, top: nextTop };
+}
+
 function minutesLeft(endsAt: string): string {
   const mins = Math.round((new Date(endsAt).getTime() - Date.now()) / 60000);
   return mins > 0 ? `${mins} min left` : "wrapping up";
@@ -173,6 +199,15 @@ export default function MapBoard({
   // Filtering out the selected marker's kind should take its card with it.
   const detail = markers.find((m) => m.key === selected) ?? null;
   const detailHref = detail ? markerHref(detail) : null;
+  const occupied: { left: number; top: number }[] = [];
+  const pinPositions = new Map<string, { left: number; top: number }>();
+  markers.forEach((m, index) => {
+    if (m.lat === null || m.lon === null) return;
+    const raw = project(m.lat, m.lon, center);
+    const next = spreadPin(raw.left, raw.top, occupied, index);
+    occupied.push(next);
+    pinPositions.set(m.key, next);
+  });
 
   useEffect(() => {
     if (selected) itemRefs.current[selected]?.scrollIntoView({ block: "nearest" });
@@ -254,8 +289,9 @@ export default function MapBoard({
           />
 
           {markers.map((m) => {
-            if (m.lat === null || m.lon === null) return null;
-            const { left, top } = project(m.lat, m.lon, center);
+            const pos = pinPositions.get(m.key);
+            if (!pos) return null;
+            const { left, top } = pos;
             const on = selected === m.key;
             return (
               <button
