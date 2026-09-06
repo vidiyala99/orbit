@@ -37,16 +37,16 @@ function Avatar({ row }: { row: AttendeeT }) {
       <img
         src={row.avatar_url}
         alt=""
-        width={24}
-        height={24}
-        className="h-6 w-6 shrink-0 rounded-full object-cover"
+        width={28}
+        height={28}
+        className="h-7 w-7 shrink-0 rounded-full object-cover"
       />
     );
   }
   return (
     <span
       aria-hidden="true"
-      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${toneFor(row.id)}`}
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${toneFor(row.id)}`}
     >
       {initials(row)}
     </span>
@@ -84,7 +84,7 @@ function RowCopyButton({
       type="button"
       onClick={onCopy}
       aria-label={label}
-      className={`btn-press relative z-10 h-7 shrink-0 rounded-full px-2.5 text-[11px] font-bold ${look}`}
+      className={`btn-press relative z-10 h-8 shrink-0 rounded-full px-3 text-[12px] font-bold ${look}`}
     >
       <span className="md:hidden">{copied ? "Copied" : short}</span>
       <span className="hidden md:inline">{copied ? "Copied" : label}</span>
@@ -94,7 +94,7 @@ function RowCopyButton({
 
 function NeedsYouActions({ row }: { row: AttendeeT }) {
   return (
-    <div className="relative z-10 flex shrink-0 items-center gap-1.5">
+    <div className="relative z-10 flex shrink-0 items-center gap-2">
       <RowCopyButton
         label="Copy note"
         short="Note"
@@ -109,7 +109,7 @@ function NeedsYouActions({ row }: { row: AttendeeT }) {
       />
       <a
         href={`mailto:${attendeeEmail(row)}`}
-        className="hidden text-[12px] font-medium text-ink hover:text-accent md:inline"
+        className="hidden text-[13px] font-medium text-ink hover:text-accent md:inline"
         onClick={(e) => e.stopPropagation()}
       >
         Email
@@ -124,16 +124,16 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   return (
     <li className="relative border-b border-rule last:border-b-0">
       <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
-      <div className="flex min-h-12 items-center gap-2 px-2 py-1.5 md:min-h-12">
+      <div className="flex min-h-14 items-center gap-3 px-3 py-2.5 md:min-h-14 md:px-4">
         <span className="order-1">
           <Avatar row={row} />
         </span>
-        <div className="order-2 min-w-0 flex-1 md:w-[180px] md:flex-none">
-          <p className="truncate text-[13px] font-bold leading-none text-ink">{name}</p>
-          <p className="mt-0.5 truncate text-[11px] font-medium leading-none text-ink2">{row.role}</p>
+        <div className="order-2 min-w-0 flex-1 md:w-[200px] md:flex-none">
+          <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
+          <p className="mt-1 truncate text-[12px] font-medium leading-snug text-ink2">{row.role}</p>
           <p
             title={row.why_meet}
-            className="mt-0.5 truncate font-mono text-[11px] italic leading-none text-ink2 md:hidden"
+            className="mt-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:hidden"
           >
             {row.why_meet}
           </p>
@@ -150,11 +150,11 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
         </span>
         <p
           title={row.why_meet}
-          className="order-4 hidden min-w-0 flex-1 truncate font-mono text-[11px] italic leading-none text-ink2 md:block"
+          className="order-4 hidden min-w-0 flex-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:block"
         >
           {row.why_meet}
         </p>
-        <p className="order-4 tabular shrink-0 text-[12px] font-semibold leading-none text-ink md:order-6">
+        <p className="order-4 tabular shrink-0 text-[13px] font-semibold leading-none text-ink md:order-6">
           #{rank}
         </p>
         {needsYou ? (
@@ -181,8 +181,8 @@ export default function AttendeeBrief({
   const rows = attendees.filter((row) => row.priority === segment);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl bg-ground px-2 pb-16 pt-4 md:px-6">
-      <header className="flex items-center gap-2 pb-3 md:gap-3">
+    <main className="mx-auto min-h-screen w-full max-w-5xl bg-ground px-4 pb-16 pt-5 md:px-8">
+      <header className="flex items-center gap-3 pb-4">
         <Link
           href={backHref}
           aria-label="Back"
@@ -201,7 +201,7 @@ export default function AttendeeBrief({
       <div
         role="tablist"
         aria-label="Priority"
-        className="mb-3 grid grid-cols-3 overflow-hidden rounded-[10px] border border-rule bg-surface"
+        className="mb-4 grid grid-cols-3 overflow-hidden rounded-[10px] border border-rule bg-surface"
       >
         {SEGMENTS.map((item) => {
           const selected = segment === item.id;
@@ -214,8 +214,8 @@ export default function AttendeeBrief({
               onClick={() => setSegment(item.id)}
               className={
                 selected
-                  ? "flex h-9 items-center justify-center gap-1.5 bg-accent-soft text-[13px] font-bold text-ink"
-                  : "h-9 text-[13px] font-medium text-ink3"
+                  ? "flex h-10 items-center justify-center gap-1.5 bg-accent-soft text-[13px] font-bold text-ink"
+                  : "h-10 text-[13px] font-medium text-ink3"
               }
             >
               {item.label}
@@ -231,7 +231,7 @@ export default function AttendeeBrief({
         {rows.length === 0 ? (
           <p className="px-3 py-3 text-[13px] font-medium text-ink3">No one in this list.</p>
         ) : (
-          <ul className="max-h-[calc(5*2.75rem)] overflow-y-auto md:max-h-[calc(5*2.5rem)]">
+          <ul className="max-h-[calc(5*4.5rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
             {rows.map((row, i) => (
               <DeskRow key={row.id} row={row} rank={i + 1} />
             ))}

@@ -127,7 +127,7 @@ describe("AttendeeBrief", () => {
     expect(row?.className).not.toMatch(/rounded-card/);
     expect(row?.className).not.toMatch(/shadow-card/);
     const rowBody = row?.querySelector(":scope > div.flex");
-    expect(rowBody?.className).toMatch(/min-h-12/);
+    expect(rowBody?.className).toMatch(/min-h-14/);
     const list = container.querySelector("ul");
     expect(list?.className).not.toMatch(/gap-4/);
     expect(list?.className).toMatch(/max-h-\[calc\(5\*/);

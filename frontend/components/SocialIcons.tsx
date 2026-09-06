@@ -43,7 +43,7 @@ export function ChevronLeftIcon() {
 const SOCIAL =
   "relative z-10 inline-flex h-8 w-8 items-center justify-center text-ink2 hover:text-accent";
 const SOCIAL_DENSE =
-  "relative z-10 inline-flex h-6 w-6 items-center justify-center text-ink2 hover:text-accent";
+  "relative z-10 inline-flex h-7 w-7 items-center justify-center text-ink2 hover:text-accent";
 
 export function AttendeeSocials({
   name,
