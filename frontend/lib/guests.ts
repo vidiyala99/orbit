@@ -147,11 +147,26 @@ function fallbackDesk(): DeskGuests {
   return { event: FIXTURE_EVENT, attendees: FIXTURE_ATTENDEES, source: "fallback" };
 }
 
+function persistToken(token: string) {
+  if (typeof document === "undefined") return;
+  setClientToken(token);
+}
+
+async function existingSessionToken(): Promise<string | null> {
+  if (typeof document !== "undefined") return getClientToken();
+  try {
+    const { cookies } = await import("next/headers");
+    return (await cookies()).get("sc_token")?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveGuestsToken(existing: string | null): Promise<string | null> {
   if (existing && existing !== DEMO_OFFLINE_TOKEN) return existing;
   try {
     const { access_token } = await demoLogin();
-    setClientToken(access_token);
+    persistToken(access_token);
     return access_token;
   } catch {
     return null;
@@ -169,7 +184,7 @@ async function fetchMappedGuests(token: string): Promise<AttendeeT[]> {
 }
 
 export async function loadDeskGuests(): Promise<DeskGuests> {
-  let token = await resolveGuestsToken(getClientToken());
+  let token = await resolveGuestsToken(await existingSessionToken());
   if (!token) return fallbackDesk();
 
   try {

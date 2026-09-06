@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import AttendeesPage from "../page";
 import ContactNotePage from "../[id]/page";
@@ -55,8 +55,8 @@ beforeEach(() => {
 
 describe("AttendeesPage", () => {
   it("renders the desk with no session and no sign-in redirect", async () => {
-    render(<AttendeesPage />);
-    expect(await screen.findByRole("heading", { name: /nerdconf sf/i })).toBeInTheDocument();
+    render(await AttendeesPage());
+    expect(screen.getByRole("heading", { name: /nerdconf sf/i })).toBeInTheDocument();
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
     expect(screen.getByText("Marcus Ellis")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /today|capture|outreach/i })).not.toBeInTheDocument();
@@ -66,8 +66,8 @@ describe("AttendeesPage", () => {
 
   it("renders live guests when the loader returns Engine people", async () => {
     loadDeskGuests.mockResolvedValue(liveDesk);
-    render(<AttendeesPage />);
-    expect(await screen.findByRole("heading", { name: /burning token/i })).toBeInTheDocument();
+    render(await AttendeesPage());
+    expect(screen.getByRole("heading", { name: /burning token/i })).toBeInTheDocument();
     expect(screen.getByText("Alex Rivera")).toBeInTheDocument();
     expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
     expect(screen.queryByText(/sign in/i)).not.toBeInTheDocument();
@@ -78,8 +78,8 @@ describe("AttendeesPage", () => {
 
 describe("ContactNotePage", () => {
   it("renders the Marcus contact note with no session", async () => {
-    render(<ContactNotePage params={Promise.resolve({ id: "marcus-ellis" })} />);
-    expect(await screen.findByRole("heading", { name: "Marcus Ellis" })).toBeInTheDocument();
+    render(await ContactNotePage({ params: Promise.resolve({ id: "marcus-ellis" }) }));
+    expect(screen.getByRole("heading", { name: "Marcus Ellis" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /where you met/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy note/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy dm/i })).toBeInTheDocument();
@@ -89,14 +89,17 @@ describe("ContactNotePage", () => {
   it("renders a live guest by Engine id", async () => {
     loadDeskGuests.mockResolvedValue(liveDesk);
     render(
-      <ContactNotePage params={Promise.resolve({ id: "68d0e97d-4bfe-4142-996d-7ea1db58ed08" })} />,
+      await ContactNotePage({
+        params: Promise.resolve({ id: "68d0e97d-4bfe-4142-996d-7ea1db58ed08" }),
+      }),
     );
-    expect(await screen.findByRole("heading", { name: "Alex Rivera" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Alex Rivera" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy note/i })).toBeInTheDocument();
   });
 
   it("404s an unknown attendee", async () => {
-    render(<ContactNotePage params={Promise.resolve({ id: "missing" })} />);
-    await waitFor(() => expect(notFound).toHaveBeenCalled());
+    await expect(
+      ContactNotePage({ params: Promise.resolve({ id: "missing" }) }),
+    ).rejects.toThrow("NOT_FOUND");
   });
 });
