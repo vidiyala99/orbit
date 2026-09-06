@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { attendeeName } from "@/lib/demoFixtures";
+import { attendeeEmail, dm_payload, note_payload, writeClipboard } from "@/lib/contactCopy";
 import type { AttendeePriorityT, AttendeeT, EventBriefT } from "@/lib/types";
-import { AttendeeSocials, ChevronLeftIcon, PeopleIcon, StarIcon } from "./SocialIcons";
+import { AttendeeSocials, ChevronLeftIcon } from "./SocialIcons";
 
 const SEGMENTS: { id: AttendeePriorityT; label: string }[] = [
   { id: "needs_you", label: "Needs you" },
@@ -52,27 +53,115 @@ function Avatar({ row }: { row: AttendeeT }) {
   );
 }
 
+function RowCopyButton({
+  label,
+  short,
+  text,
+  variant,
+}: {
+  label: string;
+  short: string;
+  text: string;
+  variant: "primary" | "secondary";
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function onCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    await writeClipboard(text);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  const look =
+    variant === "primary"
+      ? "bg-accent text-white"
+      : "border border-ink bg-surface text-ink";
+
+  return (
+    <button
+      type="button"
+      onClick={onCopy}
+      aria-label={label}
+      className={`btn-press relative z-10 h-7 shrink-0 rounded-full px-2.5 text-[11px] font-bold ${look}`}
+    >
+      <span className="md:hidden">{copied ? "Copied" : short}</span>
+      <span className="hidden md:inline">{copied ? "Copied" : label}</span>
+    </button>
+  );
+}
+
+function NeedsYouActions({ row }: { row: AttendeeT }) {
+  return (
+    <div className="relative z-10 flex shrink-0 items-center gap-1.5">
+      <RowCopyButton
+        label="Copy note"
+        short="Note"
+        text={note_payload(row)}
+        variant="primary"
+      />
+      <RowCopyButton
+        label="Copy DM"
+        short="DM"
+        text={dm_payload(row)}
+        variant="secondary"
+      />
+      <a
+        href={`mailto:${attendeeEmail(row)}`}
+        className="hidden text-[12px] font-medium text-ink hover:text-accent md:inline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        Email
+      </a>
+    </div>
+  );
+}
+
 function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   const name = attendeeName(row);
+  const needsYou = row.priority === "needs_you";
   return (
     <li className="relative border-b border-rule last:border-b-0">
       <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
-      <div className="flex min-h-11 items-center gap-2 px-2 py-2 md:min-h-10 md:py-1.5">
-        <Avatar row={row} />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-row md:items-center md:gap-3">
-          <div className="min-w-0 md:w-[220px] md:shrink-0">
-            <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
-            <p className="truncate text-[12px] font-medium leading-tight text-ink2">{row.role}</p>
-          </div>
+      <div className="flex min-h-12 items-center gap-2 px-2 py-1.5 md:min-h-12">
+        <span className="order-1">
+          <Avatar row={row} />
+        </span>
+        <div className="order-2 min-w-0 flex-1 md:w-[180px] md:flex-none">
+          <p className="truncate text-[13px] font-bold leading-none text-ink">{name}</p>
+          <p className="mt-0.5 truncate text-[11px] font-medium leading-none text-ink2">{row.role}</p>
           <p
             title={row.why_meet}
-            className="truncate font-mono text-[11px] italic leading-tight text-ink2 md:flex-1"
+            className="mt-0.5 truncate font-mono text-[11px] italic leading-none text-ink2 md:hidden"
           >
             {row.why_meet}
           </p>
         </div>
-        <AttendeeSocials name={name} linkedinUrl={row.linkedin_url} xUrl={row.x_url} dense />
-        <p className="tabular shrink-0 text-[12px] font-semibold leading-none text-ink">#{rank}</p>
+        <span className="order-3">
+          <AttendeeSocials
+            name={name}
+            linkedinUrl={row.linkedin_url}
+            xUrl={row.x_url}
+            showLinkedIn={row.linkedin_connected}
+            showX={row.x_interacted}
+            dense
+          />
+        </span>
+        <p
+          title={row.why_meet}
+          className="order-4 hidden min-w-0 flex-1 truncate font-mono text-[11px] italic leading-none text-ink2 md:block"
+        >
+          {row.why_meet}
+        </p>
+        <p className="order-4 tabular shrink-0 text-[12px] font-semibold leading-none text-ink md:order-6">
+          #{rank}
+        </p>
+        {needsYou ? (
+          <div className="order-5">
+            <NeedsYouActions row={row} />
+          </div>
+        ) : null}
       </div>
     </li>
   );
@@ -104,11 +193,8 @@ export default function AttendeeBrief({
         <h1 className="text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[22px]">
           {event.title}
         </h1>
-        <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink2">
-          <PeopleIcon />
-          <span>
-            {event.datetime} · {count} {count === 1 ? "guest" : "guests"}
-          </span>
+        <p className="text-[13px] font-medium text-ink2">
+          {event.datetime} · {count} {count === 1 ? "guest" : "guests"}
         </p>
       </header>
 
@@ -152,11 +238,6 @@ export default function AttendeeBrief({
           </ul>
         )}
       </div>
-
-      <p className="mt-4 flex items-center gap-2 text-[12px] font-medium text-ink3">
-        <StarIcon />
-        <span>Manager surfaces who matters first.</span>
-      </p>
     </main>
   );
 }

@@ -192,6 +192,8 @@ export type AttendeeT = {
   why_meet: string;
   avatar_url: string | null;
   priority: AttendeePriorityT;
+  linkedin_connected: boolean;
+  x_interacted: boolean;
   note: ContactNoteT;
 };
 

@@ -48,5 +48,9 @@ describe("demo fixtures", () => {
     expect(FIXTURE_ATTENDEES.filter((row) => row.priority === "needs_you").length).toBeGreaterThanOrEqual(5);
     expect(FIXTURE_ATTENDEES.some((row) => row.priority === "high")).toBe(true);
     expect(FIXTURE_ATTENDEES.some((row) => row.priority === "later")).toBe(true);
+    expect(FIXTURE_ATTENDEES.some((row) => row.linkedin_connected && !row.x_interacted)).toBe(true);
+    expect(FIXTURE_ATTENDEES.some((row) => row.x_interacted && !row.linkedin_connected)).toBe(true);
+    expect(FIXTURE_ATTENDEES.some((row) => row.linkedin_connected && row.x_interacted)).toBe(true);
+    expect(FIXTURE_ATTENDEES.every((row) => row.linkedin_connected && row.x_interacted)).toBe(false);
   });
 });

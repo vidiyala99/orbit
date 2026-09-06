@@ -142,7 +142,9 @@ function attendee(
   why: string,
   priority: AttendeePriorityT,
   note: AttendeeT["note"],
-  extra: Partial<Pick<AttendeeT, "website_url" | "avatar_url">> = {},
+  extra: Partial<
+    Pick<AttendeeT, "website_url" | "avatar_url" | "linkedin_connected" | "x_interacted">
+  > = {},
 ): AttendeeT {
   const handle = `${first}-${last}`.toLowerCase().replace(/[^a-z-]/g, "");
   return {
@@ -156,6 +158,8 @@ function attendee(
     why_meet: why,
     avatar_url: extra.avatar_url ?? null,
     priority,
+    linkedin_connected: extra.linkedin_connected ?? false,
+    x_interacted: extra.x_interacted ?? false,
     note,
   };
 }
@@ -173,7 +177,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Agent infra and how teams ship evals without a second platform.",
       why: "Building the layer your last two projects already assume exists.",
     },
-    { website_url: "https://render.com" },
+    { website_url: "https://render.com", linkedin_connected: true },
   ),
   attendee(
     "marcus-ellis",
@@ -187,6 +191,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "The future of agentic tools and how Render is thinking about infra for them.",
       why: "He's building in the same problem space and could be a great collaborator or advisor.",
     },
+    { x_interacted: true },
   ),
   attendee(
     "priya-raman",
@@ -200,6 +205,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Eval harnesses for search ranking and who to hire first.",
       why: "Same hiring problem, complementary stack.",
     },
+    { linkedin_connected: true },
   ),
   attendee(
     "jules-okada",
@@ -213,7 +219,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "How spatial UIs survive a 200-person room.",
       why: "Needs an engineer who has shipped event-scale surfaces.",
     },
-    { website_url: "https://okada.work" },
+    { website_url: "https://okada.work", x_interacted: true },
   ),
   attendee(
     "amina-shah",
@@ -227,6 +233,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Who in the room is actually shipping vs. pitching.",
       why: "Can intro the applied-research ICs you asked about.",
     },
+    { linkedin_connected: true },
   ),
   attendee(
     "maya-rao",
@@ -240,6 +247,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Turning a guest list into a living notes doc.",
       why: "Has the distribution; you have the contact note.",
     },
+    { linkedin_connected: true, x_interacted: true },
   ),
   attendee(
     "dev-kim",
@@ -253,6 +261,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Follow-up after the room dies — the actual retention hole.",
       why: "Looking at the category you're building in.",
     },
+    { linkedin_connected: true },
   ),
   attendee(
     "sam-ortiz",
@@ -266,6 +275,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "What people actually copy-paste the next morning.",
       why: "Building the adjacent product; worth a weekly sync.",
     },
+    { x_interacted: true },
   ),
   attendee(
     "sophie-carter",
@@ -279,6 +289,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Why most event follow-up reads like a newsletter.",
       why: "Can tighten the note you send the next morning.",
     },
+    { linkedin_connected: true },
   ),
   attendee(
     "kenji-watanabe",
@@ -292,6 +303,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Keeping a 2k-person list snappy on a bad venue network.",
       why: "Would review the list path you're about to ship.",
     },
+    { x_interacted: true },
   ),
   attendee(
     "lina-park",
@@ -305,7 +317,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Warm paper UI that still reads as a product, not a mood board.",
       why: "Has operators in rooms you want next.",
     },
-    { website_url: "https://cork.events" },
+    { website_url: "https://cork.events", linkedin_connected: true },
   ),
   attendee(
     "theo-brooks",
