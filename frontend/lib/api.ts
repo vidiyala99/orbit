@@ -194,6 +194,50 @@ export async function demoLogin(
   }
 }
 
+export class ApiRequestError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
+/** Burning Token guest list — same Person rows as GET /people?event_id=. */
+export async function fetchEventGuests(eventId: string, token: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const res = await fetch(`${API_BASE}/events/${encodeURIComponent(eventId)}/guests`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new ApiRequestError(`fetchEventGuests failed: ${res.status}`, res.status);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** POST /sync-runs {source: fixture} — seeds demo people when the guest list is empty. */
+export async function syncFixturePeople(token: string): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const res = await fetch(`${API_BASE}/sync-runs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ source: "fixture" }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new ApiRequestError(`syncFixturePeople failed: ${res.status}`, res.status);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   const res = await fetch(`${API_BASE}/auth/request-password-reset`, {
     method: "POST",
