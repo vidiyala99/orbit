@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Manrope, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const LINE = "Personal communications manager — memory that closes the loop. Not a draft box.";
+const LINE = "Personal communications manager - memory that closes the loop.";
 
 export const metadata: Metadata = {
   title: "Orbit",
@@ -11,12 +11,17 @@ export const metadata: Metadata = {
   twitter: { title: "Orbit", description: LINE },
 };
 
-/** One face carries the whole product; weight does the hierarchy. Mono is
- *  loaded at a single weight because it only ever sets times and counts. */
+/** Manrope still carries the product UI. Newsreader is the landing wordmark
+ *  and promise; Plex Mono stays on functional lines (met-at, captions). */
 const manrope = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-manrope",
+});
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-serif",
 });
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -27,7 +32,7 @@ const plexMono = IBM_Plex_Mono({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${newsreader.variable} ${plexMono.variable}`}>
       <body className="bg-ground font-sans text-ink antialiased">{children}</body>
     </html>
   );

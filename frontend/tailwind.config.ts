@@ -30,12 +30,17 @@ export default {
         accent: "#5B7A5B",
         "accent-soft": "#E4EADF",
         rule: "#E7E4DC",
+        /* Landing only — Lake Blue filled Try it / Copy note. Desk card is
+           the muted companion. Product UI keeps sage accent. */
+        lake: "#3A6B8C",
+        "lake-muted": "#D5DEE6",
         /* Idle label inside the dark tab bar — the only colour that only ever
            sits on ink. */
         "tab-idle": "#93A08A",
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
         mono: ["var(--font-plex-mono)", "ui-monospace", "monospace"],
       },
       borderRadius: {

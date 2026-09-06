@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+.landing-paper {
+  background-color: #f5f3ee;
+  background-image:
+    radial-gradient(rgba(47, 51, 44, 0.045) 0.65px, transparent 0.65px),
+    linear-gradient(180deg, rgba(255, 252, 246, 0.55), rgba(245, 243, 238, 0.15));
+  background-size: 3px 3px, auto;
+}
+
+.landing-paper a:focus-visible,
+.landing-paper button:focus-visible {
+  outline-color: #3a6b8c;
+}
+
 :root {
   /* Sage & Stone — Slice A / Design AC */
   --ground: #F5F3EE;
