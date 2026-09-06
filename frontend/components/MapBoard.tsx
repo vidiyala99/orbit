@@ -27,7 +27,16 @@ type MarkerT = {
   glyph: string;
   lat: number | null;
   lon: number | null;
+  activity?: string;
 };
+
+function activityLabel(activity: string): string {
+  return activity
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 const BASE_FILTERS: { kind: KindT; label: string }[] = [
   { kind: "plan", label: "Plans" },
@@ -72,6 +81,32 @@ export function project(
   };
 }
 
+const PIN_CLEARANCE = 7;
+
+/** Nudges stacked pins apart so a tap can hit each one. */
+export function spreadPin(
+  left: number,
+  top: number,
+  occupied: { left: number; top: number }[],
+  index: number,
+): { left: number; top: number } {
+  const clamp = (v: number) => Math.min(94, Math.max(6, v));
+  let nextLeft = left;
+  let nextTop = top;
+  let attempt = 0;
+  while (
+    attempt < 10 &&
+    occupied.some((spot) => Math.hypot(spot.left - nextLeft, spot.top - nextTop) < PIN_CLEARANCE)
+  ) {
+    const angle = (index + attempt) * 2.3;
+    const radius = PIN_CLEARANCE + attempt * 3;
+    nextLeft = clamp(left + Math.cos(angle) * radius);
+    nextTop = clamp(top + Math.sin(angle) * radius);
+    attempt += 1;
+  }
+  return { left: nextLeft, top: nextTop };
+}
+
 function minutesLeft(endsAt: string): string {
   const mins = Math.round((new Date(endsAt).getTime() - Date.now()) / 60000);
   return mins > 0 ? `${mins} min left` : "wrapping up";
@@ -98,6 +133,7 @@ function toMarkers(
       glyph: GLYPH.plan,
       lat: p.lat,
       lon: p.lon,
+      activity: p.activity ? activityLabel(p.activity) : undefined,
     })),
     ...events.map((e) => ({
       key: `event-${e.id}`,
@@ -153,15 +189,25 @@ export default function MapBoard({
   const [hidden, setHidden] = useState<KindT[]>([]);
   const itemRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const filters = people.length
-    ? [...BASE_FILTERS, { kind: "person" as const, label: "People" }]
-    : BASE_FILTERS;
-  const markers = toMarkers(plans, rooms, events, people, compact).filter(
-    (m) => !hidden.includes(m.kind),
-  );
+  const allMarkers = toMarkers(plans, rooms, events, people, compact);
+  const presentKinds = new Set(allMarkers.map((m) => m.kind));
+  const filters = [
+    ...BASE_FILTERS,
+    ...(people.length ? [{ kind: "person" as const, label: "People" }] : []),
+  ].filter((f) => !compact || presentKinds.has(f.kind));
+  const markers = allMarkers.filter((m) => !hidden.includes(m.kind));
   // Filtering out the selected marker's kind should take its card with it.
   const detail = markers.find((m) => m.key === selected) ?? null;
   const detailHref = detail ? markerHref(detail) : null;
+  const occupied: { left: number; top: number }[] = [];
+  const pinPositions = new Map<string, { left: number; top: number }>();
+  markers.forEach((m, index) => {
+    if (m.lat === null || m.lon === null) return;
+    const raw = project(m.lat, m.lon, center);
+    const next = spreadPin(raw.left, raw.top, occupied, index);
+    occupied.push(next);
+    pinPositions.set(m.key, next);
+  });
 
   useEffect(() => {
     if (selected) itemRefs.current[selected]?.scrollIntoView({ block: "nearest" });
@@ -181,17 +227,19 @@ export default function MapBoard({
       data-testid="map-split"
       className={
         compact
-          ? "flex flex-1 flex-col"
+          ? "absolute inset-0"
           : "flex flex-1 flex-col md:grid md:grid-cols-[290px_minmax(0,1fr)] md:items-start md:gap-4 md:px-[18px]"
       }
     >
-      {/* The schematic map is inset as a card rather than run edge-to-edge, so
-          it reads as one object pinned to the board. */}
-      <div className="order-1 mb-1 shrink-0 px-[18px] md:order-2 md:mb-0 md:px-0">
+      {/* Compact /try is full-bleed pins. The signed-in /map board stays a
+          paper card with a list beside it. */}
+      <div className={compact ? "absolute inset-0" : "order-1 mb-1 shrink-0 px-[18px] md:order-2 md:mb-0 md:px-0"}>
         <div
-          className={`relative overflow-hidden rounded-card bg-surface shadow-card ${
-            compact ? "h-[58vh] min-h-[320px] md:h-[68vh]" : "h-[250px] md:h-[70vh]"
-          }`}
+          className={
+            compact
+              ? "relative h-full overflow-hidden bg-ground"
+              : "relative h-[250px] overflow-hidden rounded-card bg-surface shadow-card md:h-[70vh]"
+          }
         >
           <div
             aria-hidden="true"
@@ -210,7 +258,7 @@ export default function MapBoard({
             className="absolute left-10 top-[180px] h-[55px] w-[90px] rounded-[6px] bg-ground"
           />
 
-          <div className="absolute left-2.5 top-2.5 z-10 flex gap-1.5">
+          <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-20px)] flex-wrap gap-1.5">
             {filters.map((f) => {
               const on = !hidden.includes(f.kind);
               return (
@@ -241,8 +289,9 @@ export default function MapBoard({
           />
 
           {markers.map((m) => {
-            if (m.lat === null || m.lon === null) return null;
-            const { left, top } = project(m.lat, m.lon, center);
+            const pos = pinPositions.get(m.key);
+            if (!pos) return null;
+            const { left, top } = pos;
             const on = selected === m.key;
             return (
               <button
@@ -250,7 +299,7 @@ export default function MapBoard({
                 type="button"
                 data-testid={`pin-${m.key}`}
                 aria-current={on}
-                aria-label={m.title}
+                aria-label={m.activity ? `${m.title}, ${m.activity}` : m.title}
                 onClick={() => setSelected(m.key)}
                 className={`absolute -translate-x-1/2 -translate-y-full transition-transform duration-200 ease-out ${
                   on ? "z-10 scale-[1.3]" : "hover:scale-110"
@@ -293,6 +342,11 @@ export default function MapBoard({
                 </button>
               </div>
               <p className="mt-1 font-mono text-[10.5px] text-ink3">{detail.meta}</p>
+              {detail.activity && (
+                <p data-testid="pin-activity" className="mt-1 text-[12px] font-bold text-accent">
+                  {detail.activity}
+                </p>
+              )}
               {detailHref && (
                 <Link
                   href={detailHref}
@@ -303,27 +357,32 @@ export default function MapBoard({
               )}
             </div>
           )}
+
+          {compact && markers.length === 0 && (
+            <div
+              data-testid="map-empty"
+              className="absolute inset-0 z-[5] flex items-center justify-center px-6"
+            >
+              <p className="rounded-card bg-surface px-4 py-3 text-center text-[13px] font-medium text-ink2 shadow-card">
+                Nothing pinned near you yet.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div
-        data-testid="nearby-list"
-        className={
-          compact
-            ? "order-2 px-[18px] pb-2 pt-3"
-            : "order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
-        }
-      >
-        {!compact && (
+      {!compact && (
+        <div
+          data-testid="nearby-list"
+          className="order-2 flex-1 px-[18px] pb-4 pt-4 md:order-1 md:max-h-[70vh] md:overflow-y-auto md:px-0 md:pt-0"
+        >
           <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">
             What&apos;s happening now
           </p>
-        )}
-        {markers.length === 0 ? (
-          <p className="text-[13px] text-ink2">Nothing pinned near you yet.</p>
-        ) : compact ? (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {markers.map((m) => {
+          {markers.length === 0 ? (
+            <p className="text-[13px] text-ink2">Nothing pinned near you yet.</p>
+          ) : (
+            markers.map((m) => {
               const on = selected === m.key;
               return (
                 <div
@@ -339,58 +398,30 @@ export default function MapBoard({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") setSelected(m.key);
                   }}
-                  className={`lift btn-press w-[148px] shrink-0 cursor-pointer rounded-card bg-surface p-3 ${
-                    on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card"
+                  className={`lift btn-press mb-3 flex cursor-pointer items-center gap-3 rounded-card bg-surface p-4 transition-shadow ${
+                    on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card hover:shadow-card-hover"
                   }`}
                 >
-                  <p className="truncate text-[13px] font-bold text-ink">{m.title}</p>
-                  <p className="mt-1 inline-flex max-w-full truncate rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-bold text-accent">
-                    {m.meta}
-                  </p>
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                      DOT_CLASS[m.kind]
+                    }`}
+                  >
+                    {m.glyph}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13.5px] font-semibold text-ink">
+                      {m.title}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[10.5px] text-ink3">{m.meta}</span>
+                  </span>
                 </div>
               );
-            })}
-          </div>
-        ) : (
-          markers.map((m) => {
-            const on = selected === m.key;
-            return (
-              <div
-                key={m.key}
-                ref={(el) => {
-                  itemRefs.current[m.key] = el;
-                }}
-                data-testid={`item-${m.key}`}
-                aria-current={on}
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelected(m.key)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setSelected(m.key);
-                }}
-                className={`lift btn-press mb-3 flex cursor-pointer items-center gap-3 rounded-card bg-surface p-4 transition-shadow ${
-                  on ? "shadow-card-hover ring-1 ring-accent" : "shadow-card hover:shadow-card-hover"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                    DOT_CLASS[m.kind]
-                  }`}
-                >
-                  {m.glyph}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[13.5px] font-semibold text-ink">
-                    {m.title}
-                  </span>
-                  <span className="mt-0.5 block font-mono text-[10.5px] text-ink3">{m.meta}</span>
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 }

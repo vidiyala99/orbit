@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import MapBoard from "../MapBoard";
+import MapBoard, { spreadPin } from "../MapBoard";
 import { PlanT, RoomT } from "@/lib/types";
 
 const CENTER = { lat: 37.3861, lon: -122.0839 };
@@ -45,6 +45,13 @@ beforeEach(() => {
 function renderBoard(plans = [makePlan()], rooms = [makeRoom()], events = []) {
   render(<MapBoard plans={plans} rooms={rooms} events={events} center={CENTER} />);
 }
+
+describe("spreadPin", () => {
+  it("nudges a pin off an occupied spot", () => {
+    const next = spreadPin(50, 50, [{ left: 50, top: 50 }], 1);
+    expect(Math.hypot(next.left - 50, next.top - 50)).toBeGreaterThan(5);
+  });
+});
 
 describe("MapBoard pins", () => {
   it("renders a pin per plan and per room", () => {
@@ -169,6 +176,63 @@ describe("MapBoard detail card", () => {
     fireEvent.click(screen.getByTestId("pin-room-r1"));
     fireEvent.click(screen.getByRole("button", { name: /rooms/i }));
     expect(screen.queryByTestId("map-detail")).not.toBeInTheDocument();
+  });
+});
+
+describe("MapBoard compact", () => {
+  it("is pins-only: no nearby list, activity on pin tap, empty on the map", () => {
+    render(
+      <MapBoard
+        plans={[makePlan({ activity: "event", detail: "Hack table" })]}
+        rooms={[]}
+        events={[]}
+        people={[
+          {
+            user_id: "u3",
+            first_name: "Priya",
+            last_name: "Raman",
+            status: "Working in a café",
+            lat: 37.38,
+            lon: -122.09,
+          },
+        ]}
+        center={CENTER}
+        compact
+      />,
+    );
+    expect(screen.getByTestId("pin-plan-p1")).toBeInTheDocument();
+    expect(screen.getByTestId("pin-person-u3")).toBeInTheDocument();
+    expect(screen.queryByTestId("nearby-list")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /rooms/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /plans/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /people/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("pin-plan-p1"));
+    expect(screen.getByTestId("pin-activity")).toHaveTextContent(/event/i);
+  });
+
+  it("spreads pins that share a coordinate so both can be tapped", () => {
+    render(
+      <MapBoard
+        plans={[
+          makePlan({ id: "p1", lat: 37.3861, lon: -122.0839 }),
+          makePlan({ id: "p2", lat: 37.3861, lon: -122.0839, activity: "event", text: "Hack table" }),
+        ]}
+        rooms={[]}
+        events={[]}
+        center={CENTER}
+        compact
+      />,
+    );
+    const a = screen.getByTestId("pin-plan-p1");
+    const b = screen.getByTestId("pin-plan-p2");
+    expect(a.style.left).not.toEqual(b.style.left);
+  });
+
+  it("shows an empty overlay when nothing is pinned", () => {
+    render(<MapBoard plans={[]} rooms={[]} events={[]} people={[]} center={CENTER} compact />);
+    expect(screen.getByTestId("map-empty")).toBeInTheDocument();
+    expect(screen.getByText(/nothing pinned near you yet/i)).toBeInTheDocument();
   });
 });
 
