@@ -1,3 +1,4 @@
+import { compose_dm_payload, compose_note_payload } from "./contactCopy";
 import type { AttendeePriorityT, AttendeeT, EventBriefT, NearbyPersonT, PlanT, RoomT } from "./types";
 import type { OrbitLocation, ThemeKey } from "./orbit";
 
@@ -143,10 +144,19 @@ function attendee(
   priority: AttendeePriorityT,
   note: AttendeeT["note"],
   extra: Partial<
-    Pick<AttendeeT, "website_url" | "avatar_url" | "linkedin_connected" | "x_interacted">
+    Pick<
+      AttendeeT,
+      | "website_url"
+      | "avatar_url"
+      | "linkedin_connected"
+      | "x_interacted"
+      | "note_payload"
+      | "dm_payload"
+    >
   > = {},
 ): AttendeeT {
   const handle = `${first}-${last}`.toLowerCase().replace(/[^a-z-]/g, "");
+  const source = { first_name: first, note };
   return {
     id,
     first_name: first,
@@ -161,6 +171,8 @@ function attendee(
     linkedin_connected: extra.linkedin_connected ?? false,
     x_interacted: extra.x_interacted ?? false,
     note,
+    note_payload: extra.note_payload ?? compose_note_payload(source),
+    dm_payload: extra.dm_payload ?? compose_dm_payload(source),
   };
 }
 
@@ -177,7 +189,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
       what_talked: "Agent infra and how teams ship evals without a second platform.",
       why: "Building the layer your last two projects already assume exists.",
     },
-    { website_url: "https://render.com", linkedin_connected: true },
+    { website_url: "https://render.com", linkedin_connected: true, x_interacted: true },
   ),
   attendee(
     "marcus-ellis",
@@ -306,9 +318,9 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     { x_interacted: true },
   ),
   attendee(
-    "lina-park",
-    "Lina",
-    "Park",
+    "riley-cole",
+    "Riley",
+    "Cole",
     "Founder, Cork",
     "Same cork/cream brief — already in five cities",
     "later",

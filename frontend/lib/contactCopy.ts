@@ -1,13 +1,25 @@
-import type { AttendeeT } from "./types";
+import type { AttendeeT, ContactNoteT } from "./types";
 
-/** Full follow-up note — Copy note clipboard payload. */
-export function note_payload(row: AttendeeT): string {
+type NoteSource = Pick<AttendeeT, "first_name"> & { note: ContactNoteT };
+
+/** Compose the Copy note clipboard string from stacked contact fields. */
+export function compose_note_payload(row: NoteSource): string {
   return `Hi ${row.first_name} — we met at ${row.note.where_met}. We talked about ${row.note.what_talked} ${row.note.why}`;
 }
 
-/** Interchangeable DM draft — Copy DM clipboard payload. */
-export function dm_payload(row: AttendeeT): string {
+/** Compose the Copy DM clipboard string from the same fields. */
+export function compose_dm_payload(row: NoteSource): string {
   return `Hey ${row.first_name} — ${row.note.where_met}. ${row.note.why}`;
+}
+
+/** Full follow-up note — prefers the person field Engine seeds. */
+export function note_payload(row: AttendeeT): string {
+  return row.note_payload || compose_note_payload(row);
+}
+
+/** Interchangeable DM draft — prefers the person field Engine seeds. */
+export function dm_payload(row: AttendeeT): string {
+  return row.dm_payload || compose_dm_payload(row);
 }
 
 export function attendeeEmail(row: AttendeeT): string {

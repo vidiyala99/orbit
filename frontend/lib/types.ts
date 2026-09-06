@@ -195,6 +195,8 @@ export type AttendeeT = {
   linkedin_connected: boolean;
   x_interacted: boolean;
   note: ContactNoteT;
+  note_payload: string;
+  dm_payload: string;
 };
 
 export type EventBriefT = {

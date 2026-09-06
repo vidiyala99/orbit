@@ -42,15 +42,16 @@ describe("AttendeeBrief", () => {
     expect(screen.getByRole("tab", { name: "High" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
     expect(screen.queryByText("Dev Kim")).not.toBeInTheDocument();
-    expect(screen.queryByText("Lina Park")).not.toBeInTheDocument();
+    expect(screen.queryByText("Riley Cole")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "High" }));
     expect(screen.getByRole("tab", { name: "High" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Dev Kim")).toBeInTheDocument();
+    expect(screen.getByText("Sam Ortiz")).toBeInTheDocument();
     expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "Later" }));
-    expect(screen.getByText("Lina Park")).toBeInTheDocument();
+    expect(screen.getByText("Riley Cole")).toBeInTheDocument();
     expect(screen.queryByText("Dev Kim")).not.toBeInTheDocument();
   });
 
@@ -84,16 +85,24 @@ describe("AttendeeBrief", () => {
   it("shows contextual LI/X only, not both on every row", () => {
     renderBrief();
     expect(screen.getByRole("link", { name: /alex chen on linkedin/i })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /alex chen on x/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /alex chen on x/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /marcus ellis on x/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /marcus ellis on linkedin/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /maya rao on linkedin/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /maya rao on x/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /priya raman on linkedin/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /priya raman on x/i })).not.toBeInTheDocument();
     const liCount = screen.getAllByRole("link", { name: /on linkedin/i }).length;
     const xCount = screen.getAllByRole("link", { name: /on x$/i }).length;
     const visible = FIXTURE_ATTENDEES.filter((row) => row.priority === "needs_you").length;
     expect(liCount).toBeLessThan(visible);
     expect(xCount).toBeLessThan(visible);
+
+    fireEvent.click(screen.getByRole("tab", { name: "High" }));
+    expect(screen.getByRole("link", { name: /sam ortiz on x/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /sam ortiz on linkedin/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Later" }));
+    expect(screen.getByRole("link", { name: /riley cole on linkedin/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /riley cole on x/i })).not.toBeInTheDocument();
   });
 
   it("renders a dense row: avatar, name/role, italic why-meet, rank #N", () => {
@@ -126,8 +135,9 @@ describe("AttendeeBrief", () => {
     const row = within(container).getByText("Alex Chen").closest("li");
     expect(row?.className).not.toMatch(/rounded-card/);
     expect(row?.className).not.toMatch(/shadow-card/);
-    const rowBody = row?.querySelector(":scope > div.flex");
-    expect(rowBody?.className).toMatch(/min-h-14/);
+    const rowBody = row?.querySelector(":scope > div");
+    expect(rowBody?.className).toMatch(/md:min-h-14/);
+    expect(rowBody?.className).not.toMatch(/rounded-card/);
     const list = container.querySelector("ul");
     expect(list?.className).not.toMatch(/gap-4/);
     expect(list?.className).toMatch(/max-h-\[calc\(5\*/);

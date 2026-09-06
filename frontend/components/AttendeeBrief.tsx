@@ -124,42 +124,46 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   return (
     <li className="relative border-b border-rule last:border-b-0">
       <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
-      <div className="flex items-start gap-3 px-3 py-3 md:min-h-14 md:items-center md:px-4">
-        <Avatar row={row} />
-        <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-3">
-          <div className="flex min-w-0 items-start gap-2 md:contents">
-            <div className="min-w-0 flex-1 md:w-[200px] md:flex-none">
-              <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
-              <p className="mt-1 truncate text-[12px] font-medium leading-snug text-ink2">{row.role}</p>
-              <p
-                title={row.why_meet}
-                className="mt-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:hidden"
-              >
-                {row.why_meet}
-              </p>
-            </div>
-            <span className="shrink-0">
-              <AttendeeSocials
-                name={name}
-                linkedinUrl={row.linkedin_url}
-                xUrl={row.x_url}
-                showLinkedIn={row.linkedin_connected}
-                showX={row.x_interacted}
-                dense
-              />
-            </span>
-            <p
-              title={row.why_meet}
-              className="hidden min-w-0 flex-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:block"
-            >
-              {row.why_meet}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center justify-end gap-2 md:contents">
-            {needsYou ? <NeedsYouActions row={row} /> : null}
-            <p className="tabular shrink-0 text-[13px] font-semibold leading-none text-ink">#{rank}</p>
-          </div>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-3 py-2.5 md:flex md:min-h-14 md:gap-3 md:px-4">
+        <span className="row-span-3 md:row-auto">
+          <Avatar row={row} />
+        </span>
+        <div className="contents md:block md:w-[200px] md:flex-none">
+          <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
+          <p className="truncate text-[12px] font-medium leading-snug text-ink2">{row.role}</p>
+          <p
+            title={row.why_meet}
+            className="truncate font-mono text-[12px] italic leading-snug text-ink2 md:hidden"
+          >
+            {row.why_meet}
+          </p>
         </div>
+        <span className="justify-self-end">
+          <AttendeeSocials
+            name={name}
+            linkedinUrl={row.linkedin_url}
+            xUrl={row.x_url}
+            showLinkedIn={row.linkedin_connected}
+            showX={row.x_interacted}
+            dense
+          />
+        </span>
+        <p
+          title={row.why_meet}
+          className="hidden min-w-0 flex-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:block"
+        >
+          {row.why_meet}
+        </p>
+        {needsYou ? (
+          <div className="justify-self-end">
+            <NeedsYouActions row={row} />
+          </div>
+        ) : (
+          <span className="md:hidden" />
+        )}
+        <p className="justify-self-end tabular text-[13px] font-semibold leading-none text-ink">
+          #{rank}
+        </p>
       </div>
     </li>
   );
@@ -229,7 +233,7 @@ export default function AttendeeBrief({
         {rows.length === 0 ? (
           <p className="px-3 py-3 text-[13px] font-medium text-ink3">No one in this list.</p>
         ) : (
-          <ul className="max-h-[calc(5*5.75rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
+          <ul className="max-h-[calc(5*5rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
             {rows.map((row, i) => (
               <DeskRow key={row.id} row={row} rank={i + 1} />
             ))}
