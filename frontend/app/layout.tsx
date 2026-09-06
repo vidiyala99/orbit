@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const LINE = "Meet the people already at your café or hackathon.";
+const LINE = "Personal communications manager — memory that closes the loop. Not a draft box.";
 
 export const metadata: Metadata = {
   title: "Orbit",
