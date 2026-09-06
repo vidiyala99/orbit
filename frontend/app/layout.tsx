@@ -18,7 +18,12 @@ const manrope = Manrope({
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-manrope",
 });
-const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500"], variable: "--font-plex-mono" });
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-plex-mono",
+});
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

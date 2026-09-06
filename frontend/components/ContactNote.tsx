@@ -1,0 +1,148 @@
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { attendeeName } from "@/lib/demoFixtures";
+import { emailText, linkedInNoteText } from "@/lib/contactCopy";
+import type { AttendeeT } from "@/lib/types";
+import { ChevronLeftIcon } from "./SocialIcons";
+
+function initials(row: AttendeeT): string {
+  return `${row.first_name[0] ?? ""}${row.last_name[0] ?? ""}`.toUpperCase();
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand("copy");
+  document.body.removeChild(area);
+}
+
+function CopyButton({
+  label,
+  text,
+  variant,
+}: {
+  label: string;
+  text: string;
+  variant: "primary" | "secondary";
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function onCopy() {
+    await writeClipboard(text);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  const shared = "btn-press min-h-11 flex-1 rounded-full px-4 py-2.5 text-[13px] font-bold";
+  const look =
+    variant === "primary"
+      ? "bg-ink text-ground shadow-raised hover:shadow-raised-hover"
+      : "border border-rule bg-surface text-ink";
+
+  return (
+    <button type="button" onClick={onCopy} className={`${shared} ${look}`}>
+      {copied ? "Copied" : label}
+    </button>
+  );
+}
+
+const FIELDS: { key: keyof AttendeeT["note"]; label: string }[] = [
+  { key: "where_met", label: "Where you met" },
+  { key: "what_talked", label: "What you talked about" },
+  { key: "why", label: "Why it matters" },
+];
+
+export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
+  const name = attendeeName(attendee);
+
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-ground px-4 pb-10 pt-2">
+      <Link
+        href="/attendees"
+        aria-label="Back to attendees"
+        className="btn-press -ml-2 flex h-11 w-11 items-center justify-center text-ink"
+      >
+        <ChevronLeftIcon />
+      </Link>
+
+      <article className="mt-1 overflow-hidden rounded-card bg-surface shadow-card">
+        <header className="flex items-start gap-3 px-5 py-5">
+          {attendee.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={attendee.avatar_url}
+              alt=""
+              width={56}
+              height={56}
+              className="h-14 w-14 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[15px] font-bold text-accent"
+            >
+              {initials(attendee)}
+            </span>
+          )}
+          <div className="min-w-0 pt-0.5">
+            <h1 className="text-[18px] font-extrabold leading-tight tracking-[-0.2px] text-ink">
+              {name}
+            </h1>
+            <p className="mt-1 text-[13px] font-medium text-ink2">{attendee.role}</p>
+            <p className="mt-2 text-[13px] font-semibold text-ink2">
+              <a
+                href={attendee.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink2 hover:text-accent"
+              >
+                LinkedIn
+              </a>
+              <span aria-hidden="true" className="px-1.5 text-ink3">
+                ·
+              </span>
+              <a
+                href={attendee.x_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink2 hover:text-accent"
+              >
+                X
+              </a>
+            </p>
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-5 border-t border-rule px-5 py-5">
+          {FIELDS.map((field) => (
+            <section key={field.key}>
+              <h2 className="text-[13px] font-bold text-ink">{field.label}</h2>
+              <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink2">
+                {attendee.note[field.key]}
+              </p>
+            </section>
+          ))}
+        </div>
+
+        <div className="flex gap-2 border-t border-rule px-5 py-4">
+          <CopyButton
+            label="Copy LinkedIn note"
+            text={linkedInNoteText(attendee)}
+            variant="primary"
+          />
+          <CopyButton label="Copy email" text={emailText(attendee)} variant="secondary" />
+        </div>
+      </article>
+    </main>
+  );
+}

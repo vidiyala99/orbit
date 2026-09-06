@@ -63,7 +63,7 @@ export default async function MapPage({
         </div>
         <div className="mt-2 flex gap-2">
           <Link
-            href="/today"
+            href="/attendees"
             className="flex-1 rounded-full bg-accent-soft py-2 text-center text-[12px] font-bold text-accent"
           >
             Find people

@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { fixturePeople, fixturePlans, orFixtures } from "../demoFixtures";
+import {
+  FIXTURE_ATTENDEES,
+  FIXTURE_EVENT,
+  fixtureAttendee,
+  fixturePeople,
+  fixturePlans,
+  orFixtures,
+} from "../demoFixtures";
 
 const origin = { city: "Austin, TX", lat: 30.2672, lon: -97.7431 };
 
@@ -22,5 +29,20 @@ describe("demo fixtures", () => {
   it("keeps API rows when present and falls back when empty", () => {
     expect(orFixtures(["live"], ["fixture"])).toEqual(["live"]);
     expect(orFixtures([], ["fixture"])).toEqual(["fixture"]);
+  });
+
+  it("seeds a 12-guest Slice A brief with LinkedIn, X, and a why-meet line", () => {
+    expect(FIXTURE_EVENT.title).toMatch(/nerdconf sf/i);
+    expect(FIXTURE_ATTENDEES).toHaveLength(12);
+    for (const row of FIXTURE_ATTENDEES) {
+      expect(row.linkedin_url).toMatch(/^https:\/\//);
+      expect(row.x_url).toMatch(/^https:\/\//);
+      expect(row.why_meet.length).toBeGreaterThan(0);
+      expect(row.note.where_met.length).toBeGreaterThan(0);
+      expect(row.note.what_talked.length).toBeGreaterThan(0);
+      expect(row.note.why.length).toBeGreaterThan(0);
+    }
+    expect(fixtureAttendee("marcus-ellis")?.role).toMatch(/render/i);
+    expect(FIXTURE_ATTENDEES.some((row) => row.website_url)).toBe(true);
   });
 });

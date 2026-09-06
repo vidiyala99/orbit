@@ -171,3 +171,29 @@ export type ResearchT = {
   sources: { title: string; url: string }[];
   provider: "linkup" | "offline";
 };
+
+/** One guest on a Slice A event brief (Luma-style list). */
+export type ContactNoteT = {
+  where_met: string;
+  what_talked: string;
+  why: string;
+};
+
+export type AttendeeT = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  linkedin_url: string;
+  x_url: string;
+  website_url: string | null;
+  why_meet: string;
+  avatar_url: string | null;
+  note: ContactNoteT;
+};
+
+export type EventBriefT = {
+  id: string;
+  title: string;
+  datetime: string;
+};

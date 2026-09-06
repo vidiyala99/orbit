@@ -139,7 +139,7 @@ describe("MapPage data", () => {
     expect(fetchNearbyRooms.mock.calls[0][4]).toBe("tech");
     expect(screen.getByRole("heading", { name: /tech nearby/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /change category/i })).toHaveAttribute("href", "/explore");
-    expect(screen.getByRole("link", { name: /find people/i })).toHaveAttribute("href", "/today");
+    expect(screen.getByRole("link", { name: /find people/i })).toHaveAttribute("href", "/attendees");
     expect(screen.getByRole("link", { name: /create a room/i })).toHaveAttribute("href", "/rooms");
   });
 
