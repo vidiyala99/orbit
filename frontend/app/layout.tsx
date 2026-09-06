@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Manrope, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const LINE = "Personal communications manager — memory that closes the loop. Not a draft box.";
+const LINE = "Personal communications manager - memory that closes the loop.";
 
 export const metadata: Metadata = {
   title: "Orbit",
@@ -24,10 +24,15 @@ const plexMono = IBM_Plex_Mono({
   style: ["normal", "italic"],
   variable: "--font-plex-mono",
 });
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-serif",
+});
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${plexMono.variable} ${newsreader.variable}`}>
       <body className="bg-ground font-sans text-ink antialiased">{children}</body>
     </html>
   );
