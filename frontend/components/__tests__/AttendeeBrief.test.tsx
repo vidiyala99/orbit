@@ -17,51 +17,46 @@ describe("AttendeeBrief", () => {
     expect(screen.getByRole("link", { name: /back/i })).toHaveAttribute("href", "/");
   });
 
-  it("stacks Needs you → High → Later as vertical sections, not columns", () => {
+  it("shows one segmented list at a time, not stacked tables or columns", () => {
     const { container } = renderBrief();
-    expect(screen.getByRole("heading", { name: "Needs you" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "High" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Later" })).toBeInTheDocument();
-    const stack = screen.getByTestId("priority-stack");
-    expect(stack.className).toMatch(/flex-col/);
-    expect(stack.className).not.toMatch(/grid-cols-3|flex-row/);
-    expect(stack.className).not.toMatch(/md:grid-cols/);
+    expect(screen.getByRole("tablist", { name: /priority/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Needs you" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "High" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Later" })).not.toBeInTheDocument();
+    expect(container.querySelectorAll('[data-testid="priority-desk"]')).toHaveLength(1);
+    expect(container.querySelectorAll("ul")).toHaveLength(1);
+    expect(screen.getByTestId("priority-desk").className).not.toMatch(/grid-cols-3|flex-row|md:grid-cols/);
   });
 
-  it("defaults mobile chips to Needs you and swaps one section at a time", () => {
+  it("defaults to Needs you and swaps the single list", () => {
     renderBrief();
-    const tabs = screen.getByRole("tablist", { name: /priority/i });
-    expect(tabs.className).toMatch(/md:hidden/);
     expect(screen.getByRole("tab", { name: "Needs you" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "High" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
+    expect(screen.queryByText("Dev Kim")).not.toBeInTheDocument();
+    expect(screen.queryByText("Lina Park")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "High" }));
     expect(screen.getByRole("tab", { name: "High" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "Needs you" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByText("Dev Kim")).toBeInTheDocument();
+    expect(screen.queryByText("Alex Chen")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "Later" }));
     expect(screen.getByText("Lina Park")).toBeInTheDocument();
+    expect(screen.queryByText("Dev Kim")).not.toBeInTheDocument();
   });
 
-  it("renders a dense row: avatar, name|role, LI/X, mono italic why-meet, rank #N", () => {
+  it("renders a dense row: avatar, name|role, LI/X once, mono italic why-meet, rank #N", () => {
     renderBrief();
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
     expect(screen.getByText("Founder, Render")).toBeInTheDocument();
     const why = screen.getByText(/building agent infra/i);
     expect(why.className).toMatch(/font-mono/);
     expect(why.className).toMatch(/italic/);
-    expect(screen.getAllByText("#1").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("#1")).toBeInTheDocument();
     expect(screen.queryByText(/→|←/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /alex chen on linkedin/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("linkedin.com"),
-    );
-    expect(screen.getByRole("link", { name: /alex chen on x/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("x.com"),
-    );
+    expect(screen.getAllByRole("link", { name: /alex chen on linkedin/i })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: /alex chen on x/i })).toHaveLength(1);
     expect(screen.queryByRole("link", { name: /alex chen website/i })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/mail|email/i)).not.toBeInTheDocument();
   });
@@ -85,8 +80,8 @@ describe("AttendeeBrief", () => {
     expect(row?.className).not.toMatch(/rounded-card/);
     expect(row?.className).not.toMatch(/shadow-card/);
     const rowBody = row?.querySelector("div.flex");
-    expect(rowBody?.className).toMatch(/h-12/);
-    expect(rowBody?.className).toMatch(/md:h-14/);
+    expect(rowBody?.className).toMatch(/h-11/);
+    expect(rowBody?.className).toMatch(/md:h-10/);
     const list = container.querySelector("ul");
     expect(list?.className).not.toMatch(/gap-4/);
     expect(list?.className).toMatch(/max-h-\[calc\(5\*/);

@@ -36,16 +36,16 @@ function Avatar({ row }: { row: AttendeeT }) {
       <img
         src={row.avatar_url}
         alt=""
-        width={32}
-        height={32}
-        className="h-8 w-8 shrink-0 rounded-full object-cover"
+        width={24}
+        height={24}
+        className="h-6 w-6 shrink-0 rounded-full object-cover"
       />
     );
   }
   return (
     <span
       aria-hidden="true"
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${toneFor(row.id)}`}
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${toneFor(row.id)}`}
     >
       {initials(row)}
     </span>
@@ -56,12 +56,8 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   const name = attendeeName(row);
   return (
     <li className="relative border-b border-rule last:border-b-0">
-      <Link
-        href={`/attendees/${row.id}`}
-        className="absolute inset-0"
-        aria-label={name}
-      />
-      <div className="flex h-12 items-center gap-2 px-2 md:h-14">
+      <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
+      <div className="flex h-11 items-center gap-2 px-2 md:h-10">
         <Avatar row={row} />
         <div className="flex min-w-0 max-w-[46%] shrink-0 items-center gap-1">
           <p className="min-w-0 truncate text-[13px] font-bold leading-none text-ink">{name}</p>
@@ -83,39 +79,6 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   );
 }
 
-function PrioritySection({
-  id,
-  label,
-  rows,
-  active,
-}: {
-  id: AttendeePriorityT;
-  label: string;
-  rows: AttendeeT[];
-  active: boolean;
-}) {
-  return (
-    <section
-      data-priority={id}
-      data-active={active}
-      className="hidden flex-col data-[active=true]:flex md:flex"
-    >
-      <h2 className="mb-2 hidden text-[13px] font-bold text-ink md:block">{label}</h2>
-      <div className="overflow-hidden rounded-[10px] border border-rule bg-surface">
-        {rows.length === 0 ? (
-          <p className="px-3 py-3 text-[13px] font-medium text-ink3">No one in this list.</p>
-        ) : (
-          <ul className="max-h-[calc(5*3rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
-            {rows.map((row, i) => (
-              <DeskRow key={row.id} row={row} rank={i + 1} />
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
-  );
-}
-
 export default function AttendeeBrief({
   event,
   attendees,
@@ -127,6 +90,7 @@ export default function AttendeeBrief({
 }) {
   const [segment, setSegment] = useState<AttendeePriorityT>("needs_you");
   const count = attendees.length;
+  const rows = attendees.filter((row) => row.priority === segment);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl bg-ground px-2 pb-16 pt-4 md:px-6">
@@ -154,7 +118,7 @@ export default function AttendeeBrief({
       <div
         role="tablist"
         aria-label="Priority"
-        className="mb-3 grid grid-cols-3 overflow-hidden rounded-[10px] border border-rule bg-surface md:hidden"
+        className="mb-3 grid grid-cols-3 overflow-hidden rounded-[10px] border border-rule bg-surface"
       >
         {SEGMENTS.map((item) => {
           const selected = segment === item.id;
@@ -177,16 +141,16 @@ export default function AttendeeBrief({
         })}
       </div>
 
-      <div data-testid="priority-stack" className="flex flex-col gap-4 md:gap-6">
-        {SEGMENTS.map((item) => (
-          <PrioritySection
-            key={item.id}
-            id={item.id}
-            label={item.label}
-            rows={attendees.filter((row) => row.priority === item.id)}
-            active={segment === item.id}
-          />
-        ))}
+      <div data-testid="priority-desk" className="overflow-hidden rounded-[10px] border border-rule bg-surface">
+        {rows.length === 0 ? (
+          <p className="px-3 py-3 text-[13px] font-medium text-ink3">No one in this list.</p>
+        ) : (
+          <ul className="max-h-[calc(5*2.75rem)] overflow-y-auto md:max-h-[calc(5*2.5rem)]">
+            {rows.map((row, i) => (
+              <DeskRow key={row.id} row={row} rank={i + 1} />
+            ))}
+          </ul>
+        )}
       </div>
 
       <p className="mt-4 flex items-center gap-2 text-[12px] font-medium text-ink3">
