@@ -124,46 +124,36 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   return (
     <li className="relative border-b border-rule last:border-b-0">
       <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-3 py-2.5 md:flex md:min-h-14 md:gap-3 md:px-4">
-        <span className="row-span-3 md:row-auto">
-          <Avatar row={row} />
-        </span>
-        <div className="contents md:block md:w-[200px] md:flex-none">
+      <div className="flex min-h-14 items-center gap-2 px-3 py-2 md:gap-3 md:px-4">
+        <Avatar row={row} />
+        <div className="min-w-0 flex-1 md:w-[200px] md:flex-none">
           <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
-          <p className="truncate text-[12px] font-medium leading-snug text-ink2">{row.role}</p>
+          <p className="mt-0.5 truncate text-[12px] font-medium leading-snug text-ink2">{row.role}</p>
           <p
             title={row.why_meet}
-            className="truncate font-mono text-[12px] italic leading-snug text-ink2 md:hidden"
+            className="mt-0.5 truncate font-mono text-[12px] italic leading-snug text-ink2 md:hidden"
           >
             {row.why_meet}
           </p>
         </div>
-        <span className="justify-self-end">
-          <AttendeeSocials
-            name={name}
-            linkedinUrl={row.linkedin_url}
-            xUrl={row.x_url}
-            showLinkedIn={row.linkedin_connected}
-            showX={row.x_interacted}
-            dense
-          />
-        </span>
+        <AttendeeSocials
+          name={name}
+          linkedinUrl={row.linkedin_url}
+          xUrl={row.x_url}
+          showLinkedIn={row.linkedin_connected}
+          showX={row.x_interacted}
+          dense
+        />
         <p
           title={row.why_meet}
           className="hidden min-w-0 flex-1 truncate font-mono text-[12px] italic leading-snug text-ink2 md:block"
         >
           {row.why_meet}
         </p>
-        {needsYou ? (
-          <div className="justify-self-end">
-            <NeedsYouActions row={row} />
-          </div>
-        ) : (
-          <span className="md:hidden" />
-        )}
-        <p className="justify-self-end tabular text-[13px] font-semibold leading-none text-ink">
+        <p className="tabular shrink-0 text-[12px] font-semibold leading-none text-ink2 md:order-last md:text-[13px] md:text-ink">
           #{rank}
         </p>
+        {needsYou ? <NeedsYouActions row={row} /> : null}
       </div>
     </li>
   );
@@ -233,7 +223,7 @@ export default function AttendeeBrief({
         {rows.length === 0 ? (
           <p className="px-3 py-3 text-[13px] font-medium text-ink3">No one in this list.</p>
         ) : (
-          <ul className="max-h-[calc(5*5rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
+          <ul className="max-h-[calc(5*4.75rem)] overflow-y-auto md:max-h-[calc(5*3.5rem)]">
             {rows.map((row, i) => (
               <DeskRow key={row.id} row={row} rank={i + 1} />
             ))}
