@@ -26,8 +26,13 @@ describe("ContactNote", () => {
     expect(screen.getByText(/burning token hackathon · austin/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /what you talked about/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /why it matters/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /copy linkedin note/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /copy email/i })).toBeInTheDocument();
+    const primary = screen.getByRole("button", { name: /copy linkedin note/i });
+    const secondary = screen.getByRole("button", { name: /copy email/i });
+    expect(primary).toBeInTheDocument();
+    expect(secondary).toBeInTheDocument();
+    expect(primary.className).toMatch(/bg-ink/);
+    expect(secondary.className).toMatch(/border-rule/);
+    expect(primary.parentElement?.className).toMatch(/flex-col/);
     expect(screen.queryByRole("button", { name: /send/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/auto-?dm/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/response likelihood/i)).not.toBeInTheDocument();

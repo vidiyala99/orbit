@@ -72,7 +72,7 @@ export function ChevronLeftIcon() {
 }
 
 const SOCIAL =
-  "relative z-10 inline-flex h-8 w-8 items-center justify-center text-ink2 hover:text-accent";
+  "relative z-10 inline-flex h-8 w-8 items-center justify-center text-ink3 hover:text-accent";
 
 export function AttendeeSocials({
   name,
@@ -86,7 +86,7 @@ export function AttendeeSocials({
   websiteUrl?: string | null;
 }) {
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex shrink-0 items-center">
       <a
         href={linkedinUrl}
         target="_blank"

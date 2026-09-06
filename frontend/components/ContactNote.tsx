@@ -56,7 +56,7 @@ function CopyButton({
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  const shared = "btn-press min-h-11 flex-1 rounded-full px-4 py-2.5 text-[13px] font-bold";
+  const shared = "btn-press min-h-12 w-full rounded-full px-6 py-3 text-[15px] font-bold";
   const look =
     variant === "primary"
       ? "bg-ink text-ground shadow-raised hover:shadow-raised-hover"
@@ -79,7 +79,7 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
   const name = attendeeName(attendee);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-ground px-4 pb-10 pt-2">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-ground px-6 pb-16 pt-4">
       <Link
         href="/attendees"
         aria-label="Back to attendees"
@@ -88,8 +88,8 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
         <ChevronLeftIcon />
       </Link>
 
-      <article className="mt-1 overflow-hidden rounded-card bg-surface shadow-card">
-        <header className="flex items-start gap-3 px-5 py-5">
+      <article className="mt-2 overflow-hidden rounded-card bg-surface shadow-card">
+        <header className="flex items-start gap-4 px-6 py-6">
           {attendee.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -107,12 +107,12 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
               {initials(attendee)}
             </span>
           )}
-          <div className="min-w-0 pt-0.5">
-            <h1 className="text-[18px] font-extrabold leading-tight tracking-[-0.2px] text-ink">
+          <div className="min-w-0 pt-1">
+            <h1 className="text-[20px] font-extrabold leading-tight tracking-[-0.2px] text-ink">
               {name}
             </h1>
-            <p className="mt-1 text-[13px] font-medium text-ink2">{attendee.role}</p>
-            <p className="mt-2 text-[13px] font-semibold text-ink2">
+            <p className="mt-2 text-[14px] font-medium leading-snug text-ink2">{attendee.role}</p>
+            <p className="mt-2 text-[13px] font-medium text-ink2">
               <a
                 href={attendee.linkedin_url}
                 target="_blank"
@@ -121,7 +121,7 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
               >
                 LinkedIn
               </a>
-              <span aria-hidden="true" className="px-1.5 text-ink3">
+              <span aria-hidden="true" className="px-2 text-ink3">
                 ·
               </span>
               <a
@@ -136,18 +136,18 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
           </div>
         </header>
 
-        <div className="flex flex-col gap-5 border-t border-rule px-5 py-5">
+        <div className="flex flex-col gap-6 border-t border-rule px-6 py-6">
           {FIELDS.map((field) => (
             <section key={field.key}>
-              <h2 className="text-[13px] font-bold text-ink">{field.label}</h2>
-              <p className="mt-1 text-[14px] font-medium leading-relaxed text-ink2">
+              <h2 className="text-[14px] font-bold text-ink">{field.label}</h2>
+              <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink2">
                 {attendee.note[field.key]}
               </p>
             </section>
           ))}
         </div>
 
-        <div className="flex gap-2 border-t border-rule px-5 py-4">
+        <div className="flex flex-col gap-4 border-t border-rule px-6 py-6">
           <CopyButton
             label="Copy LinkedIn note"
             text={linkedInNoteText(attendee)}

@@ -8,7 +8,6 @@ function initials(row: AttendeeT): string {
 }
 
 function Avatar({ row }: { row: AttendeeT }) {
-  const label = attendeeName(row);
   if (row.avatar_url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -43,44 +42,49 @@ export default function AttendeeBrief({
   const count = attendees.length;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md bg-ground px-4 pb-10 pt-2">
-      <header className="flex items-start gap-2 py-3">
-        <Link
-          href={backHref}
-          aria-label="Back"
-          className="btn-press -ml-2 mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center text-ink"
-        >
-          <ChevronLeftIcon />
-        </Link>
-        <div className="min-w-0 flex-1 pt-1">
-          <h1 className="text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink">
-            {event.title}
-          </h1>
-          <p className="mt-1 text-[12px] font-medium leading-snug text-ink2">{event.datetime}</p>
+    <main className="mx-auto min-h-screen w-full max-w-md bg-ground px-6 pb-16 pt-4">
+      <header className="pb-6">
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href={backHref}
+            aria-label="Back"
+            className="btn-press -ml-2 flex h-11 w-11 shrink-0 items-center justify-center text-ink"
+          >
+            <ChevronLeftIcon />
+          </Link>
+          <p className="flex items-center gap-2 text-[13px] font-medium text-ink3">
+            <PeopleIcon />
+            <span>
+              {count} {count === 1 ? "guest" : "guests"}
+            </span>
+          </p>
         </div>
-        <p className="mt-2 flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-ink2">
-          <PeopleIcon />
-          <span>
-            {count} {count === 1 ? "guest" : "guests"}
-          </span>
-        </p>
+        <h1 className="mt-4 text-[22px] font-extrabold leading-tight tracking-[-0.3px] text-ink">
+          {event.title}
+        </h1>
+        <p className="mt-2 text-[13px] font-medium leading-relaxed text-ink3">{event.datetime}</p>
       </header>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-4">
         {attendees.map((row) => {
           const name = attendeeName(row);
           return (
-            <li key={row.id} className="relative rounded-card bg-surface shadow-card">
+            <li
+              key={row.id}
+              className="relative rounded-card bg-surface shadow-card transition-shadow duration-150 hover:shadow-card-hover"
+            >
               <Link
                 href={`/attendees/${row.id}`}
                 className="absolute inset-0 rounded-card"
                 aria-label={name}
               />
-              <div className="flex items-start gap-3 px-4 py-3">
+              <div className="flex items-start gap-4 px-4 py-4">
                 <Avatar row={row} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-1.5">
-                    <p className="text-[15px] font-bold leading-none text-ink">{name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="min-w-0 truncate text-[16px] font-bold leading-none text-ink">
+                      {name}
+                    </p>
                     <AttendeeSocials
                       name={name}
                       linkedinUrl={row.linkedin_url}
@@ -88,8 +92,13 @@ export default function AttendeeBrief({
                       websiteUrl={row.website_url}
                     />
                   </div>
-                  <p className="mt-1.5 text-[13px] font-medium leading-snug text-ink2">{row.role}</p>
-                  <p className="mt-1 truncate font-mono text-[12px] italic leading-snug text-ink2">
+                  <p className="mt-2 truncate text-[13px] font-medium leading-snug text-ink2">
+                    {row.role}
+                  </p>
+                  <p
+                    title={row.why_meet}
+                    className="mt-2 truncate font-mono text-[12px] italic leading-snug text-ink2"
+                  >
                     {row.why_meet}
                   </p>
                 </div>

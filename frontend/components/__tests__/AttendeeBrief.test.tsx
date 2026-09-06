@@ -51,4 +51,11 @@ describe("AttendeeBrief", () => {
     expect(row?.className).toMatch(/rounded-card/);
     expect(row?.className).toMatch(/bg-surface/);
   });
+
+  it("spaces rows on an 8pt paper rhythm instead of a dense stack", () => {
+    const { container } = renderBrief();
+    const list = container.querySelector("ul");
+    expect(list?.className).toMatch(/gap-4/);
+    expect(screen.getByRole("main").className).toMatch(/px-6/);
+  });
 });
