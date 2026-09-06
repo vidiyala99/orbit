@@ -13,7 +13,7 @@ describe("AttendeeBrief", () => {
     const title = screen.getByRole("heading", { name: /nerdconf sf/i });
     expect(title).toBeInTheDocument();
     expect(title.className).not.toMatch(/serif/);
-    expect(screen.getByText(/sat, 12 guests/i)).toBeInTheDocument();
+    expect(screen.getByText(/sat · 12 guests/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /back/i })).toHaveAttribute("href", "/");
   });
 
@@ -79,9 +79,9 @@ describe("AttendeeBrief", () => {
     const row = within(container).getByText("Alex Chen").closest("li");
     expect(row?.className).not.toMatch(/rounded-card/);
     expect(row?.className).not.toMatch(/shadow-card/);
-    const rowBody = row?.querySelector("div.flex");
-    expect(rowBody?.className).toMatch(/h-11/);
-    expect(rowBody?.className).toMatch(/md:h-10/);
+    const rowBody = row?.querySelector(":scope > div.flex");
+    expect(rowBody?.className).toMatch(/min-h-11/);
+    expect(rowBody?.className).toMatch(/md:min-h-10/);
     const list = container.querySelector("ul");
     expect(list?.className).not.toMatch(/gap-4/);
     expect(list?.className).toMatch(/max-h-\[calc\(5\*/);

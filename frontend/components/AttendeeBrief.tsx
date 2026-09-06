@@ -57,22 +57,21 @@ function DeskRow({ row, rank }: { row: AttendeeT; rank: number }) {
   return (
     <li className="relative border-b border-rule last:border-b-0">
       <Link href={`/attendees/${row.id}`} className="absolute inset-0" aria-label={name} />
-      <div className="flex h-11 items-center gap-2 px-2 md:h-10">
+      <div className="flex min-h-11 items-center gap-2 px-2 py-2 md:min-h-10 md:py-1.5">
         <Avatar row={row} />
-        <div className="flex min-w-0 max-w-[46%] shrink-0 items-center gap-1">
-          <p className="min-w-0 truncate text-[13px] font-bold leading-none text-ink">{name}</p>
-          <span aria-hidden="true" className="text-[12px] text-ink3">
-            |
-          </span>
-          <p className="min-w-0 truncate text-[12px] font-medium leading-none text-ink2">{row.role}</p>
-          <AttendeeSocials name={name} linkedinUrl={row.linkedin_url} xUrl={row.x_url} dense />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-row md:items-center md:gap-3">
+          <div className="min-w-0 md:w-[220px] md:shrink-0">
+            <p className="truncate text-[13px] font-bold leading-tight text-ink">{name}</p>
+            <p className="truncate text-[12px] font-medium leading-tight text-ink2">{row.role}</p>
+          </div>
+          <p
+            title={row.why_meet}
+            className="truncate font-mono text-[11px] italic leading-tight text-ink2 md:flex-1"
+          >
+            {row.why_meet}
+          </p>
         </div>
-        <p
-          title={row.why_meet}
-          className="min-w-0 flex-1 truncate font-mono text-[11px] italic leading-none text-ink2"
-        >
-          {row.why_meet}
-        </p>
+        <AttendeeSocials name={name} linkedinUrl={row.linkedin_url} xUrl={row.x_url} dense />
         <p className="tabular shrink-0 text-[12px] font-semibold leading-none text-ink">#{rank}</p>
       </div>
     </li>
@@ -94,7 +93,7 @@ export default function AttendeeBrief({
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl bg-ground px-2 pb-16 pt-4 md:px-6">
-      <header className="flex items-center gap-2 pb-4 md:gap-3">
+      <header className="flex items-center gap-2 pb-3 md:gap-3">
         <Link
           href={backHref}
           aria-label="Back"
@@ -102,17 +101,15 @@ export default function AttendeeBrief({
         >
           <ChevronLeftIcon />
         </Link>
-        <div className="min-w-0">
-          <h1 className="text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[22px]">
-            {event.title}
-          </h1>
-          <p className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink2">
-            <PeopleIcon />
-            <span>
-              {event.datetime}, {count} {count === 1 ? "guest" : "guests"}
-            </span>
-          </p>
-        </div>
+        <h1 className="text-[20px] font-extrabold leading-tight tracking-[-0.3px] text-ink md:text-[22px]">
+          {event.title}
+        </h1>
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink2">
+          <PeopleIcon />
+          <span>
+            {event.datetime} · {count} {count === 1 ? "guest" : "guests"}
+          </span>
+        </p>
       </header>
 
       <div
@@ -131,11 +128,14 @@ export default function AttendeeBrief({
               onClick={() => setSegment(item.id)}
               className={
                 selected
-                  ? "h-9 bg-accent text-[13px] font-bold text-white"
+                  ? "flex h-9 items-center justify-center gap-1.5 bg-accent-soft text-[13px] font-bold text-ink"
                   : "h-9 text-[13px] font-medium text-ink3"
               }
             >
               {item.label}
+              {selected ? (
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+              ) : null}
             </button>
           );
         })}
