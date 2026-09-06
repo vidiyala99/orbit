@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { attendeeName } from "@/lib/demoFixtures";
-import { emailText, linkedInNoteText } from "@/lib/contactCopy";
+import { dmText, noteText } from "@/lib/contactCopy";
 import type { AttendeeT } from "@/lib/types";
 import { ChevronLeftIcon } from "./SocialIcons";
 
@@ -59,7 +59,7 @@ function CopyButton({
   const shared = "btn-press min-h-12 w-full rounded-full px-6 py-3 text-[15px] font-bold";
   const look =
     variant === "primary"
-      ? "bg-ink text-ground shadow-raised hover:shadow-raised-hover"
+      ? "bg-accent text-white shadow-raised hover:bg-accent/90 hover:shadow-raised-hover"
       : "border border-rule bg-surface text-ink";
 
   return (
@@ -148,12 +148,11 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
         </div>
 
         <div className="flex flex-col gap-4 border-t border-rule px-6 py-6">
-          <CopyButton
-            label="Copy LinkedIn note"
-            text={linkedInNoteText(attendee)}
-            variant="primary"
-          />
-          <CopyButton label="Copy email" text={emailText(attendee)} variant="secondary" />
+          <CopyButton label="Copy note" text={noteText(attendee)} variant="primary" />
+          <CopyButton label="Copy DM" text={dmText(attendee)} variant="secondary" />
+          <p className="text-center text-[13px] font-medium leading-snug text-ink3">
+            Swap primary anytime — note or DM.
+          </p>
         </div>
       </article>
     </main>

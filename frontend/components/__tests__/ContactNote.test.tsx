@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ContactNote from "../ContactNote";
-import { emailText, linkedInNoteText } from "@/lib/contactCopy";
+import { dmText, noteText } from "@/lib/contactCopy";
 import { fixtureAttendee } from "@/lib/demoFixtures";
 
 const marcus = fixtureAttendee("marcus-ellis")!;
@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 describe("ContactNote", () => {
-  it("stacks where / talked / why and only the two copy actions", () => {
+  it("stacks where / talked / why and offers Copy note + Copy DM only", () => {
     render(<ContactNote attendee={marcus} />);
     expect(screen.getByRole("heading", { name: "Marcus Ellis" })).toBeInTheDocument();
     expect(screen.getByText("Founding Engineer at Render")).toBeInTheDocument();
@@ -26,29 +26,30 @@ describe("ContactNote", () => {
     expect(screen.getByText(/burning token hackathon · austin/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /what you talked about/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /why it matters/i })).toBeInTheDocument();
-    const primary = screen.getByRole("button", { name: /copy linkedin note/i });
-    const secondary = screen.getByRole("button", { name: /copy email/i });
-    expect(primary).toBeInTheDocument();
-    expect(secondary).toBeInTheDocument();
-    expect(primary.className).toMatch(/bg-ink/);
-    expect(secondary.className).toMatch(/border-rule/);
-    expect(primary.parentElement?.className).toMatch(/flex-col/);
-    expect(screen.queryByRole("button", { name: /send/i })).not.toBeInTheDocument();
+    const note = screen.getByRole("button", { name: /^copy note$/i });
+    const dm = screen.getByRole("button", { name: /^copy dm$/i });
+    expect(note.className).toMatch(/bg-accent/);
+    expect(dm.className).toMatch(/border-rule/);
+    expect(note.parentElement?.className).toMatch(/flex-col/);
+    expect(screen.getByText(/swap primary anytime — note or dm/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /copy email/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /copy linkedin note/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^send$/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/auto-?dm/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/response likelihood/i)).not.toBeInTheDocument();
   });
 
-  it("copies the LinkedIn note onto the clipboard", async () => {
+  it("copies the note payload onto the clipboard", async () => {
     render(<ContactNote attendee={marcus} />);
-    fireEvent.click(screen.getByRole("button", { name: /copy linkedin note/i }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(linkedInNoteText(marcus)));
+    fireEvent.click(screen.getByRole("button", { name: /^copy note$/i }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(noteText(marcus)));
     expect(await screen.findByRole("button", { name: /copied/i })).toBeInTheDocument();
   });
 
-  it("copies the email onto the clipboard", async () => {
+  it("copies the DM payload onto the clipboard", async () => {
     render(<ContactNote attendee={marcus} />);
-    fireEvent.click(screen.getByRole("button", { name: /copy email/i }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(emailText(marcus)));
+    fireEvent.click(screen.getByRole("button", { name: /^copy dm$/i }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(dmText(marcus)));
   });
 
   it("returns to the attendee brief", () => {
