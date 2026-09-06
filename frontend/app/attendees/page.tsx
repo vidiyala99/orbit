@@ -1,6 +1,9 @@
 import AttendeeBrief from "@/components/AttendeeBrief";
-import { FIXTURE_ATTENDEES, FIXTURE_EVENT } from "@/lib/demoFixtures";
+import { loadDeskGuests } from "@/lib/guests";
 
-export default function AttendeesPage() {
-  return <AttendeeBrief event={FIXTURE_EVENT} attendees={FIXTURE_ATTENDEES} />;
+export const dynamic = "force-dynamic";
+
+export default async function AttendeesPage() {
+  const desk = await loadDeskGuests();
+  return <AttendeeBrief event={desk.event} attendees={desk.attendees} />;
 }
