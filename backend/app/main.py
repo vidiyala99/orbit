@@ -9,7 +9,7 @@ from .db import engine
 from .pg_extensions import ensure_postgres_extensions
 from .routers import (
     plans, rooms, room_messages, scheduling, threads, stamps, moderation, chat_ws, me,
-    waitlist, auth, calendar, presence, research,
+    waitlist, auth, calendar, presence, research, people, sync_runs,
 )
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,18 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Orbit API", lifespan=lifespan)
+app = FastAPI(
+    title="Orbit API",
+    description=(
+        "Presence & plans, plus Slice A people/comms: "
+        "`GET/POST /people`, `GET/PATCH /people/{id}`, `POST /people/import`, "
+        "`GET /events/{id}/guests`, `GET/POST /sync-runs`. "
+        "Person desk fields: `priority` (`needs_you`|`high`|`later`), "
+        "`linkedin_connected`, `x_interacted`, plus `note_payload`/`dm_payload`. "
+        "Demo event id: `burning-token`. See backend/README.md."
+    ),
+    lifespan=lifespan,
+)
 
 _cors_origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
@@ -53,6 +64,8 @@ app.include_router(waitlist.router)
 app.include_router(auth.router)
 app.include_router(presence.router)
 app.include_router(research.router)
+app.include_router(people.router)
+app.include_router(sync_runs.router)
 
 
 @app.get("/health")

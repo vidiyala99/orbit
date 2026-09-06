@@ -273,3 +273,64 @@ class Block(Base):
     blocked_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     __table_args__ = (UniqueConstraint("blocker_id", "blocked_id", name="uq_block_pair"),)
+
+
+class Person(Base):
+    """A contact on the signed-in user's personal comms list.
+
+    Distinct from User: these are people the caller wants to remember and
+    message, not Orbit accounts. event_id is an opaque string (no events
+    table) so a Luma-style guest list can filter without a scrape.
+    """
+    __tablename__ = "people"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(160))
+    role: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    x_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    where_met: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    what_talked: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # One-line why-meet, shown on a Luma-style guest row.
+    relevance: Mapped[str | None] = mapped_column(String(280), nullable=True)
+    # Enum-ish values validated at the Pydantic layer, not in the DB
+    # (same convention as Plan.activity / Room.purpose):
+    #   invite_state: pending | accepted | needs_message
+    invite_state: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    pending_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_touch_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    intent: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dm: Mapped[str | None] = mapped_column(Text, nullable=True)
+    email_draft: Mapped[str | None] = mapped_column(Text, nullable=True)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # JSON list of {source_id, quote} — Brain fills later; fixtures seed it.
+    evidence: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Clipboard strings. May equal note/dm; Face copies these, not live sends.
+    note_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dm_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    # Architect desk contract for Face #11. Enum-ish at the Pydantic layer:
+    #   priority: needs_you | high | later
+    priority: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # True only when this contact is already a LinkedIn connection (no scrape).
+    linkedin_connected: Mapped[bool] = mapped_column(Boolean, default=False)
+    # True only when there is an existing X interaction (no scrape).
+    x_interacted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class SyncRun(Base):
+    """One import or fixture load of people. No LinkedIn/X scrape jobs."""
+    __tablename__ = "sync_runs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    # Enum-ish values validated at the Pydantic layer, not in the DB:
+    #   source: csv | fixture
+    source: Mapped[str] = mapped_column(String(20))
+    #   status: ok | error
+    status: Mapped[str] = mapped_column(String(20))
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
