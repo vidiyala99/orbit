@@ -25,20 +25,6 @@ export function XIcon() {
   );
 }
 
-export function LinkIcon() {
-  return (
-    <svg viewBox="0 0 16 16" className={ICON} aria-hidden="true">
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        d="M6.2 9.8 9.8 6.2M7 4.6l.7-1.1a2.4 2.4 0 1 1 3.8 3.8L10.4 8.4M9 11.4l-.7 1.1a2.4 2.4 0 1 1-3.8-3.8L5.6 7.6"
-      />
-    </svg>
-  );
-}
-
 export function PeopleIcon() {
   return (
     <svg viewBox="0 0 16 16" className={ICON} aria-hidden="true">
@@ -72,19 +58,22 @@ export function ChevronLeftIcon() {
 }
 
 const SOCIAL =
-  "relative z-10 inline-flex h-8 w-8 items-center justify-center text-ink3 hover:text-accent";
+  "relative z-10 inline-flex h-8 w-8 items-center justify-center text-ink2 hover:text-accent";
+const SOCIAL_DENSE =
+  "relative z-10 inline-flex h-6 w-6 items-center justify-center text-ink2 hover:text-accent";
 
 export function AttendeeSocials({
   name,
   linkedinUrl,
   xUrl,
-  websiteUrl,
+  dense = false,
 }: {
   name: string;
   linkedinUrl: string;
   xUrl: string;
-  websiteUrl?: string | null;
+  dense?: boolean;
 }) {
+  const cls = dense ? SOCIAL_DENSE : SOCIAL;
   return (
     <span className="inline-flex shrink-0 items-center">
       <a
@@ -92,7 +81,7 @@ export function AttendeeSocials({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`${name} on LinkedIn`}
-        className={SOCIAL}
+        className={cls}
       >
         <LinkedInIcon />
       </a>
@@ -101,21 +90,21 @@ export function AttendeeSocials({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`${name} on X`}
-        className={SOCIAL}
+        className={cls}
       >
         <XIcon />
       </a>
-      {websiteUrl ? (
-        <a
-          href={websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${name} website`}
-          className={SOCIAL}
-        >
-          <LinkIcon />
-        </a>
-      ) : null}
     </span>
+  );
+}
+
+export function StarIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M8 1.2 9.05 6.2 14.2 8 9.05 9.8 8 14.8 6.95 9.8 1.8 8l5.15-1.8L8 1.2Z"
+      />
+    </svg>
   );
 }

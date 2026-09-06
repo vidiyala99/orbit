@@ -1,4 +1,4 @@
-import type { AttendeeT, EventBriefT, NearbyPersonT, PlanT, RoomT } from "./types";
+import type { AttendeePriorityT, AttendeeT, EventBriefT, NearbyPersonT, PlanT, RoomT } from "./types";
 import type { OrbitLocation, ThemeKey } from "./orbit";
 
 export const DEMO_OFFLINE_TOKEN = "orbit-demo-offline";
@@ -127,11 +127,11 @@ export function orFixtures<T>(rows: T[] | undefined, fallback: T[]): T[] {
   return rows && rows.length > 0 ? rows : fallback;
 }
 
-/** Slice A demo event — matches the approved attendee-brief comp. */
+/** Slice A demo event — dense desk header is title + short when. */
 export const FIXTURE_EVENT: EventBriefT = {
   id: "nerdconf-sf",
-  title: "NERDCONF SF — Sat",
-  datetime: "Saturday, June 7, 2025 • 10:00 AM – 4:00 PM PDT",
+  title: "NERDCONF SF",
+  datetime: "Sat",
 };
 
 function attendee(
@@ -140,6 +140,7 @@ function attendee(
   last: string,
   role: string,
   why: string,
+  priority: AttendeePriorityT,
   note: AttendeeT["note"],
   extra: Partial<Pick<AttendeeT, "website_url" | "avatar_url">> = {},
 ): AttendeeT {
@@ -154,6 +155,7 @@ function attendee(
     website_url: extra.website_url ?? null,
     why_meet: why,
     avatar_url: extra.avatar_url ?? null,
+    priority,
     note,
   };
 }
@@ -165,6 +167,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Chen",
     "Founder, Render",
     "Building agent infra — overlap with your Render work",
+    "needs_you",
     {
       where_met: "NERDCONF SF · hallway track",
       what_talked: "Agent infra and how teams ship evals without a second platform.",
@@ -178,6 +181,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Ellis",
     "Founding Engineer at Render",
     "Shipping the runtime your agent stack would sit on",
+    "needs_you",
     {
       where_met: "Burning Token hackathon · Austin",
       what_talked: "The future of agentic tools and how Render is thinking about infra for them.",
@@ -190,6 +194,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Raman",
     "ML Engineer, Lattice",
     "Hiring an ML engineer; you just shipped a ranking stack",
+    "needs_you",
     {
       where_met: "Founders Cowork Wednesdays · Red Rock Coffee",
       what_talked: "Eval harnesses for search ranking and who to hire first.",
@@ -202,6 +207,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Okada",
     "Independent designer",
     "Just shipped a spatial OS — wants a technical pair",
+    "needs_you",
     {
       where_met: "NERDCONF SF · design lounge",
       what_talked: "How spatial UIs survive a 200-person room.",
@@ -210,11 +216,38 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     { website_url: "https://okada.work" },
   ),
   attendee(
+    "amina-shah",
+    "Amina",
+    "Shah",
+    "Recruiter, Anthropic",
+    "Placing applied-research ICs this month",
+    "needs_you",
+    {
+      where_met: "NERDCONF SF · talent table",
+      what_talked: "Who in the room is actually shipping vs. pitching.",
+      why: "Can intro the applied-research ICs you asked about.",
+    },
+  ),
+  attendee(
+    "maya-rao",
+    "Maya",
+    "Rao",
+    "PM, Notion",
+    "Owning the post-event workspace nobody opens",
+    "needs_you",
+    {
+      where_met: "Peninsula Regulars · Castro",
+      what_talked: "Turning a guest list into a living notes doc.",
+      why: "Has the distribution; you have the contact note.",
+    },
+  ),
+  attendee(
     "dev-kim",
     "Dev",
     "Kim",
     "Seed investor",
     "Writing checks for event-infra this quarter",
+    "high",
     {
       where_met: "NERDCONF SF · investor office hours",
       what_talked: "Follow-up after the room dies — the actual retention hole.",
@@ -227,22 +260,11 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Ortiz",
     "Founder, Relays",
     "Same pain: follow-up after the room dies",
+    "high",
     {
       where_met: "Burning Token hackathon · Austin",
       what_talked: "What people actually copy-paste the next morning.",
       why: "Building the adjacent product; worth a weekly sync.",
-    },
-  ),
-  attendee(
-    "amina-shah",
-    "Amina",
-    "Shah",
-    "Recruiter, Anthropic",
-    "Placing applied-research ICs this month",
-    {
-      where_met: "NERDCONF SF · talent table",
-      what_talked: "Who in the room is actually shipping vs. pitching.",
-      why: "Can intro the applied-research ICs you asked about.",
     },
   ),
   attendee(
@@ -251,22 +273,11 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Carter",
     "Senior Brand Strategist at Horizon Creative",
     "Rewriting how event brands stay after the weekend",
+    "high",
     {
       where_met: "NERDCONF SF · brand workshop",
       what_talked: "Why most event follow-up reads like a newsletter.",
       why: "Can tighten the note you send the next morning.",
-    },
-  ),
-  attendee(
-    "maya-rao",
-    "Maya",
-    "Rao",
-    "PM, Notion",
-    "Owning the post-event workspace nobody opens",
-    {
-      where_met: "Peninsula Regulars · Castro",
-      what_talked: "Turning a guest list into a living notes doc.",
-      why: "Has the distribution; you have the contact note.",
     },
   ),
   attendee(
@@ -275,6 +286,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Watanabe",
     "Infra, Cloudflare",
     "Edge runtime for live attendee graphs",
+    "high",
     {
       where_met: "NERDCONF SF · infra birds of a feather",
       what_talked: "Keeping a 2k-person list snappy on a bad venue network.",
@@ -287,6 +299,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Park",
     "Founder, Cork",
     "Same cork/cream brief — already in five cities",
+    "later",
     {
       where_met: "Founders Cowork Wednesdays · Red Rock Coffee",
       what_talked: "Warm paper UI that still reads as a product, not a mood board.",
@@ -300,6 +313,7 @@ export const FIXTURE_ATTENDEES: AttendeeT[] = [
     "Brooks",
     "Engineer, Vercel",
     "Shipped the last three conference companion apps",
+    "later",
     {
       where_met: "NERDCONF SF · hallway track",
       what_talked: "What actually gets opened the morning after.",

@@ -17,7 +17,7 @@ beforeEach(() => {
 describe("AttendeesPage", () => {
   it("renders the fixture brief with no session and no sign-in redirect", () => {
     render(<AttendeesPage />);
-    expect(screen.getByRole("heading", { name: /nerdconf sf — sat/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /nerdconf sf/i })).toBeInTheDocument();
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
     expect(screen.getByText("Marcus Ellis")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /today|capture|outreach/i })).not.toBeInTheDocument();
