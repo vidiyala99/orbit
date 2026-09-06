@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { attendeeName } from "@/lib/demoFixtures";
-import { dmText, noteText } from "@/lib/contactCopy";
+import { dm_payload, note_payload } from "@/lib/contactCopy";
 import type { AttendeeT } from "@/lib/types";
 import { ChevronLeftIcon } from "./SocialIcons";
 
@@ -56,7 +56,7 @@ function CopyButton({
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  const shared = "btn-press min-h-12 w-full rounded-full px-6 py-3 text-[15px] font-bold";
+  const shared = "btn-press min-h-12 min-w-0 flex-1 rounded-full px-5 py-3 text-[15px] font-bold";
   const look =
     variant === "primary"
       ? "bg-accent text-white shadow-raised hover:bg-accent/90 hover:shadow-raised-hover"
@@ -112,23 +112,24 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
               {name}
             </h1>
             <p className="mt-2 text-[14px] font-medium leading-snug text-ink2">{attendee.role}</p>
-            <p className="mt-2 text-[13px] font-medium text-ink2">
+            <p className="mt-2 text-[13px] font-medium text-ink3">
               <a
                 href={attendee.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink2 hover:text-accent"
+                aria-label="LinkedIn"
+                className="text-ink3 hover:text-accent"
               >
-                LinkedIn
+                LI
               </a>
-              <span aria-hidden="true" className="px-2 text-ink3">
+              <span aria-hidden="true" className="px-2">
                 ·
               </span>
               <a
                 href={attendee.x_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink2 hover:text-accent"
+                className="text-ink3 hover:text-accent"
               >
                 X
               </a>
@@ -140,16 +141,24 @@ export default function ContactNote({ attendee }: { attendee: AttendeeT }) {
           {FIELDS.map((field) => (
             <section key={field.key}>
               <h2 className="text-[14px] font-bold text-ink">{field.label}</h2>
-              <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink2">
+              <p
+                className={
+                  field.key === "why"
+                    ? "mt-2 font-mono text-[14px] italic leading-relaxed text-ink2"
+                    : "mt-2 text-[15px] font-medium leading-relaxed text-ink2"
+                }
+              >
                 {attendee.note[field.key]}
               </p>
             </section>
           ))}
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-rule px-6 py-6">
-          <CopyButton label="Copy note" text={noteText(attendee)} variant="primary" />
-          <CopyButton label="Copy DM" text={dmText(attendee)} variant="secondary" />
+        <div className="flex flex-col gap-3 border-t border-rule px-6 py-6">
+          <div className="flex gap-3">
+            <CopyButton label="Copy note" text={note_payload(attendee)} variant="primary" />
+            <CopyButton label="Copy DM" text={dm_payload(attendee)} variant="secondary" />
+          </div>
           <p className="text-center text-[13px] font-medium leading-snug text-ink3">
             Swap primary anytime — note or DM.
           </p>

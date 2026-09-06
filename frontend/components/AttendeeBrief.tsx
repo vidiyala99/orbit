@@ -96,7 +96,7 @@ export default function AttendeeBrief({
                     {row.role}
                   </p>
                   <p
-                    title={row.why_meet}
+                    title={row.note.why}
                     className="mt-2 truncate font-mono text-[12px] italic leading-snug text-ink2"
                   >
                     {row.why_meet}
