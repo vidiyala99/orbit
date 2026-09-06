@@ -33,10 +33,16 @@ export default {
         /* Idle label inside the dark tab bar — the only colour that only ever
            sits on ink. */
         "tab-idle": "#93A08A",
+        /* Landing split-hero only. Do not reuse on /attendees. */
+        parchment: "#F9F7F2",
+        lake: "#3A7CA5",
+        "desk-wash": "#E4EBF1",
+        nearink: "#161616",
       },
       fontFamily: {
         sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
         mono: ["var(--font-plex-mono)", "ui-monospace", "monospace"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
       borderRadius: {
         card: "14px",
