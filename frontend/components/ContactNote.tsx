@@ -10,11 +10,7 @@ function initials(row: AttendeeT): string {
   return `${row.first_name[0] ?? ""}${row.last_name[0] ?? ""}`.toUpperCase();
 }
 
-async function writeClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
+function fallbackCopy(text: string) {
   const area = document.createElement("textarea");
   area.value = text;
   area.setAttribute("readonly", "");
@@ -24,6 +20,23 @@ async function writeClipboard(text: string) {
   area.select();
   document.execCommand("copy");
   document.body.removeChild(area);
+}
+
+async function writeClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await Promise.race([
+        navigator.clipboard.writeText(text),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("clipboard timeout")), 400);
+        }),
+      ]);
+      return;
+    }
+  } catch {
+    /* Permissions, timeout, or missing secure context. */
+  }
+  fallbackCopy(text);
 }
 
 function CopyButton({

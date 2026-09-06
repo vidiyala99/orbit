@@ -89,7 +89,7 @@ export default function AttendeeBrief({
                     />
                   </div>
                   <p className="mt-1.5 text-[13px] font-medium leading-snug text-ink2">{row.role}</p>
-                  <p className="mt-1 font-mono text-[12px] italic leading-snug text-ink2">
+                  <p className="mt-1 truncate font-mono text-[12px] italic leading-snug text-ink2">
                     {row.why_meet}
                   </p>
                 </div>
