@@ -35,7 +35,7 @@ services:
       - key: NEBIUS_BASE_URL
         value: https://api.tokenfactory.nebius.com/v1
       - key: NEBIUS_MODEL
-        value: meta-llama/Meta-Llama-3.1-8B-Instruct
+        value: google/gemma-3-27b-it
       - key: RESEND_FROM_EMAIL
         sync: false
       - key: GOOGLE_CLIENT_ID

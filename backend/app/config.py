@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Nebius Token Factory — match / "why meet" text.
     nebius_api_key: str = ""
     nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1"
-    nebius_model: str = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    nebius_model: str = "google/gemma-3-27b-it"
 
     google_client_id: str = ""
     google_client_secret: str = ""

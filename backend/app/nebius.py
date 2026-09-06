@@ -1,8 +1,8 @@
 """Nebius Token Factory — one-line 'why meet' copy for in-venue matches.
 
 OpenAI-compatible chat at https://api.tokenfactory.nebius.com/v1
-model meta-llama/Meta-Llama-3.1-8B-Instruct. Missing key or a failed call
-falls back to a tag/headline heuristic so EventRoom never blocks on the LLM.
+model google/gemma-3-27b-it. Missing key or a failed call falls back to a
+tag/headline heuristic so EventRoom never blocks on the LLM.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from .models import User
 logger = logging.getLogger(__name__)
 
 DEFAULT_BASE = "https://api.tokenfactory.nebius.com/v1"
-DEFAULT_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+DEFAULT_MODEL = "google/gemma-3-27b-it"
 
 
 def why_meet_lines(viewer: User, others: list[User]) -> dict[uuid.UUID, str]:

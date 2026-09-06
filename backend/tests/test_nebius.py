@@ -43,7 +43,7 @@ def test_why_meet_uses_nebius_when_configured(monkeypatch):
         lines = why_meet_lines(viewer, [other])
 
     assert lines[other.id] == "Marcus is raising and you want customers."
-    assert mock_post.call_args.kwargs["json"]["model"] == "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    assert mock_post.call_args.kwargs["json"]["model"] == "google/gemma-3-27b-it"
     assert mock_post.call_args[0][0].endswith("/chat/completions")
 
 
