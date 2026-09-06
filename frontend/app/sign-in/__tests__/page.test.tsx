@@ -45,7 +45,7 @@ describe("SignInPage", () => {
     expect(document.cookie).toContain("sc_token=tok456");
   });
 
-  it("redirects to /explore when the returned user is already onboarded", async () => {
+  it("redirects to /attendees when the returned user is already onboarded", async () => {
     vi.spyOn(api, "login").mockResolvedValue({
       access_token: "tok456",
       user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
@@ -56,16 +56,16 @@ describe("SignInPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: /sign in with email/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/explore"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/attendees"));
   });
 
-  it("redirects an already signed-in, onboarded user to /explore without rendering the form", async () => {
+  it("redirects an already signed-in, onboarded user to /attendees without rendering the form", async () => {
     document.cookie = "sc_token=tok789; path=/";
     vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 
     render(<SignInPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/explore"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/attendees"));
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
   });
 
@@ -116,7 +116,7 @@ describe("SignInPage", () => {
     expect(screen.queryByRole("button", { name: /try it out/i })).not.toBeInTheDocument();
   });
 
-  it("demo-logs in, stores the token, and lands on category chips", async () => {
+  it("demo-logs in, stores the token, and lands on the attendee brief", async () => {
     const demoLogin = vi.spyOn(api, "demoLogin").mockResolvedValue({
       access_token: "demotok",
       user: { ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" },
@@ -125,7 +125,7 @@ describe("SignInPage", () => {
     render(<SignInPage />);
     fireEvent.click(screen.getByRole("button", { name: /try it out/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/explore"));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/attendees"));
     expect(demoLogin).toHaveBeenCalledTimes(1);
     expect(document.cookie).toContain("sc_token=demotok");
   });

@@ -2,8 +2,18 @@
 @config "../tailwind.config.ts";
 
 :root {
+  /* Sage & Stone — Slice A / Design AC */
+  --ground: #F5F3EE;
+  --surface: #FFFFFF;
+  --ink: #2F332C;
+  --ink2: #5C6355;
+  --ink3: #7C8B6E;
+  --accent: #5B7A5B;
+  --accent-soft: #E4EADF;
+  --rule: #E7E4DC;
+
   color-scheme: light;
-  caret-color: #5B7A5B;
+  caret-color: var(--accent);
 }
 
 ::selection {
@@ -16,6 +26,7 @@
 }
 
 a {
+  color: inherit;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }

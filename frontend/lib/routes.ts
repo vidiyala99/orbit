@@ -1,5 +1,5 @@
-/** After Try it out: category chips, then the map shortlist. */
-export const APP_HOME = "/explore";
+/** After sign-in: Slice A attendee brief. Map/nearby is not the hero. */
+export const APP_HOME = "/attendees";
 
 export function afterAuthPath(user: { onboarded_at?: string | null }): string {
   return user.onboarded_at ? APP_HOME : "/onboarding";

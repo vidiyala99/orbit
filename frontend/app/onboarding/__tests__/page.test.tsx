@@ -112,7 +112,7 @@ describe("OnboardingPage", () => {
     expect(await screen.findByText(/select at least one option/i)).toBeInTheDocument();
   });
 
-  it("submits the PATCH and redirects to /today on success", async () => {
+  it("submits the PATCH and redirects to /attendees on success", async () => {
     await renderWizard();
     await advanceToStep3();
     vi.spyOn(api, "submitOnboarding").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
@@ -133,7 +133,7 @@ describe("OnboardingPage", () => {
     );
 
     expect(await screen.findByText(/you're all set/i)).toBeInTheDocument();
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/explore"), { timeout: 2000 });
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/attendees"), { timeout: 2000 });
   });
 
   it("shows an inline error on submit failure and keeps earlier step data", async () => {
@@ -151,13 +151,13 @@ describe("OnboardingPage", () => {
     expect(await screen.findByLabelText(/first name/i)).toHaveValue("Ada");
   });
 
-  it("redirects to /today immediately if already onboarded", async () => {
+  it("redirects to /attendees immediately if already onboarded", async () => {
     vi.spyOn(auth, "getClientToken").mockReturnValue("tok123");
     vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 
     render(<OnboardingPage />);
 
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/explore"));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/attendees"));
   });
 
   it("redirects to /sign-in when there is no token", async () => {
