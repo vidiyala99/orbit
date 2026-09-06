@@ -39,16 +39,16 @@ function PlanetRing({ className }: { className?: string }) {
       aria-hidden="true"
       className={className}
     >
-      <circle cx="11" cy="11" r="4.15" fill="none" stroke="currentColor" strokeWidth="1.25" />
+      <circle cx="11" cy="11" r="5.1" fill="none" stroke="currentColor" strokeWidth="1.2" />
       <ellipse
         cx="11"
         cy="11"
-        rx="8.4"
-        ry="2.85"
+        rx="9.1"
+        ry="3.05"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.25"
-        transform="rotate(-26 11 11)"
+        strokeWidth="1.2"
+        transform="rotate(-28 11 11)"
       />
     </svg>
   );
@@ -81,13 +81,14 @@ function ProofIcon({ kind }: { kind: "bookmark" | "list" | "pencil" }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
       <path
-        d="M9.7 3.15 12.85 6.3 6.1 13.05H2.95V9.9L9.7 3.15Z"
+        d="M10.05 2.7 13.3 5.95 6.2 13.05H2.95v-3.25L10.05 2.7Z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.25"
         strokeLinejoin="round"
       />
-      <path d="M8.55 4.3 11.7 7.45" stroke="currentColor" strokeWidth="1.25" />
+      <path d="M8.85 3.9 12.1 7.15" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M3.2 12.8h3.1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -182,7 +183,7 @@ export default function Page() {
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-6 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:pb-24 lg:pt-10">
         <div>
-          <h1 className="max-w-[16ch] font-serif text-[40px] font-medium leading-[1.12] tracking-[-0.4px] text-ink sm:text-[48px] lg:text-[52px]">
+          <h1 className="max-w-[16ch] font-serif text-[40px] font-semibold leading-[1.12] tracking-[-0.4px] text-ink sm:text-[48px] lg:text-[52px]">
             {H1}
           </h1>
           <div className="mt-6 h-px w-16 bg-ink/40" aria-hidden="true" />
@@ -207,7 +208,7 @@ export default function Page() {
         </div>
 
         <figure data-testid="needs-you-desk" className="min-w-0">
-          <div className="rounded-[22px] bg-lake-muted px-4 py-5 sm:px-6 sm:py-6">
+          <div className="rounded-[22px] bg-lake-muted px-4 py-5 shadow-[0_8px_24px_rgba(47,51,44,0.08)] sm:px-6 sm:py-6">
             <div className="flex items-end justify-between gap-3 pb-3">
               <h2 className="font-serif text-[22px] font-semibold leading-none tracking-[-0.2px]">
                 Needs you

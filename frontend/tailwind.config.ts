@@ -32,7 +32,7 @@ export default {
         rule: "#E7E4DC",
         /* Landing only — Lake Blue filled Try it / Copy note. Desk card is
            the muted companion. Product UI keeps sage accent. */
-        lake: "#3A6B8C",
+        lake: "#3C7398",
         "lake-muted": "#D5DEE6",
         /* Idle label inside the dark tab bar — the only colour that only ever
            sits on ink. */
