@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyEmail } from "@/lib/api";
+import { APP_HOME } from "@/lib/routes";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not verify email";
@@ -35,8 +36,8 @@ function VerifyEmailContent() {
         {status === "success" && (
           <>
             <p className="text-[19px] font-extrabold tracking-[-0.3px] text-ink lg:text-[21px]">Email verified</p>
-            <Link href="/map" className="mt-3 inline-block text-[12.5px] font-semibold text-accent">
-              Back to the board
+            <Link href={APP_HOME} className="mt-3 inline-block text-[12.5px] font-semibold text-accent">
+              Back to the desk
             </Link>
           </>
         )}

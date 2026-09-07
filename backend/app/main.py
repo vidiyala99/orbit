@@ -7,10 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .db import engine
 from .pg_extensions import ensure_postgres_extensions
-from .routers import (
-    plans, rooms, room_messages, scheduling, threads, stamps, moderation, chat_ws, me,
-    waitlist, auth, calendar, presence, research, people, sync_runs,
-)
+from .routers import me, waitlist, auth, calendar, people, sync_runs
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +27,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="Orbit API",
     description=(
-        "Presence & plans, plus Slice A people/comms: "
+        "Event follow-up memory: "
         "`GET/POST /people`, `GET/PATCH /people/{id}`, `POST /people/import`, "
         "`GET /events/{id}/guests`, `GET/POST /sync-runs`. "
         "Person desk fields: `priority` (`needs_you`|`high`|`later`), "
@@ -50,20 +47,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(plans.router)
-app.include_router(rooms.router)
-app.include_router(room_messages.router)
-app.include_router(scheduling.router)
-app.include_router(threads.router)
-app.include_router(stamps.router)
-app.include_router(moderation.router)
-app.include_router(chat_ws.router)
 app.include_router(me.router)
 app.include_router(calendar.router)
 app.include_router(waitlist.router)
 app.include_router(auth.router)
-app.include_router(presence.router)
-app.include_router(research.router)
 app.include_router(people.router)
 app.include_router(sync_runs.router)
 
