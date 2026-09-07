@@ -88,6 +88,19 @@ function contactNote(raw: Record<string, unknown>, firstName: string): ContactNo
   };
 }
 
+function evidenceOf(value: unknown): AttendeeT["evidence"] {
+  if (!Array.isArray(value)) return [];
+  const out: AttendeeT["evidence"] = [];
+  for (const item of value) {
+    const rec = asRecord(item);
+    if (!rec) continue;
+    const source_id = asString(pick(rec, "source_id", "sourceId"));
+    const quote = asString(pick(rec, "quote"));
+    if (source_id && quote) out.push({ source_id, quote });
+  }
+  return out;
+}
+
 function priorityOf(value: unknown): AttendeePriorityT {
   return typeof value === "string" && PRIORITIES.has(value as AttendeePriorityT)
     ? (value as AttendeePriorityT)
@@ -131,6 +144,7 @@ export function mapGuestToAttendee(raw: unknown): AttendeeT | null {
     note,
     note_payload: notePayload,
     dm_payload: dmPayload,
+    evidence: evidenceOf(pick(rec, "evidence")),
   };
 }
 

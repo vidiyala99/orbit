@@ -2,33 +2,57 @@
 import MarketingNav from "@/components/MarketingNav";
 import WaitlistForm from "@/components/WaitlistForm";
 import ReplayOnView from "@/components/ReplayOnView";
+import Reveal from "@/components/Reveal";
 import Typewriter from "@/components/Typewriter";
+import { FIXTURE_ATTENDEES, attendeeName } from "@/lib/demoFixtures";
+import { compose_note_payload } from "@/lib/contactCopy";
 
-const PLAN_TEXT = "Grabbing coffee near University Ave, happy to talk shop.";
+const DESK_PEOPLE = FIXTURE_ATTENDEES.slice(0, 3);
+const NOTE_ROW = FIXTURE_ATTENDEES.find((row) => row.id === "priya-raman") ?? FIXTURE_ATTENDEES[2];
+const NOTE_TEXT = compose_note_payload(NOTE_ROW);
+
+/** Display-only headshots, same fixed ids/photos as the home page desk widget. */
+const MARKETING_AVATARS: Record<string, string> = {
+  "alex-chen": "https://i.pravatar.cc/64?img=12",
+  "marcus-ellis": "https://i.pravatar.cc/64?img=33",
+  "priya-raman": "https://i.pravatar.cc/64?img=47",
+};
 
 const STEPS = [
   {
-    n: 1, title: "Pick a location",
-    desc: "Try it out, then choose a city — or use your location.",
+    n: 1,
+    title: "Connect the guest list",
+    desc: "Point Orbit at your Luma, Meetup, or Eventbrite invite, or let it find the RSVP in your Gmail.",
   },
   {
-    n: 2, title: "Pick a theme",
-    desc: "Tech, Design, Food, Music, Sports, or Outdoors.",
+    n: 2,
+    title: "It ranks who needs you first",
+    desc: "Needs you, High, Later - the triage your calendar never gives you.",
   },
   {
-    n: 3, title: "Meet nearby",
-    desc: "See events, people with a status, and start a room.",
+    n: 3,
+    title: "Copy the note it already wrote",
+    desc: "Where you met, what you talked about, why it matters - ready to paste before you forget.",
   },
 ];
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+}
 
 export default function HowItWorksPage() {
   return (
     <>
       <MarketingNav active="how-it-works" />
       <main className="min-h-screen bg-ground">
+        <div className="grain-overlay" aria-hidden="true" />
         <section className="px-6 py-12 text-center lg:py-20">
-          <h1 className="mx-auto max-w-sm text-2xl font-extrabold leading-tight tracking-[-0.4px] text-ink sm:max-w-xl sm:text-4xl lg:max-w-2xl lg:text-5xl">
-            Three moments, not a whole new app to learn
+          <h1
+            style={{ animation: "riseIn 550ms cubic-bezier(0.16,1,0.3,1) 40ms both" }}
+            className="mx-auto max-w-sm text-fl-hero font-extrabold leading-tight tracking-[-0.4px] text-ink sm:max-w-xl lg:max-w-2xl"
+          >
+            Three moments, not a whole new inbox to manage
           </h1>
         </section>
 
@@ -51,63 +75,78 @@ export default function HowItWorksPage() {
                   {() => (
                     <>
                       {step.n === 1 && (
-                        <div
-                          className="w-full rounded-card bg-surface p-3 shadow-card lg:p-4"
-                          style={{ animation: "riseIn 350ms ease-out both" }}
-                        >
-                          <p className="text-[10px] font-bold text-ink lg:text-base">Priya S.</p>
-                          <p className="mt-1 min-h-[2.4em] text-[9px] text-ink2 lg:text-sm">
-                            <Typewriter text={PLAN_TEXT} speedMs={22} />
-                          </p>
-                          <p
-                            className="mt-2 flex items-center gap-1.5 text-[8.5px] font-bold text-accent opacity-0 lg:text-xs"
-                            style={{ animation: "bubbleIn 300ms ease-out 1600ms forwards" }}
-                          >
-                            <span className="live-dot" aria-hidden="true" />
-                            Live till 4P
-                          </p>
+                        <div className="flex w-full flex-col gap-2">
+                          {DESK_PEOPLE.map((row, idx) => (
+                            <div
+                              key={row.id}
+                              className="flex items-center gap-2 rounded-card bg-surface px-2.5 py-2 shadow-card"
+                              style={{ animation: `riseIn 350ms ease-out ${idx * 140}ms both` }}
+                            >
+                              {MARKETING_AVATARS[row.id] ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={MARKETING_AVATARS[row.id]}
+                                  alt=""
+                                  width={24}
+                                  height={24}
+                                  className="h-6 w-6 shrink-0 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span
+                                  aria-hidden="true"
+                                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[8px] font-bold text-accent"
+                                >
+                                  {initials(attendeeName(row))}
+                                </span>
+                              )}
+                              <p className="truncate text-[9px] font-bold text-ink lg:text-xs">
+                                {attendeeName(row)}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       )}
                       {step.n === 2 && (
-                        <>
-                          <div
-                            className="w-full rounded-card bg-surface p-2.5 shadow-card lg:p-3"
-                            style={{ animation: "riseIn 350ms ease-out both" }}
+                        <div
+                          role="tablist"
+                          aria-label="Priority"
+                          className="grid w-full grid-cols-3 overflow-hidden rounded-[10px] border border-rule bg-surface"
+                          style={{ animation: "riseIn 350ms ease-out both" }}
+                        >
+                          <span
+                            role="tab"
+                            aria-selected="true"
+                            className="flex h-8 items-center justify-center gap-1 bg-accent-soft text-[8px] font-bold text-ink lg:text-[11px]"
                           >
-                            <p className="text-[9px] font-bold text-ink lg:text-sm">Priya S.</p>
-                            <p className="mt-0.5 text-[8px] font-medium text-ink2 lg:text-xs">Coffee · Palo Alto</p>
-                          </div>
-                          <div
-                            className="w-full rounded-[12px] rounded-bl-[4px] bg-surface px-2.5 py-1.5 text-left opacity-0 shadow-card lg:px-3 lg:py-2"
-                            style={{ animation: "bubbleIn 300ms ease-out 600ms forwards" }}
-                          >
-                            <p className="text-[7.5px] font-medium text-ink2 lg:text-[11px]">
-                              💬 &quot;same event — heading to Caltrain too, want to walk over?&quot;
-                            </p>
-                          </div>
-                          <div
-                            className="w-full rounded-[12px] rounded-bl-[4px] bg-surface px-2.5 py-1.5 text-left opacity-0 shadow-card lg:px-3 lg:py-2"
-                            style={{ animation: "bubbleIn 300ms ease-out 1100ms forwards" }}
-                          >
-                            <p className="text-[7.5px] font-medium text-ink2 lg:text-[11px]">
-                              💬 &quot;I have a car, can drop 2 people near the station&quot;
-                            </p>
-                          </div>
-                        </>
+                            Needs you
+                            <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent" />
+                          </span>
+                          <span role="tab" aria-selected="false" className="flex h-8 items-center justify-center text-[8px] font-medium text-ink3 lg:text-[11px]">
+                            High
+                          </span>
+                          <span role="tab" aria-selected="false" className="flex h-8 items-center justify-center text-[8px] font-medium text-ink3 lg:text-[11px]">
+                            Later
+                          </span>
+                        </div>
                       )}
                       {step.n === 3 && (
                         <>
                           <div
-                            className="w-full rounded-[12px] rounded-bl-[4px] bg-surface px-3 py-2 text-left opacity-0 shadow-card lg:px-3.5"
-                            style={{ animation: "bubbleIn 300ms ease-out 200ms forwards" }}
+                            className="w-full rounded-card bg-surface p-3 shadow-card lg:p-4"
+                            style={{ animation: "riseIn 350ms ease-out both" }}
                           >
-                            <p className="text-[9px] font-medium text-ink lg:text-sm">so good meeting you today!</p>
+                            <p className="text-[10px] font-bold text-ink lg:text-base">
+                              {attendeeName(NOTE_ROW)}
+                            </p>
+                            <p className="mt-1 min-h-[3.6em] text-[9px] leading-snug text-ink2 lg:text-sm">
+                              <Typewriter text={NOTE_TEXT} speedMs={16} />
+                            </p>
                           </div>
                           <span
-                            className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-[8.5px] font-bold uppercase tracking-[0.04em] text-accent opacity-0 lg:text-xs"
-                            style={{ animation: "stampPress 500ms ease-out 700ms forwards" }}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[8.5px] font-bold text-white opacity-0 lg:text-xs"
+                            style={{ animation: "stampPress 400ms ease-out 2600ms forwards" }}
                           >
-                            ● Met in person
+                            Copied
                           </span>
                         </>
                       )}
@@ -115,20 +154,22 @@ export default function HowItWorksPage() {
                   )}
                 </ReplayOnView>
               </div>
-              <div className="max-w-xs text-center md:text-left lg:max-w-md">
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.04em] text-accent lg:text-sm">Step {step.n}</p>
-                <p className="mt-1 text-base font-extrabold tracking-[-0.2px] text-ink lg:text-2xl">{step.title}</p>
-                <p className="mt-1.5 text-xs font-medium leading-relaxed text-ink2 lg:mt-2 lg:text-base">{step.desc}</p>
-              </div>
+              <Reveal className="max-w-xs text-center md:text-left lg:max-w-md">
+                <p className="text-fl-sm font-bold uppercase tracking-[0.04em] text-accent">Step {step.n}</p>
+                <p className="mt-1 text-fl-xl font-extrabold tracking-[-0.2px] text-ink">{step.title}</p>
+                <p className="mt-1.5 text-fl-md font-medium leading-relaxed text-ink2 lg:mt-2">{step.desc}</p>
+              </Reveal>
             </div>
           </div>
         ))}
 
         <section className="bg-ink px-6 py-14 text-center lg:py-24">
-          <h2 className="text-lg font-extrabold tracking-[-0.3px] text-ground lg:text-3xl">Try it at your next coffee chat</h2>
-          <div className="mt-4 flex justify-center lg:mt-8">
-            <WaitlistForm />
-          </div>
+          <Reveal>
+            <h2 className="text-fl-2xl font-extrabold tracking-[-0.3px] text-ground">Try it at your next event</h2>
+            <div className="mt-4 flex justify-center lg:mt-8">
+              <WaitlistForm />
+            </div>
+          </Reveal>
         </section>
       </main>
     </>

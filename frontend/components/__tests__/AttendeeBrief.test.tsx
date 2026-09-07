@@ -105,7 +105,7 @@ describe("AttendeeBrief", () => {
     expect(screen.queryByRole("link", { name: /riley cole on x/i })).not.toBeInTheDocument();
   });
 
-  it("renders a dense row: avatar, name/role, italic why-meet, rank #N", () => {
+  it("renders a card row: avatar, name/role, italic why-meet, rank #N", () => {
     renderBrief();
     expect(screen.getByText("Alex Chen")).toBeInTheDocument();
     expect(screen.getByText("Founder, Render")).toBeInTheDocument();
@@ -130,18 +130,18 @@ describe("AttendeeBrief", () => {
     expect(screen.queryByRole("tab", { name: /unread|warm|cold|all/i })).not.toBeInTheDocument();
   });
 
-  it("kills the equal tall paper-card stack", () => {
+  it("uses warm photo cards, not a bare divided table", () => {
     const { container } = renderBrief();
     const row = within(container).getByText("Alex Chen").closest("li");
-    expect(row?.className).not.toMatch(/rounded-card/);
-    expect(row?.className).not.toMatch(/shadow-card/);
     const rowBody = row?.querySelector(":scope > div");
-    expect(rowBody?.className).toMatch(/min-h-14/);
-    expect(rowBody?.className).toMatch(/\bflex\b/);
-    expect(rowBody?.className).not.toMatch(/rounded-card/);
+    expect(rowBody?.className).toMatch(/rounded-card/);
+    expect(rowBody?.className).toMatch(/shadow-card/);
+    expect(rowBody?.querySelector(":scope > div")?.className).toMatch(/\bflex\b/);
     const list = container.querySelector("ul");
-    expect(list?.className).not.toMatch(/gap-4/);
-    expect(list?.className).toMatch(/max-h-\[calc\(5\*/);
+    expect(list?.className).toMatch(/gap-3/);
+    const avatar = row?.querySelector("img");
+    expect(avatar).toBeTruthy();
+    expect(avatar?.getAttribute("src")).toMatch(/^https:\/\//);
   });
 
   it("has no serif footer and uses a LinkedIn mark, not a heart", () => {
