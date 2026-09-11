@@ -2,7 +2,7 @@
 
 **What to build:** On the Home Focus card the user keeps or skips the current Attendee (with undo). Kept Attendees appear in the Inbox, which is the existing Attendees tab. Each decision is stored as explicit triage state in Postgres and written to Memory as a KEPT or SKIPPED edge, so future ranking can learn from it.
 
-**Blocked by:** 05
+**Blocked by:** 00, 05
 
 **Status:** ready-for-agent
 

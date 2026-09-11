@@ -2,7 +2,7 @@
 
 **What to build:** The Focus card shows the room ranked against the user's Focus. On each sync the event's guest table loads into hotdata. Ranking combines hotdata relevance (full-text/vector against Focus) with HydraDB multi-hop boosts (prior GOT_REPLY at the same Company, links to KEPT Attendees, FITS_STRUGGLE). The LLM gateway writes one short, evidence-grounded "why meet" per top Attendee. A room summary shows aggregates (e.g. counts by role, how many fit the Struggle). Server-side ranking replaces the client-side job-relevance heuristic.
 
-**Blocked by:** 04, 05. Needs hotdata access.
+**Blocked by:** 00, 04, 05. Needs hotdata access.
 
 **Status:** ready-for-agent
 
