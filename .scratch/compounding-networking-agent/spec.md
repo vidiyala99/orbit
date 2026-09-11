@@ -10,11 +10,14 @@ When I walk into an event, the guest list is a wall of 150 names. I don't know w
 
 ## Solution
 
-Orbit is my personal networking agent for events. I connect my Luma once, and the events I'm going to arrive with their guest lists, with no URLs to paste and no event picker. I tell Orbit my Focus in two taps: what I do (Role) and what I'm struggling with right now (Struggle, with options generated for my Role). Orbit turns the guest list into Memory (a graph of Attendees, Companies, Skills, Roles, Struggles, and my past outcomes). It ranks the room against my Focus and shows me one Attendee at a time with a concrete reason to meet them. I keep or skip. Kept Attendees land in my Inbox, where Orbit drafts the next action (an intro email) that I approve and send.
+Orbit is my personal networking agent for events. I connect my Luma once, and the events I'm going to arrive with their guest lists, with no URLs to paste and no event picker. Nobody else has to sign up, so there's no cold start: the guest list already carries each Attendee's LinkedIn and X handles. Enrichment agents read those public profiles plus their personal, company, and product sites, and extract what each person does and is building. The same agents read *my* LinkedIn and X to infer my Focus (Role + Struggle), which I confirm or edit in one tap. Orbit turns all of it into Memory (a graph of Attendees, Companies, Products, Skills, Topics, Roles, Struggles, and my past outcomes). It ranks the room against my Focus and shows me ranked cards of the most relevant people, one at a time, each with a concrete, evidence-backed reason to meet them. I keep or skip. Kept Attendees land in my Inbox, where Orbit drafts the next action (an intro email) that I approve and send.
 
 When an approach gets a reply, Orbit captures that whole run as a Playbook. The next time a similar Attendee comes up, Orbit replays the Playbook instead of reasoning from scratch. I can see run #1 next to run #2+: time, LLM calls, and tokens drop. Every event makes the next one faster.
 
+The end-of-day deliverable: for an event I'm attending, ranked cards of the most relevant people for me.
+
 Under the hood, each hackathon layer does real, repeated work:
+- **Enrichment** (Scrapling fetch + ScrapeGraphAI extraction): turns profile URLs into structured profiles, and Rote replays the scrape for every Attendee after the first.
 - **Structure**: Cognee turns messy profiles into a graph.
 - **Memory**: HydraDB stores and serves it with multi-hop Cypher.
 - **Insight**: hotdata ranks and aggregates the live guest table.
@@ -33,13 +36,15 @@ The app ships with no Snyk findings.
 5. As a user, I want a clear message when my Luma session has expired, so that I know to reconnect instead of seeing an empty room.
 6. As a user, I want the demo login to keep working, so that a judge can try Orbit without an account.
 
-### Focus
-7. As a first-time user, I want a Role page with preset buttons plus a custom option, so that I can say what I do in one tap.
-8. As a user whose Role isn't a job title (e.g. "seed investor", "rock climber"), I want to type it freely, so that Orbit isn't job-hunting-only.
-9. As a user, I want Struggle options generated from my Role, so that the choices fit me instead of a fixed list.
-10. As a user, I want to enter a custom Struggle, so that I'm not boxed in by the generated options.
-11. As a user, I want to change my Focus later, so that rankings follow what I care about today.
-12. As a user, I want Struggle options for a Role Orbit has already seen to appear instantly, so that onboarding feels fast (muscle memory at the onboarding layer).
+### Enrichment and Focus
+7. As a user, I want Orbit to read each Attendee's public LinkedIn and X profiles, so that ranking uses real signal about what they do instead of a one-line bio.
+8. As a user, I want Orbit to read each Attendee's personal site and their company or product pages, so that I know what they're actually building.
+9. As a user, I want to see "what Orbit found" on each Attendee's card (role, company, product, topics, recent posts, with links), so that I can verify the signal.
+10. As a user, I want Orbit to infer my Focus (Role + Struggle) from my own LinkedIn and X, so that I don't fill in an onboarding form.
+11. As a user, I want to confirm or edit the inferred Focus in one tap, so that it's right without friction. My Role can be anything ("seed investor", "rock climber"), not just a job.
+12. As a user, I want scraping to run through my own logged-in session at human pace and capped to events I'm attending, so that my accounts stay safe and data stays limited to people I'll actually meet.
+12a. As a user, I want enrichment to get faster after the first profile (Rote replays the captured scrape), so that a 150-person event is enriched in minutes, not hours.
+12b. As a user, I want enriched profiles cached and reused across events, so that the same person is never scraped twice without a reason.
 
 ### Memory and ranking
 13. As a user, I want Orbit to build Memory from each synced guest list (Attendees, their Companies, Skills, Roles, and how they relate to my Struggle), so that ranking goes beyond keyword matching.
@@ -112,26 +117,35 @@ The app ships with no Snyk findings.
   - `crystallize(run) -> playbook_ref`, `find_playbook(person) -> playbook?`, `replay(playbook_ref, person_id) -> run`.
   - Invoked from the Windows backend through WSL (e.g. running the `rote` CLI inside Ubuntu-24.04). Plays target Orbit's agent endpoints on `localhost:8001`.
   - The exact capture mechanism (how Rote observes the run) is **UNVERIFIED** and is the first spike ticket. The adapter interface stays stable whatever the mechanism turns out to be.
+- **Enrichment worker (its own process, like Cognee; ADR-0002)**:
+  - `enrich(person_refs) -> profiles`, where refs are LinkedIn, X, and web URLs from the Luma guest data.
+  - **Scrapling** fetches: the plain/stealth fetcher for open sites, and a persistent dynamic/stealth session carrying the user's own logged-in LinkedIn/X cookies for social profiles.
+  - **ScrapeGraphAI** extracts a structured profile: headline, role, company, product, skills, topics, recent posts, and source links. It uses the fast tier. ScrapeGraphAI calls OpenAI itself, so its tokens are reported back and recorded by the gateway's meter per run.
+  - Human pacing (randomized delays), a per-event cap, and a content-hash cache so a known person isn't re-scraped. Failures degrade to the Luma bio.
+  - Rote captures the first successful scrape (via Scrapling's MCP server) as an enrichment play and replays it for the rest (ticket 01 verifies the mechanism).
+  - Instagram is deferred. browser-use is a fallback only, for pages that need interaction Scrapling can't handle.
+- **Focus inference**: the enrichment worker runs on the user's own LinkedIn/X. The LLM gateway infers Role + Struggle with evidence. The user confirms or edits.
 - **Email adapter (Resend)**: the existing email module, gated by a recipient allowlist env var. Non-allowlisted recipients are refused with a clear error.
 - **Luma**: the existing client stays as-is (internal JSON API with session cookies after a one-time Turnstile-gated browser sign-in).
 
 ### Pipelines
-- **Sync pipeline** (on Luma sync or event re-sync): persist Event and Attendees in Postgres (existing), then Cognee `remember`, then HydraDB upsert, then hotdata `load_guest_table`, then rank. Each step records success or failure on the existing SyncRun, and a failing sponsor step degrades gracefully (e.g. rank falls back to the previous score).
-- **Rank**: score = hotdata relevance to Focus + HydraDB graph boosts (multi-hop history: prior GOT_REPLY at the same Company, links to KEPT Attendees, FITS_STRUGGLE). The LLM gateway writes one short "why meet" per top-N Attendee, grounded in evidence. Results land in the existing Person score, relevance, and evidence fields. Server-side ranking replaces the client-side job-relevance keyword heuristic.
+- **Sync pipeline** (on Luma sync or event re-sync): persist Event and Attendees in Postgres (existing), then **enrich** (the enrichment worker, cached per person), then hotdata `load_guest_table` and rank (the ranked cards exist from this point), then Cognee `remember` and HydraDB upsert (Memory deepens later ranks). Each step records success or failure on the existing SyncRun, and a failing sponsor step degrades gracefully (e.g. rank falls back to the previous score).
+- **Rank (matchmaking)**: score = hotdata relevance of each *enriched profile* to the user's Focus and own profile (full-text + vector), plus HydraDB graph boosts when Memory is available (multi-hop history: prior GOT_REPLY at the same Company, links to KEPT Attendees, FITS_STRUGGLE). The LLM gateway writes one short "why meet" per top-N Attendee, grounded in evidence. Results land in the existing Person score, relevance, and evidence fields. Server-side ranking replaces the client-side job-relevance keyword heuristic.
 - **Outreach run**:
   1. Kept Attendee → check `find_playbook`. If there's a match, **replay** via Rote; otherwise run **reasoned** via RocketRide.
   2. Either path returns a draft → the user approves or edits → send (allowlisted) → CONTACTED edge.
   3. The user marks a reply → GOT_REPLY edge → if the run was reasoned, `crystallize` it into a Playbook.
 
 ### Schema changes (Postgres, Alembic)
-- `users`: add `focus_role` (text) and `focus_struggle` (text). The legacy `target_role` and `target_industries` columns stay unused. They aren't dropped mid-hackathon.
-- `people`: add an explicit triage state (`kept` / `skipped` / null) with a timestamp, so Inbox membership is unambiguous.
+- `users`: add `focus_role` (text), `focus_struggle` (text), `focus_evidence` (JSON), `focus_confirmed_at`, and the user's own enriched `profile` (JSON). The legacy `target_role` and `target_industries` columns stay unused. They aren't dropped mid-hackathon.
+- `people`: add an explicit triage state (`kept` / `skipped` / null) with a timestamp, so Inbox membership is unambiguous. Add the enriched `profile` (JSON: headline, role, company, product, skills, topics, recent posts, source links), `profile_hash`, and `enriched_at`.
 - New `playbooks` table: owner, name, Rote play reference and version, source Attendee, the Role/Struggle signature it matches on, replay count, created_at.
 - New `action_runs` table: owner, Attendee, playbook (nullable), mode (`reasoned` | `replayed`), status, duration_ms, llm_calls, tokens_in, tokens_out, draft, sent_at, outcome (`replied` | null), created_at.
 
 ### API contracts (new or changed; all authed, JSON)
 - `PATCH /me/focus` `{role, struggle}` → user.
-- `POST /focus/struggle-options` `{role}` → `{options: string[], source: "generated" | "replayed"}`. A Role that's been seen before replays.
+- `POST /me/focus/infer` → `{role, struggle, evidence}`, inferred from the user's own enriched LinkedIn/X profile. The user confirms or edits via `PATCH /me/focus`.
+- `POST /events/{id}/enrich` → starts or resumes enrichment for the event's Attendees and returns progress (enriched / cached / failed counts). `GET /people/{id}` includes the enriched profile.
 - `POST /events/{id}/sync` (existing) now runs the full sync pipeline. `GET /events/{id}/summary` returns room aggregates.
 - `GET /events/{id}/guests` (existing) returns Attendees ranked, with score, why-meet, and evidence.
 - `PATCH /people/{id}/triage` `{state: "kept" | "skipped" | null}`.
@@ -150,14 +164,17 @@ The app ships with no Snyk findings.
 
 - **What makes a good test here:** assert externally visible behaviour at the highest seam, meaning HTTP responses and persisted state. Examples: "keeping an Attendee puts them in `GET /inbox`," "an outcome of `replied` on a reasoned run creates a Playbook," "a second outreach to a similar Attendee runs in `replayed` mode with fewer recorded LLM calls." Don't assert internal call order or adapter internals.
 - **Primary seam: the backend HTTP API** via FastAPI `TestClient` against the real test Postgres. Every sponsor adapter (LLM gateway, Cognee, HydraDB, hotdata, RocketRide, Rote, Resend) is replaced with a fake at its adapter boundary, so tests run offline and deterministically. Prior art: the Luma router tests patch the Luma client with `AsyncMock` and use the same auth-client helper, and the people/events router tests cover persisted state.
-- **Tested backend behaviour:** Focus save and struggle-option generation vs replay; the sync pipeline's step recording and graceful degradation when an adapter fails; ranking order and evidence shape given faked insight + graph results; triage and Inbox; the outreach run in both modes; allowlist refusal on send; outcome → Playbook crystallization; compounding metrics; HydraDB id derivation (pure function, unit-tested).
-- **Secondary seam: frontend components** via vitest + Testing Library. This covers the Role and Struggle onboarding pages (button-or-custom, generated options), the Focus card keep/skip, the Inbox draft-approve-send flow, and the run #1 vs #N panel. Prior art: the existing FocusCard, Home, and job-target editor component tests (the job-target editor tests get replaced along with the component).
-- **Live smoke checks (not unit tests):** one small script per sponsor tool (an LLM gateway completion, Cognee remember/recall round-trip, HydraDB write-then-read, hotdata load-then-query, RocketRide engine ping, Rote play run from WSL against `localhost:8001`, Resend send to an allowlisted address). Run by hand when setting up and before the demo.
+- **Tested backend behaviour:** Focus inference and confirm; enrichment (profile extraction shape, cache hit on unchanged person, pacing cap, graceful fallback to the Luma bio) with Scrapling and ScrapeGraphAI faked at the worker boundary; the sync pipeline's step recording and graceful degradation when an adapter fails; ranking order and evidence shape given faked insight + graph results; triage and Inbox; the outreach run in both modes; allowlist refusal on send; outcome → Playbook crystallization; compounding metrics; HydraDB id derivation (pure function, unit-tested).
+- **Secondary seam: frontend components** via vitest + Testing Library. This covers the one-tap Focus confirm/edit, the "what Orbit found" profile section on cards, the Focus card keep/skip, the Inbox draft-approve-send flow, and the run #1 vs #N panel. Prior art: the existing FocusCard, Home, and job-target editor component tests (the job-target editor tests get replaced along with the component).
+- **Live smoke checks (not unit tests):** one small script per sponsor tool (an LLM gateway completion, one real profile enrichment through the logged-in session, Cognee remember/recall round-trip, HydraDB write-then-read, hotdata load-then-query, RocketRide engine ping, Rote play run from WSL against `localhost:8001`, Resend send to an allowlisted address). Run by hand when setting up and before the demo.
 - The existing suite (`scripts/test.sh`: pytest + vitest + tsc) must stay green.
 
 ## Out of Scope
 
-- Live LinkedIn scraping (LinkedIn blocks scrapers, and ScrapeGraphAI isn't a mandated tool). Enrichment uses what Luma provides (headline, bio, social handles). Pre-cached enrichment is a stretch goal only.
+- Instagram enrichment (little professional signal, mostly private). Deferred.
+- browser-use as a primary agent: it reasons on every step and has no replay, which contradicts the brief. It's a fallback only, if Scrapling can't handle a page interaction.
+- PumpGTM integration (no API). It's a reference for the pacing and approval model only.
+- Scraping beyond the guest lists of events the user is attending, or republishing scraped data.
 - Automatic reply detection (no mailbox integration). Replies are marked by the user.
 - Autonomous sending without user approval.
 - Replacing Postgres or migrating system-of-record data into HydraDB (ADR-0001).
@@ -169,7 +186,7 @@ The app ships with no Snyk findings.
 
 ## Further Notes
 
-- **Critical path:** keys (LLM provider, RocketRide coupon + key, hotdata, Snyk) → the Rote capture/replay spike (highest uncertainty, drives the Playbook design) → sync pipeline with Cognee → HydraDB → hotdata → rank → Focus card keep/skip → Inbox + RocketRide outreach → Rote crystallize/replay → compounding panel → Snyk pass → demo rehearsal. Focus onboarding and the Resend allowlist have no upstream blockers and can run in parallel.
+- **Critical path to the must-have (ranked cards for an event I'm attending):** prune (00) → LLM gateway (04) → enrichment (05) → Focus from profile (06) → ranked matchmaking cards (09). Memory (07), RocketRide outreach (10), the Rote replays (11, 13), and the compounding panel (12) deepen it, and none of them blocks the cards. The Rote spike (01) runs in parallel because it has the highest uncertainty.
 - **Known unknowns (from research):**
   - Rote's capture mechanism and whether a WSL-installed play is callable from the Windows backend.
   - The `ROCKETRIDE_URI` for staging keys.
@@ -177,4 +194,4 @@ The app ships with no Snyk findings.
   - The chosen embedding model's dimension (measure it once, because Cognee fails on a mismatch).
   - Whether the HydraDB Docker image needs `--user 0:0` on Docker Desktop.
 - **Demo story (people-first):** most teams here are building dev tools and infra, so lead with the human moment ("who in *this* room should I meet, and why") on real guest data. Then reveal the layers, and close on the run #1 vs run #2 panel as proof of compounding.
-- **Stretch:** a Tulving recurring play that re-syncs and re-ranks during the event, pre-cached profile enrichment, and "what changed since last session" as a Home module.
+- **Stretch:** a Tulving recurring play that re-syncs and re-ranks during the event, pre-scraping the demo event's Attendees before judging, and "what changed since last session" as a Home module.

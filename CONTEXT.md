@@ -24,14 +24,22 @@ _Avoid_: Template, workflow, skill
 Structured facts about people, events, and past outcomes that survive across sessions.
 _Avoid_: Chat history, embeddings (implementation)
 
+**Profile**:
+What Orbit knows about a person from their public footprint (LinkedIn, X, personal/company/product sites): role, company, what they're building, topics, recent posts, with source links. Attendees' Profiles come from enrichment; the signed-in user has one too.
+_Avoid_: Bio (just the Luma one-liner), lead, prospect
+
+**Enrichment**:
+Turning an Attendee's handles into a Profile: agents fetch their public pages and extract structure. Nobody signs up, so there's no cold start.
+_Avoid_: Scraping (the mechanism, not the concept), lookup
+
 **Focus**:
-What the signed-in user is trying to get out of an event, captured as two answers: what they do (**Role**) and what they're struggling with right now (**Struggle**). Domain-agnostic by design — a Role can be "backend engineer" or "seed investor" or "rock climber," and Struggle options are generated dynamically per Role rather than fixed, so the concept never assumes a job-hunting context specifically.
+What the signed-in user is trying to get out of an event, in two parts: what they do (**Role**) and what they're struggling with right now (**Struggle**). It's inferred from the user's own Profile and confirmed or edited in one tap, never typed into an onboarding form. Domain-agnostic: a Role can be "backend engineer", "seed investor", or "rock climber".
 _Avoid_: Job Target, target role/industries (old, job-hunt-specific naming)
 
 **Role**:
-One half of Focus — a free-text description of what the user does, entered via a button-or-custom picker.
-_Avoid_: Job title (too narrow — a Role isn't necessarily employment)
+One half of Focus: what the user does, in free text.
+_Avoid_: Job title (too narrow, since a Role isn't necessarily employment)
 
 **Struggle**:
-The other half of Focus — what the user is hoping to solve by attending, chosen from options generated dynamically from their Role, or entered as custom text.
-_Avoid_: Pain point, goal (too vague — Struggle is always answered in relation to a Role)
+The other half of Focus: what the user hopes to solve by attending, always stated in relation to their Role.
+_Avoid_: Pain point, goal (too vague)

@@ -9,7 +9,7 @@ Type: task (prefactor)
 - The old OpenAI bio-embedding matching (Memory and Insight replace it)
 - Old onboarding fields (pain points, intent tags) that Focus replaces
 
-The dropped columns and tables go in one Alembic migration. Keep auth exactly as-is, including email/password, Google sign-in, and demo login, per the user's direction. The Google sign-in env vars become optional (blank means the button hides or errors gracefully, and demo login stays the default). Job-target code is **not** in scope here: tickets 04 and 07 replace it.
+The dropped columns and tables go in one Alembic migration. Keep auth exactly as-is, including email/password, Google sign-in, and demo login, per the user's direction. The Google sign-in env vars become optional (blank means the button hides or errors gracefully, and demo login stays the default). Job-target code is **not** in scope here: tickets 06 and 09 replace it.
 
 **Blocked by:** None (can start immediately)
 
