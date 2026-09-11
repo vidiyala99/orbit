@@ -33,7 +33,6 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 - `frontend/app/` — App Router pages. Signed-in home is `/home` (the only two
   real app destinations are `/home` and `/attendees`, both behind the bottom
   `AppNav` tab bar).
-- `docs/superpowers/` — historical design specs (architecture reused)
 
 ## gstack (REQUIRED — global install)
 

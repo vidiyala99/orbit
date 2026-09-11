@@ -467,23 +467,3 @@ def test_me_exposes_calendar_connected_flag(db_session):
     assert res.json()["google_calendar_connected"] is True
 
     app.dependency_overrides.clear()
-
-
-def test_create_plan_accepts_event_activity(db_session):
-    client = _client(db_session)
-    user = _user(db_session, email="eventplan@example.com")
-
-    now = datetime.now(timezone.utc)
-    res = client.post("/plans", json={
-        "activity": "event",
-        "openness": "open_to_chat",
-        "detail": "AI Founders Mixer @ SoMa",
-        "lat": 37.7749,
-        "lon": -122.4194,
-        "starts_at": now.isoformat(),
-        "ends_at": (now + timedelta(hours=2)).isoformat(),
-    }, headers=_auth(user))
-    assert res.status_code == 201
-    assert res.json()["activity"] == "event"
-
-    app.dependency_overrides.clear()

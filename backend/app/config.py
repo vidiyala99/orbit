@@ -28,11 +28,6 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
 
-    # Nebius Token Factory — match / "why meet" text.
-    nebius_api_key: str = ""
-    nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1"
-    nebius_model: str = "google/gemma-3-27b-it"
-
     google_client_id: str = ""
     google_client_secret: str = ""
     # The one redirect URI allow-listed in the Google Cloud Console. Every

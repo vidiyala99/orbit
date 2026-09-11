@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 
 # Never read sqlalchemy.url from alembic.ini (blank / leftover localhost).
 # Never go through Settings.env_file. Process DATABASE_URL only, resolved
-# at run time so tests can point Alembic at stayconnected_test.
+# at run time so tests can point Alembic at orbit_test.
 def _database_url() -> str:
     return resolve_database_url()
 

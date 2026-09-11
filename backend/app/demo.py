@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .models import User
 
-DEMO_EMAIL = "demo@stayconnected.app"
+DEMO_EMAIL = "demo@orbit.app"
 DEMO_CITY = "Mountain View, CA"
 # Same fallback location the frontend uses when geolocation is unavailable.
 DEMO_LAT = 37.3861

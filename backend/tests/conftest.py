@@ -4,11 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from app.db import Base
 from app.config import settings
 
-TEST_DATABASE_URL = settings.database_url.rsplit("/", 1)[0] + "/stayconnected_test"
+TEST_DATABASE_URL = settings.database_url.rsplit("/", 1)[0] + "/orbit_test"
 
 @pytest.fixture(scope="session", autouse=True)
 def _create_test_db():
-    admin_engine = create_engine(settings.database_url.rsplit("/", 1)[0] + "/stayconnected", isolation_level="AUTOCOMMIT")
+    admin_engine = create_engine(settings.database_url.rsplit("/", 1)[0] + "/orbit", isolation_level="AUTOCOMMIT")
     with admin_engine.connect() as conn:
         conn.exec_driver_sql("SELECT 1")  # verify connectivity early with a clear error
     yield

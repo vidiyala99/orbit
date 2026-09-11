@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-LOCAL_DEFAULT = "postgresql+psycopg://stayconnected:localdev@localhost:5434/stayconnected"
+LOCAL_DEFAULT = "postgresql+psycopg://orbit:localdev@localhost:5434/orbit"
 
 
 def on_render() -> bool:

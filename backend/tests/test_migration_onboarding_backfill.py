@@ -22,7 +22,7 @@ from sqlalchemy import create_engine, text
 
 from app.config import settings
 
-TEST_DATABASE_URL = settings.database_url.rsplit("/", 1)[0] + "/stayconnected_test"
+TEST_DATABASE_URL = settings.database_url.rsplit("/", 1)[0] + "/orbit_test"
 
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ALEMBIC_INI = os.path.join(_BACKEND_DIR, "alembic.ini")
@@ -39,7 +39,7 @@ def _alembic_config() -> Config:
 @contextmanager
 def _alembic_targeting_test_db():
     """alembic/env.py reads process DATABASE_URL only (never alembic.ini
-    or Settings.env_file). Point it at stayconnected_test for the upgrade.
+    or Settings.env_file). Point it at orbit_test for the upgrade.
     """
     original = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL

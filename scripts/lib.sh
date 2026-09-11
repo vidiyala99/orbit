@@ -87,7 +87,7 @@ db_up_and_wait() {
   (cd "$REPO_ROOT" && docker compose up -d db)
   local waited=0
   while [ "$waited" -lt 30 ]; do
-    if docker compose exec -T db pg_isready -U stayconnected >/dev/null 2>&1; then
+    if docker compose exec -T db pg_isready -U orbit >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
@@ -98,17 +98,17 @@ db_up_and_wait() {
 }
 
 ensure_databases_and_extensions() {
-  docker compose exec -T db psql -U stayconnected -d stayconnected -tc \
-    "SELECT 1 FROM pg_database WHERE datname = 'stayconnected_test'" | grep -q 1 || \
-    docker compose exec -T db psql -U stayconnected -d stayconnected -c "CREATE DATABASE stayconnected_test;"
-  docker compose exec -T db psql -U stayconnected -d stayconnected -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
-  docker compose exec -T db psql -U stayconnected -d stayconnected_test -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
+  docker compose exec -T db psql -U orbit -d orbit -tc \
+    "SELECT 1 FROM pg_database WHERE datname = 'orbit_test'" | grep -q 1 || \
+    docker compose exec -T db psql -U orbit -d orbit -c "CREATE DATABASE orbit_test;"
+  docker compose exec -T db psql -U orbit -d orbit -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
+  docker compose exec -T db psql -U orbit -d orbit_test -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
 }
 
 migrate_dev_and_test_db() {
   require_venv
   (cd "$BACKEND_DIR" && "$VENV_PY" -m alembic upgrade head)
   local test_url
-  test_url="$(cd "$BACKEND_DIR" && "$VENV_PY" -c "from app.config import settings; print(settings.database_url.rsplit('/',1)[0] + '/stayconnected_test')")"
+  test_url="$(cd "$BACKEND_DIR" && "$VENV_PY" -c "from app.config import settings; print(settings.database_url.rsplit('/',1)[0] + '/orbit_test')")"
   (cd "$BACKEND_DIR" && DATABASE_URL="$test_url" "$VENV_PY" -m alembic upgrade head)
 }

@@ -42,7 +42,7 @@ def test_demo_login_returns_login_shaped_token(client, db_session, demo_enabled)
     assert resp.status_code == 200
     body = resp.json()
     assert set(body) == {"access_token", "user"}
-    assert body["user"]["email"] == "demo@stayconnected.app"
+    assert body["user"]["email"] == "demo@orbit.app"
 
     # The token is a normal session token: it authenticates a normal request.
     me = client.get("/me", headers={"Authorization": f"Bearer {body['access_token']}"})
@@ -66,7 +66,7 @@ def test_demo_login_twice_does_not_duplicate_the_user(client, db_session, demo_e
     second = client.post("/auth/demo-login")
     assert second.status_code == 200
     assert second.json()["user"]["id"] == first.json()["user"]["id"]
-    assert db_session.query(User).filter(User.email == "demo@stayconnected.app").count() == 1
+    assert db_session.query(User).filter(User.email == "demo@orbit.app").count() == 1
 
 
 def test_demo_login_pins_world_to_a_picked_city(client, db_session, demo_enabled):

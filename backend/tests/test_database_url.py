@@ -25,7 +25,7 @@ def test_resolve_prefers_process_env_over_localhost_fallback(monkeypatch):
 
 def test_resolve_on_render_rejects_localhost(monkeypatch):
     monkeypatch.setenv("RENDER", "true")
-    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://stayconnected:localdev@127.0.0.1:5434/stayconnected")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://orbit:localdev@127.0.0.1:5434/orbit")
     with pytest.raises(RuntimeError, match="localhost"):
         resolve_database_url()
 
