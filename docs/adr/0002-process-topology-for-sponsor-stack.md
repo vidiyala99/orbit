@@ -7,6 +7,6 @@ The mandated stack (Cognee, HydraDB, hotdata.dev, RocketRide, Modiqo Rote) has t
 - **Rote runs in WSL2 (Ubuntu-24.04) with `networkingMode=mirrored`** in `C:\Users\aakas\.wslconfig`. Rote doesn't support native Windows. Mirrored mode lets Rote reach Orbit on `localhost:8001`. Binding uvicorn to `0.0.0.0` was rejected because that would expose the API on the venue Wi-Fi.
 - **Orbit counts its own LLM calls and tokens** (a wrapper around the Nebius client). Rote reports only per-step timings, and the run #1 vs run #2 "proof of compounding" panel needs calls and tokens.
 
-HydraDB (open-source Cypher in Docker vs HydraDB Cloud) is deliberately left open pending the sponsor mentor's answer. ADR-0001 still holds either way: Postgres stays the system of record.
+- **HydraDB is the open-source build (`hydra-db/hydradb`) running locally in Docker**, queried with OpenCypher through the standard `neo4j` Python driver. HydraDB Cloud was rejected because it doesn't expose Cypher, and multi-hop Cypher is HydraDB's whole role in the brief. Cost: RocketRide's built-in HydraDB node targets Cloud, so RocketRide reaches HydraDB through Orbit's own endpoints instead. The open-source build also only accepts non-negative integer node ids, so Cognee's UUIDs have to be mapped. ADR-0001 still holds: Postgres stays the system of record.
 
 Consequence: more processes to start. `scripts/dev.sh` should grow to launch or health-check Cognee and the RocketRide engine, so a fresh session doesn't have to remember them.
