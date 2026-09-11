@@ -12,7 +12,6 @@ in `CONTEXT.md`; use its terms (Event, Attendee, Inbox, Focus, Playbook, Memory)
 - Frontend: Next.js (App Router) + TypeScript + Tailwind, pnpm
 - Auth: custom cookie-based sessions (email/password + Google OAuth) plus
   `POST /auth/demo-login` (default on)
-- Tracks: Nebius Token Factory (`NEBIUS_API_KEY`), Render service `orbit-api`
 
 ## Dev workflow
 
@@ -30,7 +29,7 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 
 - `backend/app/routers/` — one router per resource (`auth`, `calendar`, `events`,
   `me`, `people`, `sync_runs`, `waitlist`)
-- `backend/app/{models,schemas,security,email,filters,nebius}.py`
+- `backend/app/{models,schemas,security,email,embeddings,luma_client,luma_crypto,people}.py`
 - `frontend/app/` — App Router pages. Signed-in home is `/home` (the only two
   real app destinations are `/home` and `/attendees`, both behind the bottom
   `AppNav` tab bar).

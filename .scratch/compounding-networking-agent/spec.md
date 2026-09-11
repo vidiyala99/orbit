@@ -98,7 +98,7 @@ The app ships with no Snyk findings.
 - The dev start script grows to launch HydraDB and Cognee and to health-check the RocketRide engine.
 
 ### Adapter modules (one per external tool, each a deep module with a small interface)
-- **LLM gateway (Nebius, OpenAI-compatible)**: `complete(prompt, schema?, run_id?) -> result`. It's the *only* path to an LLM from Orbit, and it records calls and tokens against a run id. RocketRide's LLM steps call Orbit's agent endpoints (below) rather than Nebius directly, so the meter stays authoritative.
+- **LLM gateway (provider-agnostic, OpenAI-compatible chat + embeddings, chosen by env config)**: `complete(prompt, schema?, run_id?) -> result`. It's the *only* path to an LLM from Orbit, and it records calls and tokens against a run id. RocketRide's LLM steps call Orbit's agent endpoints (below) rather than the provider directly, so the meter stays authoritative.
 - **Structure adapter (Cognee)**: `remember(documents, dataset)` and `recall(query) -> graph facts`. Documents are Attendee profiles (headline, bio, social handles, company) plus the user's Focus, and later outcome notes.
 - **Memory adapter (HydraDB)**:
   - `upsert_nodes/edges(batch)`, `query(cypher, params)`, `changes_since(ts)`.
@@ -152,7 +152,7 @@ The app ships with no Snyk findings.
 - **Primary seam: the backend HTTP API** via FastAPI `TestClient` against the real test Postgres. Every sponsor adapter (LLM gateway, Cognee, HydraDB, hotdata, RocketRide, Rote, Resend) is replaced with a fake at its adapter boundary, so tests run offline and deterministically. Prior art: the Luma router tests patch the Luma client with `AsyncMock` and use the same auth-client helper, and the people/events router tests cover persisted state.
 - **Tested backend behaviour:** Focus save and struggle-option generation vs replay; the sync pipeline's step recording and graceful degradation when an adapter fails; ranking order and evidence shape given faked insight + graph results; triage and Inbox; the outreach run in both modes; allowlist refusal on send; outcome → Playbook crystallization; compounding metrics; HydraDB id derivation (pure function, unit-tested).
 - **Secondary seam: frontend components** via vitest + Testing Library. This covers the Role and Struggle onboarding pages (button-or-custom, generated options), the Focus card keep/skip, the Inbox draft-approve-send flow, and the run #1 vs #N panel. Prior art: the existing FocusCard, Home, and job-target editor component tests (the job-target editor tests get replaced along with the component).
-- **Live smoke checks (not unit tests):** one small script per sponsor tool (a Nebius completion, Cognee remember/recall round-trip, HydraDB write-then-read, hotdata load-then-query, RocketRide engine ping, Rote play run from WSL against `localhost:8001`, Resend send to an allowlisted address). Run by hand when setting up and before the demo.
+- **Live smoke checks (not unit tests):** one small script per sponsor tool (an LLM gateway completion, Cognee remember/recall round-trip, HydraDB write-then-read, hotdata load-then-query, RocketRide engine ping, Rote play run from WSL against `localhost:8001`, Resend send to an allowlisted address). Run by hand when setting up and before the demo.
 - The existing suite (`scripts/test.sh`: pytest + vitest + tsc) must stay green.
 
 ## Out of Scope
@@ -169,12 +169,12 @@ The app ships with no Snyk findings.
 
 ## Further Notes
 
-- **Critical path:** keys (Nebius, RocketRide coupon + key, hotdata, Snyk) → the Rote capture/replay spike (highest uncertainty, drives the Playbook design) → sync pipeline with Cognee → HydraDB → hotdata → rank → Focus card keep/skip → Inbox + RocketRide outreach → Rote crystallize/replay → compounding panel → Snyk pass → demo rehearsal. Focus onboarding and the Resend allowlist have no upstream blockers and can run in parallel.
+- **Critical path:** keys (LLM provider, RocketRide coupon + key, hotdata, Snyk) → the Rote capture/replay spike (highest uncertainty, drives the Playbook design) → sync pipeline with Cognee → HydraDB → hotdata → rank → Focus card keep/skip → Inbox + RocketRide outreach → Rote crystallize/replay → compounding panel → Snyk pass → demo rehearsal. Focus onboarding and the Resend allowlist have no upstream blockers and can run in parallel.
 - **Known unknowns (from research):**
   - Rote's capture mechanism and whether a WSL-installed play is callable from the Windows backend.
   - The `ROCKETRIDE_URI` for staging keys.
-  - Whether Nebius chat models handle Cognee's structured-output extraction.
-  - The Nebius embedding dimension (measure it once, because Cognee fails on a mismatch).
+  - Whether the chosen chat model handles Cognee's structured-output extraction.
+  - The chosen embedding model's dimension (measure it once, because Cognee fails on a mismatch).
   - Whether the HydraDB Docker image needs `--user 0:0` on Docker Desktop.
 - **Demo story (people-first):** most teams here are building dev tools and infra, so lead with the human moment ("who in *this* room should I meet, and why") on real guest data. Then reveal the layers, and close on the run #1 vs run #2 panel as proof of compounding.
 - **Stretch:** a Tulving recurring play that re-syncs and re-ranks during the event, pre-cached profile enrichment, and "what changed since last session" as a Home module.
