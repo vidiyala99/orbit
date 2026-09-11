@@ -33,6 +33,10 @@ class User(Base):
     # Job-hunting target, used for job-relevance scoring against events/people.
     target_role: Mapped[str | None] = mapped_column(String(160), nullable=True)
     target_industries: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    # Focus (CONTEXT.md): what the user does (Role) and what they're trying to
+    # solve at events (Struggle). Attendees are ranked against this.
+    focus_role: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    focus_struggle: Mapped[str | None] = mapped_column(String(400), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

@@ -12,9 +12,13 @@ Legacy helpers (password / magic-link / organiser API key) remain for tests
 and older clients. Guest lists for events an attendee is Going to require
 session cookies — the public API key path is organiser-only.
 """
+import asyncio
 import json
 import logging
+import sys
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
+from typing import TypeVar
 
 import httpx
 
@@ -129,7 +133,32 @@ async def _request_email_code_http(
         return {"ok": False, "status": "error", "detail": "Could not reach Luma — try again"}
 
 
+T = TypeVar("T")
+
+
+async def run_on_subprocess_capable_loop(coro_factory: Callable[[], Awaitable[T]]) -> T:
+    """Run coroutine work that spawns subprocesses (Playwright launching Chromium).
+
+    uvicorn --reload on Windows installs the Selector event loop policy, and a
+    Selector loop can't spawn subprocesses. So the work runs in a worker thread
+    on its own loop: Proactor on Windows (asyncio.run would pick up the Selector
+    policy too), the default loop elsewhere.
+    """
+    def run() -> T:
+        loop = asyncio.ProactorEventLoop() if sys.platform == "win32" else asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coro_factory())
+        finally:
+            loop.close()
+
+    return await asyncio.to_thread(run)
+
+
 async def _request_email_code_via_browser(email: str) -> dict:
+    return await run_on_subprocess_capable_loop(lambda: _browser_code_request(email))
+
+
+async def _browser_code_request(email: str) -> dict:
     """Drive luma.com/signin just long enough to send the email code.
 
     Runs Chromium off-screen so the end user never sees another tab/window.
