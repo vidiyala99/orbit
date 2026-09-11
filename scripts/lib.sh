@@ -97,12 +97,10 @@ db_up_and_wait() {
   exit 1
 }
 
-ensure_databases_and_extensions() {
+ensure_test_database() {
   docker compose exec -T db psql -U orbit -d orbit -tc \
     "SELECT 1 FROM pg_database WHERE datname = 'orbit_test'" | grep -q 1 || \
     docker compose exec -T db psql -U orbit -d orbit -c "CREATE DATABASE orbit_test;"
-  docker compose exec -T db psql -U orbit -d orbit -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
-  docker compose exec -T db psql -U orbit -d orbit_test -c "CREATE EXTENSION IF NOT EXISTS postgis;" >/dev/null
 }
 
 migrate_dev_and_test_db() {

@@ -12,13 +12,12 @@ from ..db import get_db
 from ..demo import get_or_create_demo_user
 from ..models import User, EmailVerificationToken, PasswordResetToken
 from ..schemas import (
-    SignupRequest, LoginRequest, DemoLoginRequest, TokenOut,
+    SignupRequest, LoginRequest, TokenOut,
     VerifyEmailRequest, RequestPasswordResetRequest, ResetPasswordRequest, OkResponse,
     GoogleExchangeRequest,
 )
 from ..security import hash_password, verify_password, create_access_token, generate_opaque_token
 from ..email import send_verification_email, send_password_reset_email
-from .calendar import CALENDAR_STATE_PREFIX, complete_connect as complete_calendar_connect
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -28,6 +27,15 @@ PASSWORD_RESET_TOKEN_LIFETIME = timedelta(hours=1)
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+
+def _google_unavailable_redirect() -> RedirectResponse | None:
+    """Google sign-in is optional. With blank credentials, send the user back
+    to sign-in with a reason instead of onto a Google error page."""
+    if settings.google_client_id and settings.google_client_secret:
+        return None
+    return RedirectResponse(f"{settings.frontend_origin}/sign-in?error=google_unavailable")
+
 
 # In-process one-time-code -> user_id store. Same single-instance tradeoff
 # already accepted for chat_ws.py's connection registry; fine for v1.
@@ -65,19 +73,17 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/demo-login", response_model=TokenOut, include_in_schema=settings.demo_login_enabled)
-def demo_login(body: DemoLoginRequest | None = None, db: Session = Depends(get_db)):
+def demo_login(db: Session = Depends(get_db)):
     """One-click sign-in as the seeded demo account, for showing the app.
 
     404 (not 403) when the flag is off, so the endpoint isn't discoverable in an
     environment that never opted in. Returns exactly what /login returns, so the
-    client treats it as an ordinary sign-in. An optional city pin moves the
-    seeded plans/people/rooms so the nearby board is never empty.
+    client treats it as an ordinary sign-in.
     """
     if not settings.demo_login_enabled:
         raise HTTPException(status_code=404, detail="Not Found")
 
-    loc = body or DemoLoginRequest()
-    user = get_or_create_demo_user(db, lat=loc.lat, lon=loc.lon, city=loc.city)
+    user = get_or_create_demo_user(db)
     return TokenOut(access_token=create_access_token(user.id), user=user)
 
 
@@ -125,6 +131,8 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
 
 @router.get("/google")
 def google_authorize():
+    if (unavailable := _google_unavailable_redirect()) is not None:
+        return unavailable
     params = {
         "client_id": settings.google_client_id,
         "redirect_uri": settings.google_redirect_uri,
@@ -139,17 +147,10 @@ def google_authorize():
 @router.get("/google/callback")
 def google_callback(
     code: str | None = None,
-    state: str | None = None,
     db: Session = Depends(get_db),
-    error: str | None = None,
 ):
-    """The single redirect URI registered with Google, shared by every Google
-    flow — `state` says which one this is."""
-    if state is not None and state.startswith(CALENDAR_STATE_PREFIX):
-        return complete_calendar_connect(
-            code, state.removeprefix(CALENDAR_STATE_PREFIX), db, error=error,
-        )
-
+    if (unavailable := _google_unavailable_redirect()) is not None:
+        return unavailable
     if code is None:
         raise HTTPException(status_code=400, detail="missing code")
 

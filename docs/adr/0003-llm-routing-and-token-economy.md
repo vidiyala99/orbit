@@ -17,7 +17,7 @@ Orbit's pitch is compounding: every run gets cheaper and faster. So the LLM laye
 |---|---|---|---|
 | fast | `gpt-5.6-luna` | $0.20 / $1.20 | Struggle options, "why meet" batches, replay slot-fill, Cognee extraction |
 | smart | `gpt-5.6-terra` | $2 / $12 | Reasoned outreach draft (run #1, user-facing quality) |
-| embed | `text-embedding-3-small` (1536-d) | $0.02 | Cognee and hotdata vectors. 1536 matches the existing embedding column |
+| embed | `text-embedding-3-small` (1536-d) | $0.02 | Cognee and hotdata vectors |
 
 Escalation rule: if a fast-tier output fails schema validation, retry once on smart, then fall back to a template. Model ids are code defaults, overridable by env but not required in it.
 

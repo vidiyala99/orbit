@@ -28,11 +28,11 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
 
+    # Google sign-in is optional: leave both blank and /auth/google sends the
+    # user back to sign-in (demo login stays the default way in).
     google_client_id: str = ""
     google_client_secret: str = ""
-    # The one redirect URI allow-listed in the Google Cloud Console. Every
-    # Google flow (sign-in, calendar consent, anything later) comes back
-    # through it and is told apart by the `state` param.
+    # The redirect URI allow-listed in the Google Cloud Console.
     google_redirect_uri: str = "http://localhost:8001/auth/google/callback"
 
     # Hackathon default: ON. Judges hit Enter demo without Google OAuth.

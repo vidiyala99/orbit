@@ -19,21 +19,20 @@ const baseUser = {
   avatar_url: null,
   first_name: null,
   last_name: null,
-  city: null,
-  lat: null,
-  lon: null,
-  pain_points: null,
-  pain_point_other: null,
   onboarded_at: null,
-  google_calendar_connected: false,
   luma_connected: false,
 };
 
-async function renderWizard() {
+async function renderForm() {
   vi.spyOn(auth, "getClientToken").mockReturnValue("tok123");
   vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser });
   render(<OnboardingPage />);
   await screen.findByLabelText(/first name/i);
+}
+
+function fillName() {
+  fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: "Ada" } });
+  fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: "Lovelace" } });
 }
 
 describe("OnboardingPage", () => {
@@ -43,116 +42,50 @@ describe("OnboardingPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("blocks advancing past step 1 when name fields are empty", async () => {
-    await renderWizard();
+  it("asks only for a name: no city or pain-point steps", async () => {
+    await renderForm();
 
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+    expect(screen.queryByLabelText(/^city$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/frustrating/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/step \d of/i)).not.toBeInTheDocument();
+  });
+
+  it("blocks submit when name fields are empty", async () => {
+    await renderForm();
+    const submit = vi.spyOn(api, "submitOnboarding");
+
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
 
     expect(await screen.findByText(/first and last name are required/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(submit).not.toHaveBeenCalled();
   });
 
-  it("navigates forward and back through the steps", async () => {
-    await renderWizard();
-
-    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: "Ada" } });
-    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: "Lovelace" } });
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-
-    expect(await screen.findByLabelText(/^city$/i)).toBeInTheDocument();
-    expect(screen.getByText(/step 2 of 3/i)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /back/i }));
-
-    expect(await screen.findByLabelText(/first name/i)).toHaveValue("Ada");
-  });
-
-  it("blocks advancing past step 2 when city is empty", async () => {
-    await renderWizard();
-
-    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: "Ada" } });
-    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: "Lovelace" } });
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-    await screen.findByLabelText(/^city$/i);
-
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-
-    expect(await screen.findByText(/city is required/i)).toBeInTheDocument();
-  });
-
-  async function advanceToStep3() {
-    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: "Ada" } });
-    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: "Lovelace" } });
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-    await screen.findByLabelText(/^city$/i);
-
-    fireEvent.change(screen.getByLabelText(/^city$/i), { target: { value: "Austin, TX" } });
-    fireEvent.click(screen.getByRole("button", { name: /next/i }));
-    await screen.findByText(/step 3 of 3/i);
-  }
-
-  it("reveals and hides the free-text input when Other is toggled", async () => {
-    await renderWizard();
-    await advanceToStep3();
-
-    expect(screen.queryByLabelText(/tell us more/i)).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText(/^other$/i));
-    expect(await screen.findByLabelText(/tell us more/i)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText(/^other$/i));
-    expect(screen.queryByLabelText(/tell us more/i)).not.toBeInTheDocument();
-  });
-
-  it("blocks submit when no pain point is selected", async () => {
-    await renderWizard();
-    await advanceToStep3();
-
-    fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
-
-    expect(await screen.findByText(/select at least one option/i)).toBeInTheDocument();
-  });
-
-  it("submits the PATCH and redirects to /attendees on success", async () => {
-    await renderWizard();
-    await advanceToStep3();
+  it("submits the name and redirects to /home on success", async () => {
+    await renderForm();
     vi.spyOn(api, "submitOnboarding").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 
-    fireEvent.click(screen.getByLabelText(/cold outreach/i));
-    fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
+    fillName();
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
 
     await waitFor(() =>
-      expect(api.submitOnboarding).toHaveBeenCalledWith(
-        {
-          first_name: "Ada",
-          last_name: "Lovelace",
-          city: "Austin, TX",
-          pain_points: ["cold_outreach"],
-        },
-        "tok123",
-      ),
+      expect(api.submitOnboarding).toHaveBeenCalledWith({ first_name: "Ada", last_name: "Lovelace" }, "tok123"),
     );
-
     expect(await screen.findByText(/you're all set/i)).toBeInTheDocument();
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/home"), { timeout: 2000 });
   });
 
-  it("shows an inline error on submit failure and keeps earlier step data", async () => {
-    await renderWizard();
-    await advanceToStep3();
-    vi.spyOn(api, "submitOnboarding").mockRejectedValue(new Error("city could not be saved"));
+  it("shows an inline error on submit failure and keeps the typed name", async () => {
+    await renderForm();
+    vi.spyOn(api, "submitOnboarding").mockRejectedValue(new Error("could not be saved"));
 
-    fireEvent.click(screen.getByLabelText(/cold outreach/i));
-    fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
+    fillName();
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
 
-    expect(await screen.findByText(/city could not be saved/i)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /back/i }));
-    fireEvent.click(screen.getByRole("button", { name: /back/i }));
-    expect(await screen.findByLabelText(/first name/i)).toHaveValue("Ada");
+    expect(await screen.findByText(/could not be saved/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toHaveValue("Ada");
   });
 
-  it("redirects to /attendees immediately if already onboarded", async () => {
+  it("redirects to /home immediately if already onboarded", async () => {
     vi.spyOn(auth, "getClientToken").mockReturnValue("tok123");
     vi.spyOn(api, "fetchMe").mockResolvedValue({ ...baseUser, onboarded_at: "2026-08-23T00:00:00Z" });
 

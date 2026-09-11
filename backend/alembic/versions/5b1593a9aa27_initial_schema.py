@@ -10,7 +10,9 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-from app.alembic_types import location_column
+# `location` below was a PostGIS Geography column (NOT NULL on plans/presence).
+# It is pre-Orbit and dropped by the prune migration, so it is now plain nullable
+# Text: history builds without PostGIS. The original is in git.
 
 
 # revision identifiers, used by Alembic.
@@ -49,16 +51,13 @@ def upgrade() -> None:
     sa.Column('text', sa.Text(), nullable=False),
     sa.Column('lat', sa.Float(), nullable=False),
     sa.Column('lon', sa.Float(), nullable=False),
-    location_column(nullable=False),
+    sa.Column('location', sa.Text(), nullable=True),
     sa.Column('starts_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('ends_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    # NOTE: geoalchemy2 automatically creates the GIST spatial index for the
-    # 'location' column via an after_create DDL event when the table is
-    # created, so no explicit op.create_index call is needed (or wanted) here.
     op.create_table('reports',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('reporter_id', sa.UUID(), nullable=False),

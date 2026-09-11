@@ -1,7 +1,6 @@
 services:
   db:
-    build:
-      context: ./db
+    image: postgres:16
     environment:
       POSTGRES_DB: orbit
       POSTGRES_USER: orbit

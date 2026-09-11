@@ -8,43 +8,53 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
-const H1 = "Most people you meet at events, you never talk to again.";
-const SUB = "Personal communications manager - memory that closes the loop.";
-const CAPTION = "Your desk - not another draft box.";
+/** Phrases that only make sense for the pre-Orbit product (follow-up desk,
+ *  calendar/Gmail sourcing, waitlist). None may reappear on the landing page. */
+const OLD_PRODUCT_COPY = [
+  /needs you/i,
+  /copy note/i,
+  /copy dm/i,
+  /google calendar/i,
+  /gmail/i,
+  /meetup/i,
+  /eventbrite/i,
+  /waitlist/i,
+  /communications manager/i,
+];
 
-describe("Home page", () => {
-  it("renders the hero: promise left, Needs you desk right", () => {
+describe("Landing page", () => {
+  it("leads with the Luma-to-ranked-attendees promise and a demo entry", () => {
     render(<Page />);
 
-    expect(screen.getByRole("heading", { name: H1 })).toBeInTheDocument();
-    expect(screen.getByText(SUB)).toBeInTheDocument();
-    expect(screen.getByText("Remembers where you met + why it matters.")).toBeInTheDocument();
-    expect(screen.getByText("Queues who needs you first.")).toBeInTheDocument();
-    expect(screen.getByText("Prepares Copy note / Copy DM you approve.")).toBeInTheDocument();
-    expect(screen.getByText(CAPTION)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/who to meet/i);
+    const demoLinks = screen.getAllByRole("link", { name: /try the demo/i });
+    expect(demoLinks.length).toBeGreaterThan(0);
+    demoLinks.forEach((link) => expect(link).toHaveAttribute("href", "/home"));
+  });
 
-    const tryItLinks = screen.getAllByRole("link", { name: /^try it$/i });
-    tryItLinks.forEach((link) => expect(link).toHaveAttribute("href", "/home"));
+  it("previews real fixture attendees ranked against a Focus", () => {
+    render(<Page />);
 
-    const desk = screen.getByTestId("needs-you-desk");
-    const deskPeople = FIXTURE_ATTENDEES.slice(0, 3);
-    deskPeople.forEach((row) => {
-      expect(within(desk).getByText(attendeeName(row))).toBeInTheDocument();
+    const preview = screen.getByTestId("ranked-preview");
+    expect(within(preview).getByText("Your Focus")).toBeInTheDocument();
+    FIXTURE_ATTENDEES.slice(0, 3).forEach((row) => {
+      expect(within(preview).getByText(attendeeName(row))).toBeInTheDocument();
     });
   });
 
-  it("tells the whole story below the fold: problem, how it works, features, proof, FAQ, closing CTA", () => {
+  it("explains the loop in the product's own words: Luma, Focus, Inbox", () => {
     render(<Page />);
 
-    expect(screen.getByText(/the best conversations end at the door/i)).toBeInTheDocument();
-    expect(screen.getByText("Connect the guest list")).toBeInTheDocument();
-    expect(screen.getByText("It ranks who needs you first")).toBeInTheDocument();
-    expect(screen.getByText("Copy the note it already wrote")).toBeInTheDocument();
-    expect(screen.getByText("Needs you, ranked")).toBeInTheDocument();
-    expect(screen.getByText("Evidence, not guesses")).toBeInTheDocument();
-    expect(screen.getByText(/you already meet the right people/i)).toBeInTheDocument();
-    expect(screen.getByText("NERDCONF SF")).toBeInTheDocument();
-    expect(screen.getByText("Is this another CRM?")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /try it before your next event/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /pulled from your luma/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /ranked against your focus/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /keep or skip/i })).toBeInTheDocument();
+    expect(screen.getByText(/keep sends them to your inbox/i)).toBeInTheDocument();
+  });
+
+  it("carries no copy from the pre-Orbit product", () => {
+    const { container } = render(<Page />);
+    const text = container.textContent ?? "";
+
+    OLD_PRODUCT_COPY.forEach((phrase) => expect(text).not.toMatch(phrase));
   });
 });

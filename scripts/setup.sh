@@ -6,7 +6,7 @@ source lib.sh
 
 log "==> db container"
 db_up_and_wait
-ensure_databases_and_extensions
+ensure_test_database
 
 log "==> backend"
 if [ ! -d "$BACKEND_DIR/.venv" ]; then

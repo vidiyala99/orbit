@@ -1,27 +1,8 @@
-import logging
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .db import engine
-from .pg_extensions import ensure_postgres_extensions
-from .routers import me, waitlist, auth, calendar, people, sync_runs, events, luma
-
-log = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    # Extensions are optional. A missing PostGIS/vector must not take /health down.
-    try:
-        with engine.connect() as connection:
-            ensure_postgres_extensions(connection)
-            connection.commit()
-    except Exception:
-        log.exception("Startup DB probe failed; serving /health anyway")
-    yield
+from .routers import me, auth, people, sync_runs, events, luma
 
 
 app = FastAPI(
@@ -37,7 +18,6 @@ app = FastAPI(
         "`POST /me/luma/disconnect`, `POST /me/luma/sync`. "
         "See backend/README.md."
     ),
-    lifespan=lifespan,
 )
 
 _cors_origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
@@ -51,8 +31,6 @@ app.add_middleware(
 )
 
 app.include_router(me.router)
-app.include_router(calendar.router)
-app.include_router(waitlist.router)
 app.include_router(auth.router)
 app.include_router(people.router)
 app.include_router(sync_runs.router)

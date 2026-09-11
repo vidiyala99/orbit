@@ -6,7 +6,6 @@ from alembic import context
 
 from app.database_url import resolve_database_url
 from app.db import Base
-from app.pg_extensions import ensure_postgres_extensions
 from app import models  # noqa: F401 — registers all tables on Base.metadata
 
 # this is the Alembic Config object, which provides
@@ -28,17 +27,6 @@ def _database_url() -> str:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
-# PostGIS creates its own tables (spatial_ref_sys, tiger geocoder tables, etc.)
-# that aren't part of our app's metadata. Exclude them from autogenerate diffs
-# so migrations only ever describe our own schema.
-_APP_TABLES = set(Base.metadata.tables.keys())
-
-
-def include_object(object, name, type_, reflected, compare_to):
-    if type_ == "table" and reflected and name not in _APP_TABLES:
-        return False
-    return True
-
 
 def run_migrations_offline() -> None:
     context.configure(
@@ -56,13 +44,7 @@ def run_migrations_online() -> None:
     connectable = create_engine(_database_url(), poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
-        ensure_postgres_extensions(connection)
-        connection.commit()
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_object=include_object,
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

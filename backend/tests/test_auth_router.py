@@ -168,6 +168,41 @@ def test_reset_password_updates_hash_and_invalidates_token(db_session):
 from unittest.mock import MagicMock
 from urllib.parse import urlparse, parse_qs
 
+import pytest
+
+from app.config import settings
+
+
+@pytest.fixture(autouse=True)
+def _google_configured(monkeypatch):
+    """Callback/exchange tests exercise the configured path; the tests for
+    blank credentials override this."""
+    monkeypatch.setattr(settings, "google_client_id", "test-client-id")
+    monkeypatch.setattr(settings, "google_client_secret", "test-client-secret")
+
+
+def test_google_authorize_without_credentials_sends_user_back_to_sign_in(db_session, monkeypatch):
+    """Google sign-in is optional: blank env must not bounce the user to a
+    Google error page about a missing client_id."""
+    monkeypatch.setattr(settings, "google_client_id", "")
+    monkeypatch.setattr(settings, "google_client_secret", "")
+    client = next(_client(db_session))
+
+    res = client.get("/auth/google", follow_redirects=False)
+
+    assert res.status_code == 307
+    assert res.headers["location"] == f"{settings.frontend_origin}/sign-in?error=google_unavailable"
+
+
+def test_google_callback_without_credentials_sends_user_back_to_sign_in(db_session, monkeypatch):
+    monkeypatch.setattr(settings, "google_client_id", "")
+    client = next(_client(db_session))
+
+    res = client.get("/auth/google/callback?code=anything", follow_redirects=False)
+
+    assert res.status_code == 307
+    assert res.headers["location"] == f"{settings.frontend_origin}/sign-in?error=google_unavailable"
+
 
 def test_google_authorize_redirect_is_properly_url_encoded(db_session):
     client = next(_client(db_session))
@@ -182,7 +217,6 @@ def test_google_authorize_redirect_is_properly_url_encoded(db_session):
     params = parse_qs(query)
     assert params["redirect_uri"] == ["http://localhost:8001/auth/google/callback"]
     assert params["scope"] == ["openid email profile"]
-    # The shared callback tells flows apart by state.
     assert params["state"] == ["login"]
     # And the query string itself must actually be percent-encoded, not raw.
     assert "redirect_uri=http://" not in query

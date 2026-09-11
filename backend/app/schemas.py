@@ -13,26 +13,11 @@ class UserOut(BaseModel):
     avatar_url: str | None
     first_name: str | None
     last_name: str | None
-    city: str | None
-    lat: float | None
-    lon: float | None
-    pain_points: list[str] | None
-    pain_point_other: str | None
-    bio_text: str | None
-    intent_tags: list[str] | None
     target_role: str | None
     target_industries: list[str] | None
     onboarded_at: datetime | None
     # Read off the user row but never sent to the client — only the derived
-    # boolean below is. The refresh token itself is never exposed at all.
-    google_calendar_connected_at: datetime | None = Field(default=None, exclude=True)
-
-    @computed_field
-    @property
-    def google_calendar_connected(self) -> bool:
-        return self.google_calendar_connected_at is not None
-
-    # Luma: same pattern — timestamp excluded, derived bool exposed.
+    # boolean below is.
     luma_connected_at: datetime | None = Field(default=None, exclude=True)
 
     @computed_field
@@ -42,11 +27,6 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
-
-class GeocodeOut(BaseModel):
-    city: str
-    lat: float
-    lon: float
 
 class EventCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
@@ -74,35 +54,9 @@ class SignupRequest(BaseModel):
     email: str = Field(min_length=3, max_length=255)
     password: str = Field(min_length=8, max_length=255)
 
-PAIN_POINT_KEYS = {"cold_outreach", "dont_know_who", "no_time", "no_followthrough", "other"}
-INTENT_TAG_KEYS = {"co_founder", "customers", "investors", "friends", "other"}
-
 class OnboardingRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=60)
     last_name: str = Field(min_length=1, max_length=60)
-    city: str = Field(min_length=1, max_length=120)
-    pain_points: list[str] = Field(min_length=1)
-    pain_point_other: str | None = Field(default=None, max_length=200)
-    bio_text: str | None = Field(default=None, max_length=2000)
-    intent_tags: list[str] | None = Field(default=None)
-
-    @field_validator("pain_points")
-    @classmethod
-    def _valid_pain_points(cls, value: list[str]) -> list[str]:
-        invalid = set(value) - PAIN_POINT_KEYS
-        if invalid:
-            raise ValueError(f"invalid pain point(s): {', '.join(sorted(invalid))}")
-        return value
-
-    @field_validator("intent_tags")
-    @classmethod
-    def _valid_intent_tags(cls, value: list[str] | None) -> list[str] | None:
-        if value is None:
-            return value
-        invalid = set(value) - INTENT_TAG_KEYS
-        if invalid:
-            raise ValueError(f"invalid intent tag(s): {', '.join(sorted(invalid))}")
-        return value
 
 class JobTargetRequest(BaseModel):
     target_role: str | None = Field(default=None, max_length=160)
@@ -111,12 +65,6 @@ class JobTargetRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
-
-class DemoLoginRequest(BaseModel):
-    """Optional pin so a picked city moves the seeded demo user with it."""
-    lat: float | None = None
-    lon: float | None = None
-    city: str | None = None
 
 class TokenOut(BaseModel):
     access_token: str
@@ -137,26 +85,6 @@ class OkResponse(BaseModel):
 
 class GoogleExchangeRequest(BaseModel):
     code: str
-
-class EventCandidateOut(BaseModel):
-    source: Literal["calendar", "gmail"]
-    title: str
-    location: str | None
-    starts_at: datetime | None
-    ends_at: datetime | None
-
-class CandidatesOut(BaseModel):
-    connected: bool
-    candidates: list[EventCandidateOut]
-
-class WaitlistCreate(BaseModel):
-    email: str = Field(min_length=3, max_length=255)
-
-class WaitlistOut(BaseModel):
-    ok: bool = True
-
-class WaitlistCountOut(BaseModel):
-    count: int
 
 
 class LumaConnectStartRequest(BaseModel):

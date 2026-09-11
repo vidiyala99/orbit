@@ -37,7 +37,7 @@ def resolve_database_url(fallback: str | None = None) -> str:
     if on_render():
         if not raw:
             raise RuntimeError(
-                "DATABASE_URL must be set on Render. Link a PostGIS Postgres "
+                "DATABASE_URL must be set on Render. Link a Postgres "
                 "instance and set DATABASE_URL on orbit-api."
             )
         url = normalize_database_url(raw)

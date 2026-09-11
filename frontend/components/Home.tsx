@@ -321,7 +321,7 @@ export default function Home({ data }: { data: HomeDataT }) {
           <EmptyRow>
             {data.featuredEvent
               ? "No shortlist yet for this event."
-              : "No upcoming event yet — a shortlist appears once one's on the calendar."}
+              : "No upcoming event yet. Your next Luma event shows up here."}
           </EmptyRow>
         ) : (
           <ListGroup>

@@ -9,9 +9,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock, replace:
 
 const baseUser = {
   id: "u1", email: "a@b.com", email_verified_at: null, headline: null, linkedin_url: null,
-  avatar_url: null, first_name: null, last_name: null, city: null, lat: null, lon: null,
-  pain_points: null, pain_point_other: null, onboarded_at: null,
-  google_calendar_connected: false, luma_connected: false,
+  avatar_url: null, first_name: null, last_name: null,
+  onboarded_at: null, luma_connected: false,
 };
 
 describe("SignUpPage", () => {

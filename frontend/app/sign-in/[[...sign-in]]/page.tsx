@@ -11,8 +11,14 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not sign in";
 }
 
+/** The backend sends Google sign-in back here with `?error=` when it can't
+ *  complete it (e.g. no Google credentials configured). */
+const REDIRECT_ERRORS: Record<string, string> = {
+  google_unavailable: "Google sign-in isn't set up here yet. Use email, or tap Try it out.",
+};
+
 /** OrbitMark — the one recurring shape (ring + tilted orbit). Same treatment
- *  as the landing/about pages: a quiet brand anchor, never decorative. */
+ *  as the landing page: a quiet brand anchor, never decorative. */
 function OrbitMark({ className = "" }: { className?: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className={`shrink-0 ${className}`}>
@@ -33,6 +39,9 @@ export default function SignInPage() {
   const demoEnabled = isDemoLoginEnabled();
 
   useEffect(() => {
+    const redirectError = new URLSearchParams(window.location.search).get("error");
+    if (redirectError && REDIRECT_ERRORS[redirectError]) setError(REDIRECT_ERRORS[redirectError]);
+
     const token = getClientToken();
     if (!token) {
       setChecking(false);

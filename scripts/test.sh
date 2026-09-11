@@ -6,7 +6,7 @@ source lib.sh
 
 require_venv
 db_up_and_wait
-ensure_databases_and_extensions
+ensure_test_database
 migrate_dev_and_test_db
 
 overall=0

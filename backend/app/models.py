@@ -4,11 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import String, ForeignKey, DateTime, Boolean, Text, Float, JSON, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
-from pgvector.sqlalchemy import Vector
 from .db import Base
-
-# text-embedding-3-small's output size (see app/embeddings.py).
-EMBEDDING_DIM = 1536
 
 def _uuid() -> uuid.UUID:
     return uuid.uuid4()
@@ -28,29 +24,15 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     first_name: Mapped[str | None] = mapped_column(String(60), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(60), nullable=True)
-    city: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
-    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
-    pain_points: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    pain_point_other: Mapped[str | None] = mapped_column(String(200), nullable=True)
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    google_calendar_refresh_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    google_calendar_connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Luma integration — session cookies or organiser API key, both stored
     # encrypted. Never logged or returned to the client raw.
     luma_session_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
     luma_api_key_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
     luma_connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # Self-written, not scraped from LinkedIn (against its ToS and brittle).
-    # Used for in-venue matching similarity (see bio_embedding).
-    bio_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Enum-ish values validated at the Pydantic layer, not in the DB:
-    #   co_founder | customers | investors | friends | other
-    intent_tags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     # Job-hunting target, used for job-relevance scoring against events/people.
     target_role: Mapped[str | None] = mapped_column(String(160), nullable=True)
     target_industries: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    bio_embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
@@ -71,12 +53,6 @@ class PasswordResetToken(Base):
     token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-
-class WaitlistSignup(Base):
-    __tablename__ = "waitlist_signups"
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 class Event(Base):

@@ -53,10 +53,14 @@ def test_demo_login_returns_login_shaped_token(client, db_session, demo_enabled)
 def test_demo_user_is_fully_onboarded(client, db_session, demo_enabled):
     user = client.post("/auth/demo-login").json()["user"]
     assert user["first_name"] == "Demo"
-    assert user["city"] == "Mountain View, CA"
-    assert user["lat"] == pytest.approx(37.3861)
-    assert user["lon"] == pytest.approx(-122.0839)
     assert user["onboarded_at"] is not None
+
+
+def test_demo_user_carries_no_pre_orbit_fields(client, db_session, demo_enabled):
+    user = client.post("/auth/demo-login").json()["user"]
+    for dead in ("city", "lat", "lon", "pain_points", "intent_tags", "bio_text",
+                 "google_calendar_connected"):
+        assert dead not in user
 
 
 def test_demo_login_twice_does_not_duplicate_the_user(client, db_session, demo_enabled):
@@ -67,13 +71,3 @@ def test_demo_login_twice_does_not_duplicate_the_user(client, db_session, demo_e
     assert second.status_code == 200
     assert second.json()["user"]["id"] == first.json()["user"]["id"]
     assert db_session.query(User).filter(User.email == "demo@orbit.app").count() == 1
-
-
-def test_demo_login_pins_world_to_a_picked_city(client, db_session, demo_enabled):
-    token = client.post("/auth/demo-login", json={
-        "lat": 40.7128, "lon": -74.006, "city": "New York, NY",
-    }).json()["access_token"]
-    user = client.get("/me", headers={"Authorization": f"Bearer {token}"}).json()
-    assert user["city"] == "New York, NY"
-    assert user["lat"] == pytest.approx(40.7128)
-    assert user["headline"] == "Just exploring"

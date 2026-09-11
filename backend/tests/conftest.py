@@ -16,10 +16,6 @@ def _create_test_db():
 @pytest.fixture()
 def db_session():
     engine = create_engine(TEST_DATABASE_URL)
-    with engine.connect() as conn:
-        conn.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS postgis")
-        conn.exec_driver_sql("CREATE EXTENSION IF NOT EXISTS vector")
-        conn.commit()
     Base.metadata.create_all(engine)
     TestSession = sessionmaker(bind=engine)
     session = TestSession()

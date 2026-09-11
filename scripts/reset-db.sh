@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Drop and recreate local db + test db, re-enable postgis, re-migrate.
+# Drop and recreate local db + test db, re-migrate.
 # Refuses to run against anything but a localhost DATABASE_URL.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -15,7 +15,7 @@ docker compose exec -T db psql -U orbit -d postgres -c "DROP DATABASE IF EXISTS 
 docker compose exec -T db psql -U orbit -d postgres -c "DROP DATABASE IF EXISTS orbit_test;"
 docker compose exec -T db psql -U orbit -d postgres -c "CREATE DATABASE orbit;"
 
-ensure_databases_and_extensions
+ensure_test_database
 migrate_dev_and_test_db
 
 log "reset-db complete"

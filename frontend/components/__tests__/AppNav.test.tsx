@@ -48,15 +48,6 @@ describe("AppNav", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing on marketing pages", () => {
-    for (const path of ["/about", "/how-it-works", "/try"]) {
-      mockPathname = path;
-      const { container, unmount } = render(<AppNav />);
-      expect(container).toBeEmptyDOMElement();
-      unmount();
-    }
-  });
-
   it("renders nothing on auth pages", () => {
     for (const path of [
       "/sign-in",

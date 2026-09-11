@@ -14,9 +14,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => routerMock }));
 
 const baseUser = {
   id: "u1", email: "a@b.com", email_verified_at: null, headline: null, linkedin_url: null,
-  avatar_url: null, first_name: null, last_name: null, city: null, lat: null, lon: null,
-  pain_points: null, pain_point_other: null, onboarded_at: null,
-  google_calendar_connected: false, luma_connected: false,
+  avatar_url: null, first_name: null, last_name: null,
+  onboarded_at: null, luma_connected: false,
 };
 
 describe("SignInPage", () => {
@@ -103,6 +102,16 @@ describe("SignInPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /sign in with email/i }));
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
+  });
+
+  it("explains when the backend bounced a Google sign-in it isn't configured for", async () => {
+    window.history.pushState({}, "", "/sign-in?error=google_unavailable");
+    try {
+      render(<SignInPage />);
+      expect(await screen.findByRole("alert")).toHaveTextContent(/google sign-in isn't set up/i);
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
   });
 
   it("renders the demo button by default", () => {

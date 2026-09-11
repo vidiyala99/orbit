@@ -7,27 +7,10 @@ export type UserT = {
   avatar_url: string | null;
   first_name: string | null;
   last_name: string | null;
-  city: string | null;
-  lat: number | null;
-  lon: number | null;
-  pain_points: string[] | null;
-  pain_point_other: string | null;
   target_role?: string | null;
   target_industries?: string[] | null;
   onboarded_at: string | null;
-  google_calendar_connected: boolean;
   luma_connected: boolean;
-};
-
-/** Something the user might be attending today, as returned by
- *  `/me/calendar/candidates`. Gmail-sourced candidates carry a title only —
- *  email bodies aren't parsed for time/location. */
-export type EventCandidateT = {
-  source: "calendar" | "gmail";
-  title: string;
-  location: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
 };
 
 /** One guest on a Slice A event brief (Luma-style list). */

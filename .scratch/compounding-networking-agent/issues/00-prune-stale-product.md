@@ -15,9 +15,9 @@ The dropped columns and tables go in one Alembic migration. Keep auth exactly as
 
 **Status:** ready-for-agent
 
-- [ ] No references remain to calendar, geocoding, waitlist, or bio embeddings in backend, frontend, config, or tests
-- [ ] One migration drops the dead columns/tables. It upgrades cleanly on a fresh database and on the current dev database
-- [ ] Unused Python/Node dependencies removed (e.g. PostGIS/GeoAlchemy only if nothing else uses them). The Postgres image stays if migrations still need it
-- [ ] Landing page still renders and leads to demo login. No old-product copy remains on it
-- [ ] `scripts/test.sh` green (pytest + vitest + tsc). Demo login still returns 200
-- [ ] `CLAUDE.md` Stack/Structure sections match what's left
+- [x] No references remain to calendar, geocoding, waitlist, or bio embeddings in backend, frontend, config, or tests
+- [x] One migration drops the dead columns/tables. It upgrades cleanly on a fresh database and on the current dev database
+- [x] Unused Python/Node dependencies removed (e.g. PostGIS/GeoAlchemy only if nothing else uses them). The Postgres image stays if migrations still need it
+- [x] Landing page still renders and leads to demo login. No old-product copy remains on it
+- [x] `scripts/test.sh` green (pytest + vitest + tsc). Demo login still returns 200
+- [x] `CLAUDE.md` Stack/Structure sections match what's left

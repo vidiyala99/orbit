@@ -8,9 +8,10 @@ in `CONTEXT.md`; use its terms (Event, Attendee, Inbox, Focus, Playbook, Memory)
 
 ## Stack
 
-- Backend: FastAPI + SQLAlchemy 2.0 + GeoAlchemy2 + Alembic, Postgres/PostGIS
+- Backend: FastAPI + SQLAlchemy 2.0 + Alembic, plain Postgres 16 (no extensions)
 - Frontend: Next.js (App Router) + TypeScript + Tailwind, pnpm
-- Auth: custom cookie-based sessions (email/password + Google OAuth) plus
+- Auth: custom cookie-based sessions (email/password + optional Google OAuth;
+  blank Google env vars bounce back to sign-in with an explanation) plus
   `POST /auth/demo-login` (default on)
 
 ## Dev workflow
@@ -27,10 +28,11 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 
 ## Structure
 
-- `backend/app/routers/` — one router per resource (`auth`, `calendar`, `events`,
-  `me`, `people`, `sync_runs`, `waitlist`)
-- `backend/app/{models,schemas,security,email,embeddings,luma_client,luma_crypto,people}.py`
-- `frontend/app/` — App Router pages. Signed-in home is `/home` (the only two
+- `backend/app/routers/` — one router per resource (`auth`, `events`, `luma`,
+  `me`, `people`, `sync_runs`)
+- `backend/app/{models,schemas,security,email,luma_client,luma_crypto,people}.py`
+- `frontend/app/` — App Router pages. `/` is the one marketing page (leads to
+  the demo). Signed-in home is `/home` (the only two
   real app destinations are `/home` and `/attendees`, both behind the bottom
   `AppNav` tab bar).
 

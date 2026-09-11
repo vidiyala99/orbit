@@ -10,7 +10,7 @@ function errorMessage(err: unknown): string {
 }
 
 /** OrbitMark — the one recurring shape (ring + tilted orbit). Same treatment
- *  as the landing/about pages: a quiet brand anchor, never decorative. */
+ *  as the landing page: a quiet brand anchor, never decorative. */
 function OrbitMark({ className = "" }: { className?: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className={`shrink-0 ${className}`}>

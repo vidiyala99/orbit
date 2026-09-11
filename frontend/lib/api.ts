@@ -1,4 +1,4 @@
-import { EventCandidateT, UserT } from "./types";
+import { UserT } from "./types";
 import { resolveApiBase } from "./apiBase";
 
 const API_BASE = resolveApiBase();
@@ -8,52 +8,6 @@ export async function fetchMe(token: string): Promise<UserT> {
   const res = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`fetchMe failed: ${res.status}`);
   return res.json();
-}
-
-/** A plain browser-navigation target, not a `fetch` — the OAuth consent flow is a
- *  redirect chain, so the JWT rides along as a query param. */
-export function calendarConnectUrl(token: string): string {
-  return `${API_BASE}/me/calendar/connect?token=${encodeURIComponent(token)}`;
-}
-
-export async function disconnectCalendar(token: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/me/calendar/disconnect`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`disconnectCalendar failed: ${res.status}`);
-}
-
-/** Day boundaries come from the browser because the server doesn't know the
- *  user's timezone. Backs the Luma/Meetup/Eventbrite guest-list sourcing story. */
-export async function fetchEventCandidates(
-  dayStart: string, dayEnd: string, token: string,
-): Promise<{ connected: boolean; candidates: EventCandidateT[] }> {
-  const url = new URL(`${API_BASE}/me/calendar/candidates`);
-  url.searchParams.set("day_start", dayStart);
-  url.searchParams.set("day_end", dayEnd);
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`fetchEventCandidates failed: ${res.status}`);
-  return res.json();
-}
-
-export async function joinWaitlist(email: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/waitlist`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  if (!res.ok) throw new Error("Could not join waitlist");
-}
-
-export async function fetchWaitlistCount(): Promise<number> {
-  const res = await fetch(`${API_BASE}/waitlist/count`);
-  if (!res.ok) throw new Error("Could not fetch waitlist count");
-  const body = await res.json();
-  return body.count;
 }
 
 export async function signup(
@@ -82,16 +36,12 @@ export async function login(
 
 /** Signs in as the seeded demo account. 404s unless the backend has demo login
  *  enabled, so it's only surfaced behind NEXT_PUBLIC_DEMO_LOGIN_ENABLED. */
-export async function demoLogin(
-  location?: { lat: number; lon: number; city: string },
-): Promise<{ access_token: string; user: UserT }> {
+export async function demoLogin(): Promise<{ access_token: string; user: UserT }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12_000);
   try {
     const res = await fetch(`${API_BASE}/auth/demo-login`, {
       method: "POST",
-      headers: location ? { "Content-Type": "application/json" } : undefined,
-      body: location ? JSON.stringify(location) : undefined,
       signal: controller.signal,
     });
     if (!res.ok) throw new Error((await res.json()).detail ?? "Demo login failed");
@@ -314,13 +264,7 @@ export async function syncLuma(token: string): Promise<{ events: number; people:
 }
 
 export async function submitOnboarding(
-  input: {
-    first_name: string;
-    last_name: string;
-    city: string;
-    pain_points: string[];
-    pain_point_other?: string;
-  },
+  input: { first_name: string; last_name: string },
   token: string,
 ): Promise<UserT> {
   const res = await fetch(`${API_BASE}/me/onboarding`, {
