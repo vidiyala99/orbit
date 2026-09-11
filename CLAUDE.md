@@ -1,7 +1,8 @@
 # Orbit
 
-Presence & Plans: pick a location and theme, see nearby events and people,
-create a room, message, mutually confirm an in-person "stamp" once met.
+Your personal networking agent for events: pull real Luma guests, rank them
+against your Focus, stash who matters, then act later. Domain language lives
+in `CONTEXT.md`; use its terms (Event, Attendee, Inbox, Focus, Playbook, Memory).
 
 **User-facing name is Orbit.** Demo login is ON by default (hackathon).
 
