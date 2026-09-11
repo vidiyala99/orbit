@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+  workerd: true
+
+overrides:
+  # Next.js's optional peer dep for next/image optimization; unused in this
+  # app and its native binary can't be bundled for Cloudflare Workers.
+  sharp: npm:empty-npm-package@1.0.0

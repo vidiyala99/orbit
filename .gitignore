@@ -1,0 +1,15 @@
+.superpowers/
+node_modules/
+.env
+.env.local
+.next/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.run/
+.agents/
+.claude/skills/
+.claude/worktrees/
+.playwright-cli/
+skills-lock.json

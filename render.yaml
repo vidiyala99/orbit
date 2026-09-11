@@ -1,0 +1,48 @@
+# Orbit API on Render.
+#
+# Pin Python 3.12.x. Native Render Python is 3.14 and SQLAlchemy 2.0.35
+# crashes on Mapped[T | None] (Union __getitem__). runtime.txt at the repo
+# root is what the live orbit-api service reads (its rootDir is empty).
+#
+# PostGIS + pgvector are optional. Boot tries CREATE EXTENSION and degrades
+# geo search to lat/lon when free Render Postgres does not ship them.
+services:
+  - type: web
+    name: orbit-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: RESEND_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: NEBIUS_BASE_URL
+        value: https://api.tokenfactory.nebius.com/v1
+      - key: NEBIUS_MODEL
+        value: google/gemma-3-27b-it
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: DEMO_LOGIN_ENABLED
+        value: "true"
+      - key: PYTHON_VERSION
+        value: 3.12.6

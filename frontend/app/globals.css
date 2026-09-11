@@ -1,0 +1,192 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  /* Signal — warm bone ground + amber-ember accent */
+  --ground: #F4F1EA;
+  --surface: #FDFCF8;
+  --ink: #211D1A;
+  --ink2: #5C5548;
+  --ink3: #8B8373;
+  --accent: #9C540E;
+  --accent-soft: #F6E2C3;
+  --rule: #E3DDD0;
+  --rust: #9A3E22;
+  --rust-soft: #F1DDCF;
+  --amber: #7A5D12;
+  --amber-soft: #F0E8C6;
+
+  color-scheme: light;
+  caret-color: var(--accent);
+}
+
+::selection {
+  background: rgba(156, 84, 14, 0.2);
+  color: #211D1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E3DDD0;
+}
+
+/* These are base-reset-style defaults: they must lose to any Tailwind
+   utility class present on an element (e.g. `text-tab-idle`, or the
+   `focus-visible:outline-*` overrides in FollowUpStoryDeck), and only apply
+   as a fallback. Tailwind v4 emits utilities inside `@layer utilities`; an
+   unlayered rule beats every layered rule regardless of specificity, so
+   these must live in `@layer base` (base < components < utilities) to
+   correctly lose that fight. */
+@layer base {
+  a {
+    color: inherit;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  /* Every interactive element gets the same visible ring by default; nothing
+     anywhere sets outline:none without this replacing it. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid #9C540E;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #9C540E;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Text fields read their focus as a filled ring rather than an outline, so the
+   field itself looks "active" and not annotated. */
+.field {
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.field:focus {
+  outline: none;
+  border-color: #9C540E;
+  box-shadow: 0 0 0 3px rgba(156, 84, 14, 0.16);
+}
+.field:focus-visible {
+  outline: none;
+}
+
+/* MOTION — cards lift 2px on hover, press settles back in. Transform/opacity
+   only, so it stays on the compositor. */
+.lift {
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.btn-press:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lift:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+
+/* Live dot: a soft ring expands out of it. The ring is its own element so the
+   animation is transform + opacity, never box-shadow. */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #9C540E;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(156, 84, 14, 0.4);
+  animation: liveRing 2.2s ease-out infinite;
+}
+
+@keyframes liveRing {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(3.4); opacity: 0; }
+}
+
+@keyframes bubbleIn {
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes riseIn {
+  0% { transform: translateY(10px) scale(0.98); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes stampPress {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .live-dot::after {
+    display: none;
+  }
+}
+
+/* Slow, subtle zoom on full-bleed editorial photos — reads as "alive," not
+   as a slideshow effect, because it never reverses or loops. */
+.kenburns {
+  animation: kenburns 14s ease-out both;
+}
+@keyframes kenburns {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kenburns { animation: none; }
+}
+
+/* PRODUCT UI MOTION — /attendees: fast, occasional-frequency transitions.
+   Rows/panes stay under the 250ms UI budget; CSS transitions/keyframes only
+   (no JS scroll listeners), so rapid tab-switching never queues or jitters. */
+@keyframes rowIn {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes paneIn {
+  0% { opacity: 0; filter: blur(2px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+/* Fine grain so flat color fields (ground/surface) read as material rather
+   than flat paper. Fixed + pointer-events:none per perf guidance: it never
+   repaints on scroll since it isn't inside a scrolling stacking context. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Breathing room at the end of a page mounted under AppNav. AppNav itself
+   can no longer overlap this content (it's a non-fixed sibling pane, see
+   layout.tsx/AppNav.tsx) — this is just air so the last row/button doesn't
+   sit flush against the bar's top border. */
+.pb-appnav {
+  padding-bottom: 1.5rem;
+}
