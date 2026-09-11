@@ -103,7 +103,7 @@ The app ships with no Snyk findings.
 - The dev start script grows to launch HydraDB and Cognee and to health-check the RocketRide engine.
 
 ### Adapter modules (one per external tool, each a deep module with a small interface)
-- **LLM gateway (provider-agnostic, OpenAI-compatible chat + embeddings, chosen by env config)**: `complete(prompt, schema?, run_id?) -> result`. It's the *only* path to an LLM from Orbit, and it records calls and tokens against a run id. Routing, caching, and token rules: ADR-0003. RocketRide's LLM steps call Orbit's agent endpoints (below) rather than the provider directly, so the meter stays authoritative.
+- **LLM gateway (OpenAI Responses API + embeddings per ADR-0003; model ids and task routing overridable by env)**: `complete(prompt, schema?, run_id?) -> result`. It's the *only* path to an LLM from Orbit, and it records calls and tokens against a run id. Routing, caching, and token rules: ADR-0003. RocketRide's LLM steps call Orbit's agent endpoints (below) rather than the provider directly, so the meter stays authoritative.
 - **Structure adapter (Cognee)**: `remember(documents, dataset)` and `recall(query) -> graph facts`. Documents are Attendee profiles (headline, bio, social handles, company) plus the user's Focus, and later outcome notes.
 - **Memory adapter (HydraDB)**:
   - `upsert_nodes/edges(batch)`, `query(cypher, params)`, `changes_since(ts)`.

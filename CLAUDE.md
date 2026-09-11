@@ -23,6 +23,7 @@ Use `scripts/*.sh` (Git Bash) rather than running services manually:
 - `scripts/stop.sh` — stop backend + frontend by port
 - `scripts/test.sh` — backend pytest + frontend vitest + tsc
 - `scripts/reset-db.sh` — drop/recreate local + test db, re-migrate (refuses non-localhost `DATABASE_URL`)
+- `scripts/llm-smoke.sh` — live LLM gateway check: one real completion + one embedding (needs `OPENAI_API_KEY`)
 
 Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 
@@ -31,6 +32,8 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 - `backend/app/routers/` — one router per resource (`auth`, `events`, `luma`,
   `me`, `people`, `sync_runs`)
 - `backend/app/{models,schemas,security,email,luma_client,luma_crypto,people}.py`
+- `backend/app/llm/` — the metered LLM gateway (ADR-0003): task routing, budgets,
+  and the `action_runs`/`llm_calls` meter. `openai_provider.py` is the only OpenAI code
 - `frontend/app/` — App Router pages. `/` is the one marketing page (leads to
   the demo). Signed-in home is `/home` (the only two
   real app destinations are `/home` and `/attendees`, both behind the bottom

@@ -27,6 +27,20 @@ class Settings(BaseSettings):
     resend_from_email: str = "Orbit <noreply@orbit.app>"
 
     openai_api_key: str = ""
+    # LLM routing (ADR-0003). Code defaults, overridable by env
+    # (LLM_FAST_MODEL, ...) but never required in it.
+    llm_fast_model: str = "gpt-5.6-luna"
+    llm_smart_model: str = "gpt-5.6-terra"
+    llm_embed_model: str = "text-embedding-3-small"
+    # Fast tier runs at the lowest effort the model accepts.
+    llm_fast_reasoning_effort: str | None = "none"
+    llm_smart_reasoning_effort: str | None = "medium"
+    # Per-run budget: stops a runaway loop. A run may override either cap.
+    llm_run_max_calls: int = 40
+    llm_run_max_tokens: int = 200_000
+    # Task -> tier overrides on top of the code routing table, as JSON:
+    # LLM_ROUTES='{"why_meet": "smart"}'.
+    llm_routes: dict[str, str] = {}
 
     # Google sign-in is optional: leave both blank and /auth/google sends the
     # user back to sign-in (demo login stays the default way in).

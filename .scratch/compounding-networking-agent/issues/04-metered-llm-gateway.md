@@ -8,8 +8,8 @@ Type: task (prefactor)
 
 **Status:** ready-for-agent
 
-- [ ] `action_runs` table (migration) with run id, kind, mode, status, duration, llm_calls, tokens in/cached/out
-- [ ] Gateway API: a completion (task, schema, run id) and embeddings. The routing table and model ids are code defaults, overridable by env
-- [ ] Schema-invalid fast-tier output retries once on smart, then returns a typed failure. The per-run budget is enforced
-- [ ] Cached tokens are read from the provider's usage details and recorded
-- [ ] Unit/API tests with the OpenAI client faked at the boundary. Live smoke script
+- [x] `action_runs` table (migration) with run id, kind, mode, status, duration, llm_calls, tokens in/cached/out
+- [x] Gateway API: a completion (task, schema, run id) and embeddings. The routing table and model ids are code defaults, overridable by env
+- [x] Schema-invalid fast-tier output retries once on smart, then returns a typed failure. The per-run budget is enforced
+- [x] Cached tokens are read from the provider's usage details and recorded
+- [x] Unit/API tests with the OpenAI client faked at the boundary. Live smoke script

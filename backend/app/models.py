@@ -134,3 +134,52 @@ class SyncRun(Base):
     status: Mapped[str] = mapped_column(String(20))
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class ActionRun(Base):
+    """One agent run (enrichment, outreach, ...) and its metered LLM usage.
+
+    The run #1 vs #N compounding panel reads these totals.
+    """
+    __tablename__ = "action_runs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    # Enum-ish values validated at the gateway layer, not in the DB:
+    #   kind: enrichment | focus | matchmaking | outreach | smoke
+    kind: Mapped[str] = mapped_column(String(20))
+    #   mode: reasoned | replayed
+    mode: Mapped[str] = mapped_column(String(20))
+    #   status: running | succeeded | failed
+    status: Mapped[str] = mapped_column(String(20))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    llm_calls: Mapped[int] = mapped_column(Integer, default=0)
+    tokens_in: Mapped[int] = mapped_column(Integer, default=0)
+    # The part of tokens_in served from the provider's prompt cache.
+    tokens_cached: Mapped[int] = mapped_column(Integer, default=0)
+    tokens_out: Mapped[int] = mapped_column(Integer, default=0)
+    # Budget caps; the gateway refuses calls once either is reached.
+    max_llm_calls: Mapped[int] = mapped_column(Integer)
+    max_tokens: Mapped[int] = mapped_column(Integer)
+
+
+class LLMCall(Base):
+    """One metered model call (or externally reported usage) within a run."""
+    __tablename__ = "llm_calls"
+    # Integer key: calls are an append-only log read back in insert order.
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("action_runs.id"), index=True)
+    # Enum-ish values validated at the gateway layer (app/llm/gateway.py), not in the DB:
+    #   task: a Task value, e.g. why_meet | outreach_draft | profile_extraction
+    task: Mapped[str] = mapped_column(String(40))
+    #   tier: fast | smart | embed
+    tier: Mapped[str] = mapped_column(String(20))
+    model: Mapped[str] = mapped_column(String(80))
+    #   outcome: ok | schema_invalid | provider_error
+    outcome: Mapped[str] = mapped_column(String(20))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cached_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
