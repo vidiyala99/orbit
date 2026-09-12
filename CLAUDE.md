@@ -1,10 +1,12 @@
-# Orbit
+# Actintro
 
-Your personal networking agent for events: pull real Luma guests, rank them
-against your Focus, stash who matters, then act later. Domain language lives
+Your personal matchmaking and communication assistant for events: pull real Luma guests, rank them
+against your Focus, stash who matters, then act on the intro. (Code and older docs may still say Orbit.)
+
+Domain language lives
 in `CONTEXT.md`; use its terms (Event, Attendee, Inbox, Focus, Playbook, Memory).
 
-**User-facing name is Orbit.** Demo login is ON by default (hackathon).
+**User-facing name is Actintro.** Demo login is ON by default (hackathon).
 
 ## Stack
 
@@ -35,9 +37,8 @@ Ports: backend `8001`, frontend `3000`, Postgres `5434`.
 - `backend/app/llm/` — the metered LLM gateway (ADR-0003): task routing, budgets,
   and the `action_runs`/`llm_calls` meter. `openai_provider.py` is the only OpenAI code
 - `frontend/app/` — App Router pages. `/` is the one marketing page (leads to
-  the demo). Signed-in home is `/home` (the only two
-  real app destinations are `/home` and `/attendees`, both behind the bottom
-  `AppNav` tab bar).
+  the demo). Signed-in home is `/home`. App tabs: `/home`, `/events`, `/inbox`
+  (behind the top `AppNav` tab bar). Guest search is `/events/[id]`.
 
 ## gstack (REQUIRED — global install)
 
@@ -100,3 +101,11 @@ Default five canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, 
 ### Domain docs
 
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Design System
+
+Always read `DESIGN.md` before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match `DESIGN.md`.
+User-facing product name is **Actintro** (matchmaking + communication assistant).

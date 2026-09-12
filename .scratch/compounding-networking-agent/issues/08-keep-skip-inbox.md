@@ -4,10 +4,10 @@
 
 **Blocked by:** 00, 07
 
-**Status:** ready-for-agent
+**Status:** in-progress (Memory edges deferred post-hackathon; Postgres triage + UI shipped)
 
-- [ ] Attendees have an explicit triage state (kept / skipped / none) with a timestamp (migration)
-- [ ] `PATCH /people/{id}/triage` sets and clears it. `GET /inbox` lists kept Attendees with contact status
+- [x] Attendees have an explicit triage state (kept / skipped / none) with a timestamp (migration)
+- [x] `PATCH /people/{id}/triage` sets and clears it. `GET /inbox` lists kept Attendees with contact status
 - [ ] Keep/skip writes KEPT/SKIPPED edges via the Memory adapter. Undo neutralises the edge
-- [ ] Card keep / skip / undo works. The Attendees tab shows the Inbox (UI copy: Inbox)
-- [ ] API tests (Memory faked) and component tests for keep/skip/undo
+- [x] Card keep / skip / undo works. The Attendees tab shows the Inbox (UI copy: Inbox)
+- [x] API tests (Memory faked) and component tests for keep/skip/undo
