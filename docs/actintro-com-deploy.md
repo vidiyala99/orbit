@@ -41,19 +41,31 @@ Optional: leave `NEXT_PUBLIC_API_BASE` unset for marketing-only; demo remains a 
 
 After the Cloudflare zone is **Active**:
 
-1. Cloudflare → `actintro.com` → **DNS** → Add records:
+1. Cloudflare → `actintro.com` → **DNS** → set **web** records (keep Email Routing MX/TXT as-is).
+
+   Preferred (what Vercel Domain Connect recommends; **DNS only / grey cloud** required):
 
    | Type | Name | Content | Proxy |
    |------|------|---------|--------|
-   | A | `@` | `76.76.21.21` | Proxied or DNS-only (if SSL flaps, try DNS-only first) |
-   | A | `www` | `76.76.21.21` | Same as apex |
+   | CNAME | `@` | `d537f42e04681939.vercel-dns-017.com` | **DNS only** |
+   | CNAME | `www` | `d537f42e04681939.vercel-dns-017.com` | **DNS only** |
 
-   Alternate for `www`: CNAME `www` → `cname.vercel-dns.com` if you prefer CNAME over a second A.
+   Fallback A records if you prefer A over CNAME flattening:
 
-2. Vercel → Project → Domains should flip to **Valid** once DNS propagates (minutes to hours).
+   | Type | Name | Content | Proxy |
+   |------|------|---------|--------|
+   | A | `@` | `216.198.79.1` | **DNS only** |
+   | A | `@` | `64.29.17.1` | **DNS only** |
+   | A | `www` | same, or CNAME `www` → apex target | **DNS only** |
+
+   Older anycast `76.76.21.21` may still work, but **orange-cloud proxy without a Vercel cert
+   causes Error 525**. Leave proxy off until https://actintro.com loads; only re-enable proxy
+   after Vercel shows a cert / Domains Valid, with SSL mode **Full (strict)**.
+
+2. Or open Vercel’s Domain Connect apply URL from `vercel domains verify actintro.com` and approve
+   the Cloudflare DNS change (also sets proxy off).
 3. Confirm https://actintro.com and https://www.actintro.com serve the marketing page.
-
-Email Routing MX/TXT records and these web records coexist on the same Cloudflare zone.
+4. Keep Cloudflare nameservers for email — do **not** switch to `ns1.vercel-dns.com`.
 
 ## 4. Checklist
 

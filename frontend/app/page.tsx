@@ -44,7 +44,7 @@ const INBOX_ROWS = [
 
 export default function Page() {
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto overflow-x-auto bg-ground text-ink">
+    <main className="h-full min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-ground text-ink">
       <MarketingNav />
 
       {/* 1. Asymmetric hero */}
