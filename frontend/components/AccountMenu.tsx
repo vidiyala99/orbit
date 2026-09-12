@@ -1,9 +1,7 @@
 "use client";
 
-/** The only account entry point in the app — a small trigger next to the
- *  OrbitMark in AppNav (see AppNav.tsx), reachable from every signed-in
- *  route. Deliberately minimal per CLAUDE.md: email + Sign out, not a
- *  settings page. Opens upward since it lives in the bottom tab bar. */
+/** The only account entry point in the app — next to the Actintro mark in
+ *  AppNav. Opens downward under the top bar on every breakpoint. */
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -81,7 +79,7 @@ export default function AccountMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.97 }}
             transition={reduceMotion ? { duration: 0 } : MENU_SPRING}
-            className="absolute bottom-full right-0 mb-2 w-56 origin-bottom-right rounded-card border border-rule bg-surface p-1.5 shadow-card"
+            className="absolute right-0 top-full mt-2 w-56 origin-top-right rounded-card border border-rule bg-surface p-1.5 shadow-card"
           >
             <p className="truncate px-2.5 py-2 text-fl-xs font-semibold text-ink3">
               {email ?? "Signed in"}

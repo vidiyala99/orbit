@@ -21,7 +21,7 @@ describe("ConnectLuma — not connected", () => {
     expect(screen.getByRole("button", { name: /connect luma/i })).toBeInTheDocument();
   });
 
-  it("opens Orbit-only email step — no Luma redirect CTA", () => {
+  it("opens Actintro-only email step — no Luma redirect CTA", () => {
     render(<ConnectLuma lumaConnected={false} />);
     fireEvent.click(screen.getByRole("button", { name: /connect luma/i }));
     expect(screen.getByRole("dialog", { name: /connect luma/i })).toBeInTheDocument();

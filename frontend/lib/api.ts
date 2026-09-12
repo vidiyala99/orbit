@@ -195,6 +195,29 @@ export async function patchPerson(
   }
 }
 
+/** PATCH /people/{id}/triage — Keep / Skip / undo on the Focus card. */
+export async function triagePerson(
+  personId: string,
+  state: "kept" | "skipped" | null,
+  token: string,
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const res = await fetch(`${API_BASE}/people/${encodeURIComponent(personId)}/triage`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ state }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new ApiRequestError(`triagePerson failed: ${res.status}`, res.status);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function startLumaConnect(
   body: { email: string; turnstile_token?: string },
   token: string,

@@ -66,14 +66,14 @@ function ConnectedView({ lastSyncedAt }: { lastSyncedAt?: string | null }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="rounded-full bg-accent-soft px-3 py-1 text-fl-xs font-bold text-accent">
+      <span className="rounded-md bg-accent-soft px-3 py-1 text-fl-xs font-bold text-accent">
         Luma connected
       </span>
       <button
         type="button"
         onClick={handleSync}
         disabled={syncing}
-        className="lift btn-press rounded-full bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
+        className="lift btn-press rounded-md bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
       >
         {syncing ? "Syncing…" : "Sync guests"}
       </button>
@@ -81,7 +81,7 @@ function ConnectedView({ lastSyncedAt }: { lastSyncedAt?: string | null }) {
         type="button"
         onClick={handleDisconnect}
         disabled={busy}
-        className="rounded-full border border-rule bg-surface px-3 py-2 text-fl-xs font-semibold text-ink2 hover:bg-ground disabled:opacity-60"
+        className="rounded-md border border-rule bg-surface px-3 py-2 text-fl-xs font-semibold text-ink2 hover:bg-ground disabled:opacity-60"
       >
         Disconnect
       </button>
@@ -97,7 +97,7 @@ function ConnectedView({ lastSyncedAt }: { lastSyncedAt?: string | null }) {
 
 type Step = "email" | "code";
 
-/** Orbit-only: email → Luma emails a code → enter code here. Never opens luma.com. */
+/** Actintro-only: email → Luma emails a code → enter code here. Never opens luma.com. */
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
@@ -176,7 +176,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
       <div className="max-h-[min(100dvh,28rem)] w-full max-w-sm overflow-y-auto rounded-t-card bg-surface px-4 py-4 shadow-raised sm:rounded-card sm:px-5 sm:py-5">
         <h2 className="font-display text-fl-lg font-semibold text-ink">Connect Luma</h2>
         <p className="mt-0.5 text-fl-xs text-ink3">
-          Stay in Orbit — no Luma tab. Enter your email, then the code from your inbox.
+          Stay in Actintro — no Luma tab. Enter your email, then the code from your inbox.
         </p>
 
         {step === "email" ? (
@@ -247,7 +247,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-rule px-4 py-2 text-fl-sm font-semibold text-ink2 hover:bg-ground"
+            className="rounded-md border border-rule px-4 py-2 text-fl-sm font-semibold text-ink2 hover:bg-ground"
           >
             Cancel
           </button>
@@ -256,7 +256,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={handleSendCode}
               disabled={!canSend}
-              className="lift btn-press rounded-full bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
+              className="lift btn-press rounded-md bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
             >
               {busy ? "Sending…" : "Continue with Luma"}
             </button>
@@ -265,7 +265,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={handleConnect}
               disabled={!canConnect}
-              className="lift btn-press rounded-full bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
+              className="lift btn-press rounded-md bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
             >
               {busy ? "Connecting…" : "Connect"}
             </button>
@@ -294,7 +294,7 @@ export default function ConnectLuma({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="lift btn-press rounded-full border border-rule bg-surface px-4 py-2 text-fl-sm font-semibold text-ink2 hover:bg-ground"
+        className="lift btn-press rounded-md border border-ink/15 bg-transparent px-4 py-2 text-fl-sm font-medium text-ink2 hover:bg-ink/[0.05]"
       >
         Connect Luma
       </button>

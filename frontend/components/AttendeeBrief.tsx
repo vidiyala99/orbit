@@ -8,6 +8,7 @@ import { displayInitials } from "@/lib/displayAvatar";
 import { isPreEvent } from "@/lib/guests";
 import { hasRelevanceSignal } from "@/lib/relevanceSignal";
 import type { AttendeePriorityT, AttendeeT, EventBriefT } from "@/lib/types";
+import { personPath } from "@/lib/routes";
 import { AttendeeSocials, ChevronLeftIcon } from "./SocialIcons";
 import { ContactNoteCard } from "./ContactNote";
 
@@ -157,7 +158,7 @@ function DeskRow({
       className="relative"
     >
       <Link
-        href={`/attendees/${row.id}`}
+        href={personPath(row.id)}
         className="absolute inset-0 z-0 rounded-card"
         aria-label={name}
         aria-current={selected ? "true" : undefined}
@@ -267,7 +268,7 @@ export default function AttendeeBrief({
   }, [segment, rows.length]);
 
   return (
-    <main className="pb-appnav mx-auto min-h-dvh w-full max-w-[1400px] bg-ground px-4 pt-4 md:px-8">
+    <main className="pb-appnav mx-auto h-full w-full max-w-[1400px] overflow-y-auto bg-ground px-4 pt-4 md:px-8">
       <header className="flex items-baseline gap-2.5 pb-3">
         <Link
           href={backHref}

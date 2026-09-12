@@ -4,23 +4,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import FollowUpFocus from "../FocusCard";
 import type { PersonSummaryT } from "@/lib/events";
 
-const patchPersonMock = vi.fn();
+const triagePersonMock = vi.fn();
 
 vi.mock("@/lib/api", () => ({
-  patchPerson: (...args: unknown[]) => patchPersonMock(...args),
+  triagePerson: (...args: unknown[]) => triagePersonMock(...args),
 }));
 
 vi.mock("@/lib/auth", () => ({
   getClientToken: () => "test-token",
 }));
 
-// jsdom doesn't run real-time spring physics to completion, so
-// AnimatePresence's exit hold (the outgoing card/rail-row staying mounted
-// until its spring settles) never resolves within a test's wall clock —
-// that's a rendering-fidelity gap in jsdom, not a bug in the component.
-// Strip AnimatePresence down to a passthrough here so exits are instant,
-// matching how these tests only assert on end-state DOM, not the
-// animation itself.
 vi.mock("framer-motion", async (importOriginal) => {
   const actual = await importOriginal<typeof import("framer-motion")>();
   return { ...actual, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> };
@@ -33,8 +26,9 @@ function person(overrides: Partial<PersonSummaryT>): PersonSummaryT {
     last_name: "Rivera",
     role: "Partner, Westbound Ventures",
     priority: "needs_you",
-    event_title: "Founders Cowork Wednesdays",
-    event_ended_days_ago: 4,
+    event_title: "Build Fridays",
+    event_ended_days_ago: 0,
+    event_upcoming: true,
     why: "Backs early infra bets",
     note_payload: null,
     dm_payload: null,
@@ -44,27 +38,33 @@ function person(overrides: Partial<PersonSummaryT>): PersonSummaryT {
 
 const realMatchMedia = window.matchMedia;
 
-/** The mobile-vs-desktop tree is picked by a real `window.matchMedia`
- *  check (`useIsDesktop` in FocusCard.tsx), not a CSS breakpoint — jsdom's
- *  stub (vitest.setup.ts) always reports `matches: false`, i.e. mobile, so
- *  desktop-path tests override it here and restore it afterward. */
-function mockDesktop(matches: boolean) {
-  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+function mockLayout(layout: "phone" | "tablet" | "workbench") {
+  window.matchMedia = vi.fn().mockImplementation((query: string) => {
+    let matches = false;
+    if (query.includes("max-width: 767")) matches = layout === "phone";
+    else if (query.includes("min-width: 1024")) matches = layout === "workbench";
+    return {
+      matches,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    };
+  }) as unknown as typeof window.matchMedia;
 }
 
-describe("FollowUpFocus — mobile (drag-card) surface", () => {
+describe("FocusCard — Keep/Skip", () => {
   beforeEach(() => {
-    patchPersonMock.mockReset();
-    patchPersonMock.mockResolvedValue({});
+    triagePersonMock.mockReset();
+    triagePersonMock.mockResolvedValue({});
+    mockLayout("phone");
+  });
+
+  afterEach(() => {
+    window.matchMedia = realMatchMedia;
   });
 
   it("renders the first person when the queue is non-empty", () => {
@@ -74,37 +74,30 @@ describe("FollowUpFocus — mobile (drag-card) surface", () => {
     expect(screen.queryByText(/bo rivera/i)).not.toBeInTheDocument();
   });
 
-  it("Skip calls PATCH with priority: later and advances to the next person", async () => {
+  it("Skip calls triage skipped and advances", async () => {
     const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
     render(<FollowUpFocus people={people} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^skip$/i }));
 
-    await waitFor(() => expect(patchPersonMock).toHaveBeenCalledWith("p-1", { priority: "later" }, "test-token"));
+    await waitFor(() => expect(triagePersonMock).toHaveBeenCalledWith("p-1", "skipped", "test-token"));
     await waitFor(() => expect(screen.getByText(/bo rivera/i)).toBeInTheDocument());
-    // The outgoing card is a framer-motion AnimatePresence exit (spring
-    // slide-off) — it stays mounted in jsdom until that animation
-    // completes, so give it a beat rather than asserting instantly.
     await waitFor(() => expect(screen.queryByText(/alex rivera/i)).not.toBeInTheDocument());
   });
 
-  it("Follow up calls PATCH with followed_up_at and advances to the next person", async () => {
+  it("Keep calls triage kept and advances", async () => {
     const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
     render(<FollowUpFocus people={people} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^follow up$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^keep$/i }));
 
-    await waitFor(() => expect(patchPersonMock).toHaveBeenCalledTimes(1));
-    const [id, body, token] = patchPersonMock.mock.calls[0];
-    expect(id).toBe("p-1");
-    expect(typeof body.followed_up_at).toBe("string");
-    expect(token).toBe("test-token");
+    await waitFor(() => expect(triagePersonMock).toHaveBeenCalledWith("p-1", "kept", "test-token"));
     await waitFor(() => expect(screen.getByText(/bo rivera/i)).toBeInTheDocument());
   });
 
-  it("shows an inline error and does not advance when the PATCH fails", async () => {
-    patchPersonMock.mockRejectedValueOnce(new Error("boom"));
-    const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
+  it("shows an inline error and does not advance when triage fails", async () => {
+    triagePersonMock.mockRejectedValueOnce(new Error("boom"));
+    const people = [person({ id: "p-1" }), person({ id: "p-2", first_name: "Bo" })];
     render(<FollowUpFocus people={people} />);
 
     fireEvent.click(screen.getByRole("button", { name: /^skip$/i }));
@@ -113,98 +106,124 @@ describe("FollowUpFocus — mobile (drag-card) surface", () => {
     expect(screen.getByText(/alex rivera/i)).toBeInTheDocument();
   });
 
-  it("shows the end state when the queue empties out", async () => {
+  it("shows the room-reviewed end state when the queue empties", async () => {
     const people = [person({ id: "p-1" })];
     render(<FollowUpFocus people={people} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /^skip$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^keep$/i }));
 
-    await waitFor(() => expect(screen.getByText(/all caught up/i)).toBeInTheDocument());
+    expect(await screen.findByText(/room reviewed/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open inbox/i })).toHaveAttribute("href", "/inbox");
   });
 
-  it("renders the end state immediately for an empty queue", () => {
-    render(<FollowUpFocus people={[]} />);
-    expect(screen.getByText(/all caught up/i)).toBeInTheDocument();
-  });
-
-  it("tap zones navigate between people without calling PATCH", () => {
+  it("shows previous/next browse controls on phone and wraps the queue", () => {
     const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
     render(<FollowUpFocus people={people} />);
+    expect(screen.getByRole("button", { name: /previous person/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /next person/i })).not.toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: /next person/i }));
     expect(screen.getByText(/bo rivera/i)).toBeInTheDocument();
-    expect(patchPersonMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /next person/i }));
+    expect(screen.getByText(/alex rivera/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /previous person/i }));
-    expect(screen.getByText(/alex rivera/i)).toBeInTheDocument();
-    expect(patchPersonMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/bo rivera/i)).toBeInTheDocument();
+    expect(screen.queryByText(/swipe right/i)).not.toBeInTheDocument();
   });
 
-  it("expands into the full profile via the handle and shows the note/DM preview", async () => {
-    const people = [person({ id: "p-1", first_name: "Alex" })];
+  it("expands the profile dossier on phone", () => {
+    const people = [
+      person({
+        id: "p-1",
+        first_name: "Alex",
+        why: "Backs early infra bets across the bay",
+        event_title: "Build Fridays",
+      }),
+    ];
     render(<FollowUpFocus people={people} />);
-
-    expect(screen.queryByText(/note preview/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /expand full profile/i }));
-    expect(screen.getByText(/note preview/i)).toBeInTheDocument();
-    expect(screen.getByText(/dm preview/i)).toBeInTheDocument();
-
+    fireEvent.click(screen.getByRole("button", { name: /expand profile/i }));
+    expect(screen.getByText(/backs early infra bets across the bay/i)).toBeInTheDocument();
+    expect(screen.getByText(/alignment/i)).toBeInTheDocument();
+    expect(screen.getByText(/trajectory & recent work/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /collapse profile/i })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
     fireEvent.click(screen.getByRole("button", { name: /collapse profile/i }));
-    // Collapse is also an AnimatePresence exit (height/opacity spring) —
-    // same jsdom timing note as above.
-    await waitFor(() => expect(screen.queryByText(/note preview/i)).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /expand profile/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("expands the dossier when the phone stage scrolls down", () => {
+    const people = [
+      person({
+        id: "p-1",
+        first_name: "Alex",
+        why: "Backs early infra bets across the bay",
+        event_title: "Build Fridays",
+      }),
+    ];
+    const { container } = render(<FollowUpFocus people={people} />);
+    const stage = container.querySelector(".grid.h-full");
+    expect(stage).toBeTruthy();
+    fireEvent.wheel(stage!, { deltaY: 40 });
+    expect(screen.getByRole("button", { name: /collapse profile/i })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.getByText(/backs early infra bets across the bay/i)).toBeInTheDocument();
+  });
+
+  it("shows LinkedIn and X when URLs exist", () => {
+    const people = [
+      person({
+        id: "p-1",
+        first_name: "Alex",
+        linkedin_url: "https://www.linkedin.com/in/alex",
+        x_url: "https://x.com/alex",
+      }),
+    ];
+    render(<FollowUpFocus people={people} />);
+    const linkedin = screen.getByRole("link", { name: /alex rivera on linkedin/i });
+    const x = screen.getByRole("link", { name: /alex rivera on x/i });
+    expect(linkedin).toHaveAttribute("href", "https://www.linkedin.com/in/alex");
+    expect(x).toHaveAttribute("href", "https://x.com/alex");
+    expect(linkedin).toHaveTextContent("LinkedIn");
+    expect(x).toHaveTextContent("X");
+    expect(linkedin.className).toMatch(/min-h-11/);
+    expect(x.className).toMatch(/min-h-11/);
+    // Parent stack raises socials above browse hit zones.
+    expect(linkedin.parentElement?.className).toMatch(/z-20/);
+    expect(linkedin.parentElement?.className).toMatch(/pointer-events-auto/);
+  });
+
+  it("hides LinkedIn and X when URLs are missing", () => {
+    render(<FollowUpFocus people={[person({ id: "p-1" })]} />);
+    expect(screen.queryByRole("link", { name: /linkedin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: / on x$/i })).not.toBeInTheDocument();
   });
 });
 
-describe("FollowUpFocus — desktop (card + rail) surface", () => {
+describe("FocusCard — filmstrip", () => {
   beforeEach(() => {
-    patchPersonMock.mockReset();
-    patchPersonMock.mockResolvedValue({});
-    mockDesktop(true);
+    triagePersonMock.mockReset();
+    triagePersonMock.mockResolvedValue({});
+    mockLayout("workbench");
   });
 
   afterEach(() => {
     window.matchMedia = realMatchMedia;
   });
 
-  it("renders the queue rail alongside the card, with the current person highlighted", async () => {
+  it("shows the queue filmstrip on desktop without instructional copy", async () => {
     const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
     render(<FollowUpFocus people={people} />);
-
-    await waitFor(() => expect(screen.getByText(/follow-up queue/i)).toBeInTheDocument());
-    const railButtons = screen.getAllByRole("button", { name: /alex rivera|bo rivera/i });
-    expect(railButtons.length).toBeGreaterThanOrEqual(2);
-    const activeButton = railButtons.find((b) => b.getAttribute("aria-current") === "true");
-    expect(activeButton).toHaveTextContent(/alex rivera/i);
-  });
-
-  it("clicking a rail row jumps directly to that person", async () => {
-    const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" }), person({ id: "p-3", first_name: "Cy" })];
-    render(<FollowUpFocus people={people} />);
-
-    await waitFor(() => expect(screen.getByText(/follow-up queue/i)).toBeInTheDocument());
-    const cyRailRow = screen.getAllByRole("button", { name: /cy rivera/i })[0];
-    fireEvent.click(cyRailRow);
-
-    expect(screen.getByText(/3 of 3 to follow up/i)).toBeInTheDocument();
-  });
-
-  it("ArrowRight/ArrowLeft keys advance and reverse through the queue", async () => {
-    const people = [person({ id: "p-1", first_name: "Alex" }), person({ id: "p-2", first_name: "Bo" })];
-    render(<FollowUpFocus people={people} />);
-
-    await waitFor(() => expect(screen.getByText(/1 of 2 to follow up/i)).toBeInTheDocument());
-
-    fireEvent.keyDown(window, { key: "ArrowRight" });
-    expect(screen.getByText(/2 of 2 to follow up/i)).toBeInTheDocument();
-
-    fireEvent.keyDown(window, { key: "ArrowLeft" });
-    expect(screen.getByText(/1 of 2 to follow up/i)).toBeInTheDocument();
-  });
-
-  it("shows the caught-up end state with no rail when the queue is empty", async () => {
-    render(<FollowUpFocus people={[]} />);
-    await waitFor(() => expect(screen.getByText(/all caught up/i)).toBeInTheDocument());
-    expect(screen.queryByText(/follow-up queue/i)).not.toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: /queue/i })).toBeInTheDocument();
+    expect(screen.queryByText(/browse/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /bo rivera/i })).toBeInTheDocument();
   });
 });

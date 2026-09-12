@@ -4,9 +4,16 @@ import HomePage from "../page";
 
 vi.mock("@/lib/events", () => ({
   loadHomeData: vi.fn().mockResolvedValue({
-    upcoming: [], past: [], needsFollowUp: [], lastSyncedAt: null,
-    featuredEvent: null, topShortlist: [], shortlistTotal: 0,
+    upcoming: [],
+    past: [],
+    events: [],
+    reviewQueue: [],
+    catchUp: [],
+    inboxCount: 0,
+    lastSyncedAt: null,
+    featuredEvent: null,
     jobTarget: { targetRole: null, targetIndustries: null },
+    lumaConnected: false,
   }),
 }));
 
@@ -18,6 +25,6 @@ describe("HomePage", () => {
   it("renders without a signed-in session", async () => {
     render(await HomePage());
     expect(screen.getByText(/good to see you/i)).toBeInTheDocument();
-    expect(screen.getByText(/all caught up/i)).toBeInTheDocument();
+    expect(screen.getByText(/no upcoming event yet/i)).toBeInTheDocument();
   });
 });

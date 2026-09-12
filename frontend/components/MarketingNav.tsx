@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getClientToken } from "@/lib/auth";
 import { APP_HOME } from "@/lib/routes";
+import BrandMark from "./BrandMark";
 
 export default function MarketingNav() {
   const [signedIn, setSignedIn] = useState(false);
@@ -32,17 +33,14 @@ export default function MarketingNav() {
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-8 lg:py-5">
-          <Link href="/" className="flex items-center gap-1.5 rounded-full font-display text-fl-base font-bold tracking-[-0.2px] text-ink lg:gap-2 lg:text-lg">
-            <svg width="18" height="18" viewBox="0 0 22 22" aria-hidden="true" className="shrink-0 text-accent lg:h-5 lg:w-5">
-              <circle cx="11" cy="11" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              <ellipse cx="11" cy="11" rx="9.2" ry="3.35" fill="none" stroke="currentColor" strokeWidth="1.6" transform="rotate(-22 11 11)" />
-            </svg>
-            Orbit
+          <Link href="/" className="flex items-center gap-1.5 rounded-md font-display text-fl-base font-bold tracking-[-0.02em] text-ink lg:gap-2 lg:text-lg">
+            <BrandMark size={18} className="text-accent lg:h-5 lg:w-5" />
+            Actintro
           </Link>
 
           <Link
             href={signedIn ? APP_HOME : "/sign-in"}
-            className="btn-press rounded-full border border-rule bg-surface px-4 py-1.5 text-fl-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:px-5 lg:py-2"
+            className="btn-press rounded-md border border-rule bg-surface px-4 py-1.5 text-fl-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:px-5 lg:py-2"
           >
             {signedIn ? "Open app" : "Sign in"}
           </Link>

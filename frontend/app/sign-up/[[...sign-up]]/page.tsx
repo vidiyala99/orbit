@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BrandMark from "@/components/BrandMark";
 import { fetchMe, signup } from "@/lib/api";
 import { clearClientToken, getClientToken, setClientToken } from "@/lib/auth";
 import { afterAuthPath } from "@/lib/routes";
@@ -9,17 +10,6 @@ import { resolveApiBase } from "@/lib/apiBase";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Could not create account";
-}
-
-/** OrbitMark — the one recurring shape (ring + tilted orbit). Same treatment
- *  as the landing page: a quiet brand anchor, never decorative. */
-function OrbitMark({ className = "" }: { className?: string }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className={`shrink-0 ${className}`}>
-      <circle cx="11" cy="11" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.35" />
-      <ellipse cx="11" cy="11" rx="9.2" ry="3.35" fill="none" stroke="currentColor" strokeWidth="1.35" transform="rotate(-22 11 11)" />
-    </svg>
-  );
 }
 
 export default function SignUpPage() {
@@ -69,17 +59,17 @@ export default function SignUpPage() {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ground px-6 py-16">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[620px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-accent/[0.07] blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[620px] -translate-x-1/2 -translate-y-1/3 rounded-md bg-accent/[0.07] blur-3xl"
       />
       <form
         onSubmit={handleSubmit}
         className="relative w-full max-w-sm overflow-hidden rounded-card bg-surface p-6 shadow-card lg:max-w-md lg:p-8"
       >
-        <OrbitMark className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-ink/[0.04]" />
-        <Link href="/" className="relative inline-flex items-center gap-1.5 rounded-full text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
+        <BrandMark className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 text-ink/[0.04]" />
+        <Link href="/" className="relative inline-flex items-center gap-1.5 rounded-md text-[12.5px] font-semibold text-ink3 transition-colors hover:text-ink">
           <span aria-hidden="true">←</span>
-          <OrbitMark className="h-[15px] w-[15px]" />
-          Orbit
+          <BrandMark className="h-[15px] w-[15px]" />
+          Actintro
         </Link>
         <h1 className="font-display relative mt-3 text-balance text-[23px] font-bold tracking-[-0.3px] text-ink lg:text-[26px]">
           Post your first plan
@@ -129,7 +119,7 @@ export default function SignUpPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="lift btn-press mt-5 w-full rounded-full bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none lg:text-base"
+          className="lift btn-press mt-5 w-full rounded-md bg-ink py-3.5 text-sm font-bold text-ground shadow-raised hover:shadow-raised-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none lg:text-base"
         >
           {submitting ? "Creating account…" : "Create account"}
         </button>
@@ -142,7 +132,7 @@ export default function SignUpPage() {
 
         <a
           href={`${resolveApiBase()}/auth/google`}
-          className="btn-press mt-4 block w-full rounded-full border border-rule bg-surface py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:text-base"
+          className="btn-press mt-4 block w-full rounded-md border border-rule bg-surface py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-accent hover:bg-accent-soft lg:text-base"
         >
           Continue with Google
         </a>

@@ -1,52 +1,163 @@
 "use client";
 
-/** The one-person-at-a-time follow-up queue — Orbit's fixed "who should I
- *  follow up with next" mechanic (full visual focus, swipe/arrow browsing).
- *  Two distinct surfaces, not one layout reflowing at a breakpoint: below
- *  768px this is a drag-gesture card (touch idiom — the finger directly
- *  manipulates the card, velocity-based commit, spring return-to-center);
- *  at 768px+ it's the same card next to a live, animated queue rail, with
- *  drag off and click/keyboard (←/→) as the native mouse+keyboard advance
- *  paths instead — dragging a card with a mouse has no equivalent desktop
- *  convention, so it isn't offered as a half-hearted afterthought.
- *
- *  Supersedes `FollowUpStoryDeck` (the old CSS-transition-only deck) and
- *  the old sidebar "Needs follow-up" row list — this is now the single
- *  follow-up surface on Home, mobile and desktop alike, not a fallback
- *  shown only when there's no upcoming-event shortlist.
- *
- *  No AI/agentic scope here: ranking and note/DM text are still the
- *  existing keyword-based `why`/`note_payload`/`dm_payload` fields off the
- *  wire — this component is presentation/interaction only. */
+/** Match stage — calm instrument (DESIGN.md).
+ *  Soft field, no white-cage. Phone: capped photo + explicit browse + Keep.
+ *  Desktop: photo | panel + avatar filmstrip. */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import {
   AnimatePresence,
   motion,
-  useMotionValue,
   useReducedMotion,
-  useTransform,
-  type PanInfo,
 } from "framer-motion";
-import { patchPerson } from "@/lib/api";
+import { triagePerson } from "@/lib/api";
 import { getClientToken } from "@/lib/auth";
-import { dm_payload, note_payload, writeClipboard } from "@/lib/contactCopy";
+import { avatarCandidates } from "@/lib/avatarCandidates";
 import { displayInitials } from "@/lib/displayAvatar";
 import type { PersonSummaryT } from "@/lib/events";
-import type { AttendeeT } from "@/lib/types";
+import { APP_INBOX } from "@/lib/routes";
+import { resolveSignalTags } from "@/lib/signalTags";
+import { eventBrief, type EventKind } from "@/lib/eventBrief";
+import { personApproachTip } from "@/lib/personApproach";
+import { PhotoFallback } from "./PhotoFallback";
 
-const DESKTOP_QUERY = "(min-width: 768px)";
-const SWIPE_DISTANCE = 120;
-const SWIPE_VELOCITY = 480;
-const CARD_SPRING = { type: "spring", stiffness: 380, damping: 32 } as const;
-const SHEET_SPRING = { type: "spring", stiffness: 300, damping: 30 } as const;
+const PHONE_MAX = "(max-width: 767px)";
+const CARD_SPRING = { type: "spring", stiffness: 420, damping: 36 } as const;
+
+type HomeLayout = "phone" | "wide";
+
+function subscribePhone(onStoreChange: () => void) {
+  const mql = window.matchMedia(PHONE_MAX);
+  mql.addEventListener("change", onStoreChange);
+  return () => mql.removeEventListener("change", onStoreChange);
+}
+
+function getPhoneSnapshot() {
+  return window.matchMedia(PHONE_MAX).matches;
+}
+
+/** false on server + first hydration paint — avoids phone/desktop tree mismatch. */
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
+function useHomeLayout(): HomeLayout {
+  const isPhone = useSyncExternalStore(subscribePhone, getPhoneSnapshot, () => false);
+  return isPhone ? "phone" : "wide";
+}
 
 const PRIORITY_LABEL: Record<string, string> = {
-  needs_you: "Needs you",
-  high: "High",
+  needs_you: "Top match",
+  high: "Strong match",
   later: "Later",
 };
+
+function personSignals(person: PersonSummaryT) {
+  return resolveSignalTags({
+    signals: person.signals,
+    role: person.role,
+    why: person.why,
+    intent: person.intent,
+    priority: person.priority,
+  });
+}
+
+function SignalChips({ tags }: { tags: string[] }) {
+  if (!tags.length) return null;
+  return (
+    <ul className="flex flex-wrap gap-1.5" aria-label="Match signals">
+      {tags.map((tag) => (
+        <li
+          key={tag}
+          className="rounded-md bg-accent px-2.5 py-1 font-mono text-[0.6875rem] font-semibold tracking-[0.02em] text-white"
+        >
+          {tag}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function DossierSection({
+  label,
+  children,
+  muted,
+}: {
+  label: string;
+  children: ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <div>
+      <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-ink3">{label}</p>
+      <div className={`mt-1 text-[0.9375rem] leading-relaxed ${muted ? "text-ink3" : "font-medium text-ink"}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Shared profile body: real fields first; research gaps stay honest. */
+function ProfileDossier({
+  person,
+  signals,
+  hideSignals = false,
+  eventKind = null,
+}: {
+  person: PersonSummaryT;
+  signals: string[];
+  /** When chips already sit under the name (desktop). */
+  hideSignals?: boolean;
+  eventKind?: EventKind | null;
+}) {
+  const why = person.why?.trim() || "";
+  const context = (person.what_talked || person.note || person.note_payload || "").trim();
+  const evidence = (person.evidence ?? []).filter((e) => e?.quote?.trim());
+  const hasResearch = evidence.length > 0 || Boolean(context && context !== why);
+  const approach = personApproachTip({
+    signals: person.signals,
+    role: person.role,
+    why: person.why,
+    intent: person.intent,
+    priority: person.priority,
+    eventKind,
+  });
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <DossierSection label="How to approach">{approach}</DossierSection>
+      {why ? <DossierSection label="Alignment">{why}</DossierSection> : null}
+      {!hideSignals && signals.length ? (
+        <DossierSection label="Signals">
+          <SignalChips tags={signals} />
+        </DossierSection>
+      ) : null}
+      {person.role ? <DossierSection label="Role">{person.role}</DossierSection> : null}
+      {person.event_title ? <DossierSection label="Event">{person.event_title}</DossierSection> : null}
+      {context ? <DossierSection label="Context">{context}</DossierSection> : null}
+      {evidence.length ? (
+        <DossierSection label="Evidence">
+          <ul className="flex flex-col gap-1.5">
+            {evidence.map((item) => (
+              <li key={`${item.source_id}:${item.quote}`}>“{item.quote}”</li>
+            ))}
+          </ul>
+        </DossierSection>
+      ) : null}
+      {!hasResearch ? (
+        <DossierSection label="Trajectory & recent work" muted>
+          Not researched yet — enrichment fills trajectory, recent posts, and accomplishments from
+          LinkedIn/X.
+        </DossierSection>
+      ) : null}
+    </div>
+  );
+}
 
 function initials(person: PersonSummaryT): string {
   const a = person.first_name.trim().charAt(0);
@@ -54,89 +165,26 @@ function initials(person: PersonSummaryT): string {
   return `${a}${b}`.toUpperCase() || "?";
 }
 
-function asContactCopyRow(person: PersonSummaryT): AttendeeT {
-  return {
-    id: person.id,
-    first_name: person.first_name,
-    last_name: person.last_name,
-    role: person.role,
-    linkedin_url: "",
-    x_url: "",
-    website_url: null,
-    why_meet: person.why,
-    avatar_url: null,
-    priority: person.priority,
-    linkedin_connected: false,
-    x_interacted: false,
-    note: { where_met: "", what_talked: "", why: person.why },
-    note_payload: person.note_payload ?? "",
-    dm_payload: person.dm_payload ?? "",
-    evidence: [],
-    talking_points: null,
-  };
-}
-function noteText(person: PersonSummaryT): string {
-  return note_payload(asContactCopyRow(person));
-}
-function dmText(person: PersonSummaryT): string {
-  return dm_payload(asContactCopyRow(person));
-}
-
-function RailAvatar({ name, size = 26, tone = "accent" }: { name: string; size?: number; tone?: "accent" | "rust" | "amber" }) {
-  const bg = tone === "rust" ? "bg-rust-soft text-rust" : tone === "amber" ? "bg-amber-soft text-amber" : "bg-accent-soft text-accent";
-  return (
-    <span
-      aria-hidden="true"
-      style={{ width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.34)) }}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold tracking-wide ${bg}`}
-    >
-      {displayInitials(name)}
-    </span>
-  );
-}
-
-function CopyButton({ label, text, variant }: { label: string; text: string; variant: "primary" | "secondary" }) {
-  const [copied, setCopied] = useState(false);
-  async function onCopy() {
-    await writeClipboard(text);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
-  }
-  const look = variant === "primary" ? "bg-accent text-white" : "border border-rule bg-surface text-ink";
-  return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className={`lift btn-press flex-1 rounded-full px-4 py-2 text-fl-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${look}`}
-    >
-      {copied ? "Copied" : label}
-    </button>
-  );
-}
-
-/** Local queue state + PATCH action. Tracks a purely-local `index` for
- *  browsing and drops a person out of `queue` (advancing the deck) only
- *  once their PATCH actually succeeds — same contract the old
- *  FollowUpStoryDeck had. `jump` additionally lets the desktop rail select
- *  anyone directly, not just step sequentially. */
-function useFollowUpQueue(people: PersonSummaryT[]) {
+function useReviewQueue(people: PersonSummaryT[]) {
   const [queue, setQueue] = useState(people);
   const [index, setIndex] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastKeptName, setLastKeptName] = useState<string | null>(null);
 
   const total = queue.length;
   const current = queue[index] ?? null;
 
   function go(delta: number) {
-    setIndex((i) => Math.max(0, Math.min(total - 1, i + delta)));
+    if (total <= 1) return;
+    setIndex((i) => (i + delta + total) % total);
   }
   function jump(id: string) {
     const i = queue.findIndex((p) => p.id === id);
     if (i >= 0) setIndex(i);
   }
 
-  async function act(input: { priority?: "later"; followed_up_at?: string }) {
+  async function act(state: "kept" | "skipped") {
     if (!current || pending) return;
     const token = getClientToken();
     if (!token) {
@@ -146,7 +194,10 @@ function useFollowUpQueue(people: PersonSummaryT[]) {
     setPending(true);
     setError(null);
     try {
-      await patchPerson(current.id, input, token);
+      await triagePerson(current.id, state, token);
+      if (state === "kept") {
+        setLastKeptName(`${current.first_name} ${current.last_name}`.trim());
+      }
       setQueue((q) => {
         const next = q.filter((p) => p.id !== current.id);
         setIndex((i) => Math.min(i, Math.max(0, next.length - 1)));
@@ -159,341 +210,677 @@ function useFollowUpQueue(people: PersonSummaryT[]) {
     }
   }
 
-  return { queue, index, total, current, pending, error, go, jump, act };
+  return { queue, index, total, current, pending, error, lastKeptName, go, jump, act };
 }
 
-type QueueState = ReturnType<typeof useFollowUpQueue>;
+type QueueState = ReturnType<typeof useReviewQueue>;
 
-/** Real media-query state, not a CSS-only reflow — mobile and desktop are
- *  genuinely different component trees (drag-card-alone vs. card+rail with
- *  drag off), so which one mounts has to be a real branch, matching the
- *  `useIsDesktop` convention already used in AttendeeBrief.tsx. */
-function useIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState(false);
+function useResolvedAvatar(person: Pick<PersonSummaryT, "avatar_url" | "linkedin_url">) {
+  const candidates = avatarCandidates(person);
+  const key = candidates.join("|");
+  const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const mq = window.matchMedia(DESKTOP_QUERY);
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return isDesktop;
-}
-
-function ExpandHandle({ expanded, onToggle, reduceMotion }: { expanded: boolean; onToggle: (v: boolean) => void; reduceMotion: boolean }) {
-  return (
-    <motion.button
-      type="button"
-      onClick={() => onToggle(!expanded)}
-      aria-expanded={expanded}
-      aria-label={expanded ? "Collapse profile" : "Expand full profile"}
-      drag={reduceMotion ? false : "y"}
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={0.6}
-      onDragEnd={(_, info: PanInfo) => {
-        if (!expanded && info.offset.y < -36) onToggle(true);
-        if (expanded && info.offset.y > 36) onToggle(false);
-      }}
-      whileTap={{ scale: 0.96 }}
-      className="btn-press flex w-full flex-col items-center gap-1 border-t border-rule bg-surface py-2 text-ink3 hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-    >
-      <span aria-hidden="true" className="h-1 w-9 rounded-full bg-rule" />
-      <span className="flex items-center gap-1 text-fl-xs font-bold">
-        {expanded ? "Collapse" : "See full profile"}
-        <motion.svg
-          width="12"
-          height="12"
-          viewBox="0 0 16 16"
-          aria-hidden="true"
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 24 }}
-        >
-          <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3.5 6 8 10.5 12.5 6" />
-        </motion.svg>
-      </span>
-    </motion.button>
-  );
-}
-
-/** The card mechanic itself, shared verbatim between mobile and desktop
- *  except `enableDrag` (desktop passes false — see file header). */
-function FocusCard({
-  queueState,
-  enableDrag,
-  photoHeight = "min(58vh, 460px)",
-}: {
-  queueState: QueueState;
-  enableDrag: boolean;
-  photoHeight?: string;
-}) {
-  const { queue, index, total, current, pending, error, go, act } = queueState;
-  const [expanded, setExpanded] = useState(false);
-  const [direction, setDirection] = useState(1);
-  const reduceMotion = useReducedMotion() ?? false;
-  const dragEnabled = enableDrag && !reduceMotion;
-
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-220, 220], [-10, 10]);
-  const dragOpacity = useTransform(x, [-220, -140, 0, 140, 220], [0.4, 1, 1, 1, 0.4]);
-
-  function advance(delta: number) {
-    setExpanded(false);
-    setDirection(delta);
-    go(delta);
-  }
-
-  // Desktop keyboard advance — ArrowLeft/ArrowRight, the mouse+keyboard
-  // equivalent of the touch drag gesture that mobile uses instead.
-  useEffect(() => {
-    if (enableDrag) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight" && index < total - 1) advance(1);
-      if (e.key === "ArrowLeft" && index > 0) advance(-1);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableDrag, index, total]);
-
-  function handleDragEnd(_: unknown, info: PanInfo) {
-    const committedLeft = info.offset.x < -SWIPE_DISTANCE || info.velocity.x < -SWIPE_VELOCITY;
-    const committedRight = info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY;
-    if (committedLeft && index < total - 1) advance(1);
-    else if (committedRight && index > 0) advance(-1);
-  }
-
-  if (!current) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-1.5 rounded-hero border border-rule bg-surface px-6 text-center shadow-card">
-        <p className="font-display text-fl-lg font-bold text-ink">All caught up</p>
-        <p className="text-fl-sm text-ink3">Nobody needs a follow-up right now.</p>
-      </div>
-    );
-  }
-
-  const urgent = current.priority === "needs_you";
-  const wash = urgent ? "bg-rust-soft" : "bg-amber-soft";
-
-  const cardVariants = {
-    enter: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir > 0 ? 90 : -90, scale: 0.97 }),
-    center: { opacity: 1, x: 0, scale: 1 },
-    exit: (dir: number) => (reduceMotion ? { opacity: 0 } : { opacity: 0, x: dir > 0 ? -280 : 280, scale: 0.95 }),
+    setIdx(0);
+  }, [key]);
+  return {
+    url: candidates[idx] ?? null,
+    advance: () => setIdx((i) => i + 1),
   };
-
-  return (
-    <motion.div layout transition={reduceMotion ? { duration: 0 } : SHEET_SPRING} className="overflow-hidden rounded-hero border border-rule bg-surface shadow-glow">
-      <div className="px-4 pt-4">
-        <div className="flex gap-1">
-          {queue.map((p, i) => (
-            <div key={p.id} aria-hidden="true" className={`h-1 flex-1 rounded-full transition-colors duration-200 ${i <= index ? "bg-accent" : "bg-rule"}`} />
-          ))}
-        </div>
-        <p className="mt-1.5 tabular text-fl-xs font-semibold text-ink3">
-          {index + 1} of {total} to follow up
-          {!enableDrag ? <span className="ml-1.5 text-ink3/70">· use ← → or click the queue</span> : null}
-        </p>
-      </div>
-
-      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-        <motion.div
-          key={current.id}
-          custom={direction}
-          variants={cardVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={reduceMotion ? { duration: 0 } : CARD_SPRING}
-          style={{ x: dragEnabled ? x : 0, rotate: dragEnabled ? rotate : 0, opacity: dragEnabled ? dragOpacity : 1 }}
-          drag={dragEnabled && !expanded ? "x" : false}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.9}
-          dragSnapToOrigin
-          onDragEnd={handleDragEnd}
-          className={dragEnabled ? "touch-pan-y" : ""}
-        >
-          <div
-            className={`relative mt-3 flex items-center justify-center overflow-hidden ${wash} transition-[height] duration-300 ease-out`}
-            style={{ height: expanded ? "min(30vh, 220px)" : photoHeight }}
-          >
-            <span
-              aria-hidden="true"
-              className={`flex shrink-0 select-none items-center justify-center rounded-full font-display font-bold text-white ${urgent ? "bg-rust" : "bg-amber"}`}
-              style={{
-                width: expanded ? "72px" : "clamp(90px, 22vw, 150px)",
-                height: expanded ? "72px" : "clamp(90px, 22vw, 150px)",
-                fontSize: expanded ? "1.4rem" : "clamp(1.8rem, 6vw, 3rem)",
-                transition: "width 300ms ease-out, height 300ms ease-out, font-size 300ms ease-out",
-              }}
-            >
-              {initials(current)}
-            </span>
-            <span className={`absolute left-3 top-3 inline-flex items-center rounded-full bg-surface/95 px-2.5 py-1 font-mono text-fl-xs font-bold uppercase tracking-[0.03em] shadow-card ${urgent ? "text-rust" : "text-amber"}`}>
-              {PRIORITY_LABEL[current.priority] ?? current.priority}
-            </span>
-
-            {!expanded && index > 0 ? (
-              <motion.button type="button" aria-label="Previous person" onClick={() => advance(-1)} whileTap={{ scale: 0.9 }} className="group absolute inset-y-0 left-0 flex w-1/3 items-center justify-start pl-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-ink opacity-80 shadow-card transition-opacity duration-150 group-hover:opacity-100">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </span>
-              </motion.button>
-            ) : null}
-            {!expanded && index < total - 1 ? (
-              <motion.button type="button" aria-label="Next person" onClick={() => advance(1)} whileTap={{ scale: 0.9 }} className="group absolute inset-y-0 right-0 flex w-1/3 items-center justify-end pr-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-ink opacity-80 shadow-card transition-opacity duration-150 group-hover:opacity-100">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </span>
-              </motion.button>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-1.5 px-5 pt-4">
-            <div>
-              <Link href={`/attendees/${current.id}`} className="font-display text-fl-xl font-bold leading-tight tracking-[-0.2px] text-ink hover:underline break-words">
-                {current.first_name} {current.last_name}
-              </Link>
-              <p className="truncate text-fl-base text-ink2">{current.role}</p>
-            </div>
-            <p className="truncate text-fl-xs text-ink3">{current.event_title} · ended {current.event_ended_days_ago} days ago</p>
-            {!expanded && current.why ? (
-              <div className="mt-1 rounded-lg bg-accent-soft px-3.5 py-2.5">
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.02em] text-accent">Why it matters</h2>
-                <p className="mt-0.5 text-fl-sm leading-snug text-ink line-clamp-2">{current.why}</p>
-              </div>
-            ) : null}
-          </div>
-
-          <ExpandHandle expanded={expanded} onToggle={setExpanded} reduceMotion={reduceMotion} />
-
-          <AnimatePresence initial={false}>
-            {expanded ? (
-              <motion.div
-                key="expanded-body"
-                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                transition={reduceMotion ? { duration: 0 } : SHEET_SPRING}
-                className="overflow-hidden"
-              >
-                <div className="max-h-[38vh] overflow-y-auto px-5 py-4">
-                  <div className="flex flex-col gap-4">
-                    {current.why ? (
-                      <div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-[0.02em] text-accent">Why it matters</h3>
-                        <p className="mt-1 text-fl-sm leading-relaxed text-ink">{current.why}</p>
-                      </div>
-                    ) : null}
-                    <div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">Event context</h3>
-                      <p className="mt-1 text-fl-sm leading-relaxed text-ink2">
-                        Met at {current.event_title || "an event"}, which ended {current.event_ended_days_ago} {current.event_ended_days_ago === 1 ? "day" : "days"} ago. Priority: {PRIORITY_LABEL[current.priority] ?? current.priority}.
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">Note preview</h3>
-                      <p className="mt-1 whitespace-pre-line text-fl-sm leading-relaxed text-ink2">{noteText(current)}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink3">DM preview</h3>
-                      <p className="mt-1 whitespace-pre-line text-fl-sm leading-relaxed text-ink2">{dmText(current)}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-
-          <div className="flex gap-2 px-5 pt-4">
-            <CopyButton label="Copy note" text={noteText(current)} variant="primary" />
-            <CopyButton label="Copy DM" text={dmText(current)} variant="secondary" />
-          </div>
-
-          {error ? <p role="alert" className="px-5 pt-2 text-fl-xs font-semibold text-rust">{error}</p> : null}
-
-          <div className="mt-4 flex gap-2 border-t border-rule px-5 py-3.5">
-            <motion.button type="button" disabled={pending} onClick={() => act({ priority: "later" })} whileTap={{ scale: 0.96 }} transition={{ type: "spring", stiffness: 400, damping: 20 }} className="min-h-[50px] flex-1 rounded-full border border-rule bg-surface text-fl-base font-bold text-ink disabled:opacity-60">
-              Skip
-            </motion.button>
-            <motion.button type="button" disabled={pending} onClick={() => act({ followed_up_at: new Date().toISOString() })} whileTap={{ scale: 0.96 }} transition={{ type: "spring", stiffness: 400, damping: 20 }} className="min-h-[50px] flex-1 rounded-full bg-accent text-fl-base font-bold text-white disabled:opacity-60">
-              Follow up
-            </motion.button>
-          </div>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
-  );
 }
 
-/** Rail row background that slides/morphs to the active row via a shared
- *  `layoutId` (the framer-motion "animated tab underline" pattern) — the
- *  active-person highlight glides between rows instead of teleporting. */
-function RailRow({ person, active, onSelect, reduceMotion }: { person: PersonSummaryT; active: boolean; onSelect: () => void; reduceMotion: boolean }) {
-  const urgent = person.priority === "needs_you";
+function ProfilePhoto({
+  person,
+  initialsLabel,
+  urgent,
+  maxH,
+  signals = [],
+  socialName,
+}: {
+  person: Pick<PersonSummaryT, "avatar_url" | "linkedin_url" | "x_url">;
+  initialsLabel: string;
+  urgent: boolean;
+  maxH: number;
+  /** On-photo chips — easier to catch than panel chrome. */
+  signals?: string[];
+  socialName?: string;
+}) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const { url, advance } = useResolvedAvatar(person);
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    setNatural(null);
+  }, [url]);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => setWidth(el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [url]);
+
+  const minH = 140;
+  let frameH = Math.min(220, maxH);
+  let objectPos = "object-[center_28%]";
+  if (!url) {
+    frameH = Math.min(Math.max(280, Math.round(maxH * 0.55)), maxH);
+  } else if (natural && natural.w > 0 && width > 0) {
+    const ratio = natural.w / natural.h;
+    const ideal = width / ratio;
+    frameH = Math.round(Math.min(maxH, Math.max(minH, ideal)));
+    objectPos =
+      ratio > 1.25 ? "object-center" : ratio < 0.85 ? "object-[center_22%]" : "object-[center_28%]";
+  }
+
+  const showOverlay = signals.length > 0 || person.linkedin_url || person.x_url;
+
   return (
-    <motion.button
-      layout
-      type="button"
-      onClick={onSelect}
-      aria-current={active ? "true" : undefined}
-      initial={reduceMotion ? false : { opacity: 0, x: 14 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -14, height: 0 }}
-      whileHover={{ x: reduceMotion ? 0 : 2 }}
-      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 34 }}
-      className="btn-press relative flex w-full items-center gap-2.5 rounded-card px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+    <div
+      ref={frameRef}
+      className="relative w-full overflow-hidden rounded-md bg-ink/[0.06]"
+      style={{ height: frameH }}
     >
-      {active ? (
-        <motion.div
-          layoutId="rail-active-highlight"
-          transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 38 }}
-          className="absolute inset-0 rounded-card border border-accent/30 bg-accent-soft"
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={url}
+          src={url}
+          alt=""
+          onError={advance}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+              setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+            }
+          }}
+          className={`absolute inset-0 h-full w-full object-cover ${objectPos}`}
         />
+      ) : (
+        <PhotoFallback initials={initialsLabel} urgent={urgent} />
+      )}
+      {showOverlay ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pb-4 pt-12">
+          {signals.length ? <SignalChips tags={signals} /> : null}
+          {socialName ? (
+            <MatchSocials
+              name={socialName}
+              linkedinUrl={person.linkedin_url}
+              xUrl={person.x_url}
+              onDark
+            />
+          ) : null}
+        </div>
       ) : null}
-      <span className="relative z-10 shrink-0">
-        <RailAvatar name={`${person.first_name} ${person.last_name}`} size={26} tone={urgent ? "rust" : "amber"} />
-      </span>
-      <span className="relative z-10 min-w-0 flex-1">
-        <span className={`block truncate text-fl-sm font-bold ${active ? "text-ink" : "text-ink2"}`}>{person.first_name} {person.last_name}</span>
-        <span className="block truncate text-fl-xs text-ink3">{person.role}</span>
-      </span>
-      {urgent ? <span aria-hidden="true" className="relative z-10 h-1.5 w-1.5 shrink-0 rounded-full bg-rust" /> : null}
-    </motion.button>
+    </div>
   );
 }
 
-function QueueRail({ queueState, reduceMotion }: { queueState: QueueState; reduceMotion: boolean }) {
+/** Avatar row only — names via accessible label (DESIGN.md distill). */
+function Filmstrip({ queueState }: { queueState: QueueState }) {
   const { queue, current, jump } = queueState;
-  if (queue.length === 0) return null;
+  if (queue.length <= 1) return null;
   return (
-    <section>
-      <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.04em] text-ink3">Follow-up queue</p>
-      <div className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto rounded-card border border-rule bg-surface p-1.5 shadow-card">
-        <AnimatePresence initial={false}>
-          {queue.map((p) => (
-            <RailRow key={p.id} person={p} active={p.id === current?.id} onSelect={() => jump(p.id)} reduceMotion={reduceMotion} />
-          ))}
-        </AnimatePresence>
+    <section aria-label="Queue" className="mt-4 border-t border-ink/[0.08] pt-3">
+      <div className="flex gap-2.5 overflow-x-auto pb-0.5">
+        {queue.map((p) => {
+          const active = p.id === current?.id;
+          const label = `${p.first_name} ${p.last_name}`;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              title={label}
+              aria-label={label}
+              aria-current={active ? "true" : undefined}
+              onClick={() => jump(p.id)}
+              className={[
+                "btn-press flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-fl-xs font-semibold transition-colors",
+                active
+                  ? "bg-accent text-white ring-2 ring-accent/35 ring-offset-2 ring-offset-ground"
+                  : "bg-ink/[0.08] text-ink2 hover:bg-ink/[0.12]",
+              ].join(" ")}
+            >
+              {p.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                displayInitials(label)
+              )}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-/** Public API: mount this wherever the follow-up queue belongs on the page.
- *  Below 768px, it's just the drag-card. At 768px+, it's the card (no
- *  drag) beside the live rail. */
-export default function FollowUpFocus({ people }: { people: PersonSummaryT[] }) {
-  const queueState = useFollowUpQueue(people);
-  const isDesktop = useIsDesktop();
-  const reduceMotion = useReducedMotion() ?? false;
+function Chevron({ dir }: { dir: "prev" | "next" }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {dir === "prev" ? (
+        <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}
 
-  if (!isDesktop) {
-    return <FocusCard queueState={queueState} enableDrag />;
+/** Compact prev/next flanking the name — wraps; no end-of-list vanish. */
+function NameNav({
+  name,
+  canBrowse,
+  onPrev,
+  onNext,
+}: {
+  name: string;
+  canBrowse: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const btn =
+    "btn-press flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-ink/12 bg-surface-raised text-ink2 hover:bg-ink/[0.06] hover:text-ink disabled:pointer-events-none disabled:opacity-0";
+  return (
+    <div className="mt-2 flex min-w-0 items-center gap-2">
+      <button type="button" aria-label="Previous person" disabled={!canBrowse} onClick={onPrev} className={btn}>
+        <Chevron dir="prev" />
+      </button>
+      <p className="min-w-0 truncate font-display text-[1.75rem] font-bold leading-tight tracking-[-0.04em] text-ink md:text-[2rem]">
+        {name}
+      </p>
+      <button type="button" aria-label="Next person" disabled={!canBrowse} onClick={onNext} className={btn}>
+        <Chevron dir="next" />
+      </button>
+    </div>
+  );
+}
+/** Touch chips on the match — words only, ≥44px, above browse hit zones. */
+function MatchSocials({
+  name,
+  linkedinUrl,
+  xUrl,
+  onDark = false,
+}: {
+  name: string;
+  linkedinUrl?: string | null;
+  xUrl?: string | null;
+  onDark?: boolean;
+}) {
+  const linkedin = linkedinUrl?.trim() || null;
+  const x = xUrl?.trim() || null;
+  if (!linkedin && !x) return null;
+  const chip = onDark
+    ? "btn-press inline-flex min-h-11 items-center rounded-md bg-black/55 px-4 text-[0.8125rem] font-semibold text-white ring-1 ring-white/35 backdrop-blur-[2px] hover:bg-black/70"
+    : "btn-press inline-flex min-h-11 items-center rounded-md border border-ink/15 bg-surface-raised px-4 text-[0.8125rem] font-semibold text-ink2 hover:bg-ink/[0.05] hover:text-ink";
+  return (
+    <div className="pointer-events-auto relative z-20 mt-2.5 flex flex-wrap items-center gap-2">
+      {linkedin ? (
+        <a
+          href={linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name} on LinkedIn`}
+          className={chip}
+        >
+          LinkedIn
+        </a>
+      ) : null}
+      {x ? (
+        <a href={x} target="_blank" rel="noopener noreferrer" aria-label={`${name} on X`} className={chip}>
+          X
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+/** Phone Focus — photo + dossier; scroll/swipe expands, Skip/Keep stay put. */
+function PhoneStage({
+  person,
+  index,
+  total,
+  pending,
+  error,
+  onPrev,
+  onNext,
+  onSkip,
+  onKeep,
+}: {
+  person: PersonSummaryT;
+  index: number;
+  total: number;
+  pending: boolean;
+  error: string | null;
+  onPrev: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+  onKeep: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dossierScrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const label = `${person.first_name} ${person.last_name}`.trim();
+  const urgent = person.priority === "needs_you";
+  const canBrowse = total > 1;
+  const linkedin = person.linkedin_url?.trim() || null;
+  const x = person.x_url?.trim() || null;
+  const signals = personSignals(person);
+  const why = person.why?.trim() || "";
+  const { url: photoUrl, advance: advancePhoto } = useResolvedAvatar(person);
+  const approach = personApproachTip({
+    signals: person.signals,
+    role: person.role,
+    why: person.why,
+    intent: person.intent,
+    priority: person.priority,
+    eventKind: eventBrief(person.event_title).kind,
+  });
+
+  useEffect(() => {
+    setOpen(false);
+  }, [person.id]);
+
+  // Viewport is overflow-locked on phone — page scroll cannot expand. Wheel /
+  // swipe on the stage opens the dossier; swipe up-at-top closes it.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY > 18 && !open) {
+        e.preventDefault();
+        setOpen(true);
+        return;
+      }
+      if (e.deltaY < -18 && open) {
+        const panel = dossierScrollRef.current;
+        if (!panel || panel.scrollTop <= 0) {
+          e.preventDefault();
+          setOpen(false);
+        }
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [open]);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0]?.clientY ?? null;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchStartY.current;
+    touchStartY.current = null;
+    if (start == null) return;
+    const end = e.changedTouches[0]?.clientY;
+    if (end == null) return;
+    const dy = start - end; // finger up → positive → “scroll down” to reveal more
+    if (dy > 48 && !open) {
+      setOpen(true);
+      return;
+    }
+    if (dy < -48 && open) {
+      const panel = dossierScrollRef.current;
+      if (!panel || panel.scrollTop <= 0) setOpen(false);
+    }
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_320px] items-start gap-6">
-      <FocusCard queueState={queueState} enableDrag={false} photoHeight="min(46vh, 380px)" />
-      <QueueRail queueState={queueState} reduceMotion={reduceMotion} />
+    <div
+      ref={stageRef}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      className={`grid h-full min-h-0 w-full min-w-0 max-w-full overflow-hidden ${
+        open ? "grid-rows-[auto_minmax(5.5rem,0.3fr)_minmax(0,1fr)]" : "grid-rows-[auto_minmax(0,1fr)_auto]"
+      }`}
+    >
+      {total > 1 ? (
+        <div className="mb-2 flex gap-1" aria-hidden="true">
+          {Array.from({ length: Math.min(total, 16) }, (_, i) => (
+            <div
+              key={i}
+              className={`h-[2px] flex-1 rounded-full ${i === index ? "bg-accent" : i < index ? "bg-accent/40" : "bg-ink/15"}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <div />
+      )}
+
+      <div className="relative min-h-0 overflow-hidden rounded-[12px] bg-ink/[0.1] shadow-card">
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={photoUrl}
+            src={photoUrl}
+            alt=""
+            onError={advancePhoto}
+            className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
+          />
+        ) : (
+          <PhotoFallback initials={initials(person)} urgent={urgent} />
+        )}
+
+        {!open && canBrowse ? (
+          <>
+            <button
+              type="button"
+              aria-label="Previous person"
+              onClick={onPrev}
+              className="absolute bottom-[35%] left-0 top-[18%] z-10 flex w-[28%] items-center justify-start pl-2"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/25">
+                <Chevron dir="prev" />
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="Next person"
+              onClick={onNext}
+              className="absolute bottom-[35%] right-0 top-[18%] z-10 flex w-[28%] items-center justify-end pr-2"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/25">
+                <Chevron dir="next" />
+              </span>
+            </button>
+          </>
+        ) : null}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-10">
+          <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.06em] text-white/65">
+            {PRIORITY_LABEL[person.priority] ?? person.priority}
+          </p>
+          <p className="mt-0.5 font-display text-[1.35rem] font-bold leading-[1.05] tracking-[-0.04em] text-white sm:text-[1.5rem]">
+            {label}
+          </p>
+          {person.role && !open ? (
+            <p className="mt-0.5 line-clamp-1 text-[0.8125rem] font-medium text-white/88">{person.role}</p>
+          ) : null}
+          {!open && signals.length ? (
+            <div className="mt-2">
+              <SignalChips tags={signals} />
+            </div>
+          ) : null}
+          <MatchSocials name={label} linkedinUrl={linkedin} xUrl={x} onDark />
+        </div>
+      </div>
+
+      <div className="flex min-h-0 flex-col gap-2 pt-2 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-ink/10 bg-surface-raised shadow-sm">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-label={open ? "Collapse profile" : "Expand profile"}
+            onClick={() => setOpen((v) => !v)}
+            className="btn-press flex w-full shrink-0 items-center justify-between gap-3 px-4 pt-2 pb-1 text-left"
+          >
+            <span className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-accent">
+              {open ? "Profile" : "Why meet"}
+            </span>
+            <span aria-hidden="true" className="font-display text-[0.75rem] font-bold tracking-[-0.02em] text-accent">
+              {open ? "Less" : "More"}
+            </span>
+          </button>
+
+          <motion.div
+            ref={dossierScrollRef}
+            initial={false}
+            animate={{ height: open ? "auto" : "2.85rem" }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 420, damping: 36, mass: 0.8 }
+            }
+            className={`min-h-0 overflow-hidden px-4 ${open ? "overflow-y-auto" : ""}`}
+          >
+            {!open ? (
+              <div className="pb-3">
+                <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-accent">
+                  How to approach
+                </p>
+                <p className="mt-1 line-clamp-2 text-[0.875rem] font-medium leading-snug text-ink">
+                  {approach}
+                </p>
+              </div>
+            ) : (
+              <div className="pb-3">
+                <ProfileDossier
+                  person={person}
+                  signals={signals}
+                  eventKind={eventBrief(person.event_title).kind}
+                />
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {error ? (
+          <p role="alert" className="shrink-0 text-[0.75rem] font-semibold text-rust">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="flex shrink-0 items-center gap-2">
+          <motion.button
+            type="button"
+            disabled={pending}
+            onClick={onSkip}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            className="min-h-11 flex-[0.85] rounded-md border border-ink/15 bg-transparent text-[0.875rem] font-semibold text-ink2 disabled:opacity-50"
+          >
+            Skip
+          </motion.button>
+          <motion.button
+            type="button"
+            disabled={pending}
+            onClick={onKeep}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            className="min-h-11 flex-[1.35] rounded-md bg-accent font-display text-[1rem] font-bold tracking-[-0.02em] text-white shadow-glow disabled:opacity-50"
+          >
+            Keep
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FocusCard({
+  queueState,
+  showFilmstrip,
+}: {
+  queueState: QueueState;
+  showFilmstrip: boolean;
+}) {
+  const { index, total, current, pending, error, lastKeptName, go, act } = queueState;
+  const [direction, setDirection] = useState(1);
+  const reduceMotion = useReducedMotion() ?? false;
+
+  function advance(delta: number) {
+    setDirection(delta);
+    go(delta);
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (total <= 1) return;
+      if (e.key === "ArrowRight") advance(1);
+      if (e.key === "ArrowLeft") advance(-1);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, total]);
+
+  if (!current) {
+    return (
+      <div className="flex min-h-[36vh] flex-col justify-center gap-3 py-12">
+        <p className="font-display text-fl-lg font-bold tracking-[-0.03em] text-ink">Room reviewed</p>
+        <p className="max-w-md text-fl-sm text-ink3">
+          {lastKeptName
+            ? `${lastKeptName} is in your Inbox. Open Inbox when you're ready for the next move.`
+            : "Nobody left to review for this event. Kept people wait in your Inbox."}
+        </p>
+        <Link href={APP_INBOX} className="self-start text-fl-sm font-semibold text-accent hover:underline">
+          Open Inbox
+        </Link>
+      </div>
+    );
+  }
+
+  const urgent = current.priority === "needs_you";
+
+  const cardVariants = {
+    enter: () => (reduceMotion ? { opacity: 1 } : { opacity: 0 }),
+    center: { opacity: 1 },
+    exit: () => (reduceMotion ? { opacity: 0 } : { opacity: 0 }),
+  };
+
+  if (!showFilmstrip) {
+    return (
+      <div className="relative h-full min-h-0 min-w-0 w-full flex-1 overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={current.id}
+            variants={cardVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.18 }}
+            className="absolute inset-0 flex min-h-0 flex-col"
+          >
+            <PhoneStage
+              person={current}
+              index={index}
+              total={total}
+              pending={pending}
+              error={error}
+              onPrev={() => advance(-1)}
+              onNext={() => advance(1)}
+              onSkip={() => void act("skipped")}
+              onKeep={() => void act("kept")}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  const desktopVariants = {
+    enter: (dir: number) =>
+      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir > 0 ? 40 : -40 },
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) =>
+      reduceMotion ? { opacity: 0 } : { opacity: 0, x: dir > 0 ? -120 : 120 },
+  };
+
+  const desktopSignals = personSignals(current);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col md:justify-start">
+      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+        <motion.div
+          key={current.id}
+          custom={direction}
+          variants={desktopVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={reduceMotion ? { duration: 0 } : CARD_SPRING}
+          className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-7"
+        >
+          <div className="relative min-w-0">
+            <ProfilePhoto
+              person={current}
+              urgent={urgent}
+              maxH={560}
+              initialsLabel={initials(current)}
+              signals={desktopSignals}
+              socialName={`${current.first_name} ${current.last_name}`.trim()}
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-3">
+            <div>
+              <p className="text-fl-xs font-medium text-ink3">
+                {PRIORITY_LABEL[current.priority] ?? current.priority}
+              </p>
+              <NameNav
+                name={`${current.first_name} ${current.last_name}`.trim()}
+                canBrowse={total > 1}
+                onPrev={() => advance(-1)}
+                onNext={() => advance(1)}
+              />
+              <p className="mt-1 text-fl-base text-ink2">{current.role}</p>
+            </div>
+
+            <div className="flex max-w-md items-stretch gap-3">
+              <motion.button
+                type="button"
+                disabled={pending}
+                onClick={() => act("skipped")}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.12 }}
+                className="min-h-11 flex-[0.8] rounded-md border border-ink/15 bg-transparent text-fl-sm font-semibold text-ink2 disabled:opacity-50"
+              >
+                Skip
+              </motion.button>
+              <motion.button
+                type="button"
+                disabled={pending}
+                onClick={() => act("kept")}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.12 }}
+                className="min-h-11 flex-[1.4] rounded-md bg-accent font-display text-fl-base font-bold tracking-[-0.02em] text-white shadow-glow disabled:opacity-50"
+              >
+                Keep
+              </motion.button>
+            </div>
+
+            {error ? (
+              <p role="alert" className="text-fl-xs font-semibold text-rust">
+                {error}
+              </p>
+            ) : null}
+
+            <div className="rounded-md border border-ink/10 bg-surface-raised px-4 py-3">
+              <ProfileDossier
+                person={current}
+                signals={desktopSignals}
+                hideSignals
+                eventKind={eventBrief(current.event_title).kind}
+              />
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <Filmstrip queueState={queueState} />
+    </div>
+  );
+}
+
+export default function FollowUpFocus({ people }: { people: PersonSummaryT[] }) {
+  const queueState = useReviewQueue(people);
+  const ready = useIsClient();
+  const layout = useHomeLayout();
+
+  if (!ready) {
+    return <div className="h-full min-h-0 min-w-0 flex-1" aria-busy="true" />;
+  }
+
+  return (
+    <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
+      <FocusCard queueState={queueState} showFilmstrip={layout !== "phone"} />
     </div>
   );
 }

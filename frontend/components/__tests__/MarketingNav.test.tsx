@@ -7,9 +7,9 @@ describe("MarketingNav", () => {
     document.cookie = "sc_token=; path=/; max-age=0";
   });
 
-  it("links the wordmark home and has no pre-Orbit marketing pages", () => {
+  it("links the wordmark home and has no pre-Actintro marketing pages", () => {
     render(<MarketingNav />);
-    expect(screen.getByRole("link", { name: "Orbit" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Actintro" })).toHaveAttribute("href", "/");
     expect(screen.queryByRole("link", { name: /how it works/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /about/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /menu/i })).not.toBeInTheDocument();

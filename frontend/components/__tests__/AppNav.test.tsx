@@ -9,37 +9,51 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-// AccountMenu fetches the signed-in user on mount; stub it out so these
-// nav-shell tests don't hit the network.
 vi.spyOn(auth, "ensureClientToken").mockResolvedValue(null);
 
 describe("AppNav", () => {
-  it("renders both tabs on /home", () => {
+  it("renders Home, Events, and Inbox tabs on /home", () => {
     mockPathname = "/home";
     render(<AppNav />);
-    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Attendees" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Events" })).toHaveAttribute("href", "/events");
+    expect(screen.queryByRole("tab", { name: "Attendees" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Inbox" })).toHaveAttribute("href", "/inbox");
   });
 
-  it("renders both tabs on a nested /attendees/:id route", () => {
-    mockPathname = "/attendees/guest-123";
+  it("marks Events active on /events and /events/:id", () => {
+    mockPathname = "/events";
+    const { unmount } = render(<AppNav />);
+    expect(screen.getByRole("tab", { name: "Events" })).toHaveAttribute("aria-current", "page");
+    unmount();
+
+    mockPathname = "/events/evt-1";
     render(<AppNav />);
-    expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Attendees" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Events" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("marks Inbox active only on /inbox, not on /people/:id", () => {
+    mockPathname = "/inbox";
+    const { unmount } = render(<AppNav />);
+    expect(screen.getByRole("tab", { name: "Inbox" })).toHaveAttribute("aria-current", "page");
+    unmount();
+
+    mockPathname = "/people/guest-123";
+    render(<AppNav />);
+    expect(screen.getByRole("tab", { name: "Inbox" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("tab", { name: "Home" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("still shows app chrome on /people/:id", () => {
+    mockPathname = "/people/guest-123";
+    render(<AppNav />);
+    expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
   });
 
   it("marks Home active on /home", () => {
     mockPathname = "/home";
     render(<AppNav />);
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Attendees" })).not.toHaveAttribute("aria-current");
-  });
-
-  it("marks Attendees active on /attendees and nested routes", () => {
-    mockPathname = "/attendees/guest-123";
-    render(<AppNav />);
-    expect(screen.getByRole("link", { name: "Attendees" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("tab", { name: "Home" })).toHaveAttribute("aria-current", "page");
   });
 
   it("renders nothing on the marketing homepage", () => {
@@ -62,5 +76,15 @@ describe("AppNav", () => {
       expect(container).toBeEmptyDOMElement();
       unmount();
     }
+  });
+
+  it("uses a distinct raised top chrome with a tab group", () => {
+    mockPathname = "/home";
+    const { container } = render(<AppNav />);
+    const nav = container.querySelector("nav");
+    expect(nav?.className).toMatch(/border-b/);
+    expect(nav?.className).toMatch(/surface-raised/);
+    expect(nav?.className).not.toMatch(/order-2/);
+    expect(screen.getByRole("tablist", { name: /app sections/i })).toBeInTheDocument();
   });
 });

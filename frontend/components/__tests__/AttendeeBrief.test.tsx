@@ -174,7 +174,7 @@ describe("AttendeeBrief", () => {
     renderBrief();
     expect(screen.getByRole("link", { name: "Marcus Ellis" })).toHaveAttribute(
       "href",
-      "/attendees/marcus-ellis",
+      "/people/marcus-ellis",
     );
     expect(screen.queryByRole("navigation", { name: /sections|main/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /today|capture|outreach/i })).not.toBeInTheDocument();

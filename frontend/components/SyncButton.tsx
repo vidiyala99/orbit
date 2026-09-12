@@ -23,9 +23,12 @@ function errorMessage(err: unknown): string {
 export default function SyncButton({
   lastSyncedAt,
   eventId,
+  stack = false,
 }: {
   lastSyncedAt: string | null;
   eventId: string | null;
+  /** Vertical layout for the narrow workbench rail. */
+  stack?: boolean;
 }) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -48,15 +51,15 @@ export default function SyncButton({
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <p className="text-fl-sm text-ink3">
+    <div className={stack ? "flex flex-col gap-2" : "flex flex-wrap items-center gap-3"}>
+      <p className={`text-ink3 ${stack ? "text-fl-xs" : "text-fl-sm"}`}>
         Last synced <strong className="text-ink2">{timeAgo(lastSyncedAt)}</strong>
       </p>
       <button
         type="button"
         onClick={onClick}
         disabled={syncing || !eventId}
-        className="lift btn-press rounded-full bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
+        className={`lift btn-press rounded-md border border-ink/15 bg-transparent px-3.5 py-2 text-fl-sm font-medium text-ink2 hover:bg-ink/[0.05] disabled:opacity-70 ${stack ? "w-full" : ""}`}
       >
         {syncing ? "Syncing…" : "Sync now"}
       </button>

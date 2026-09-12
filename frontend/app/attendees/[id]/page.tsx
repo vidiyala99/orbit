@@ -1,18 +1,14 @@
-import { notFound } from "next/navigation";
-import ContactNote from "@/components/ContactNote";
-import { findDeskAttendee, isPreEvent, loadDeskGuests } from "@/lib/guests";
+import { redirect } from "next/navigation";
+import { personPath } from "@/lib/routes";
 
 export const dynamic = "force-dynamic";
 
-export default async function ContactNotePage({
+/** Legacy path — person detail lives at /people/[id]. */
+export default async function AttendeeIdRedirect({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const desk = await loadDeskGuests();
-  const attendee = findDeskAttendee(id, desk.attendees);
-  if (!attendee) notFound();
-
-  return <ContactNote attendee={attendee} preEvent={isPreEvent(desk.event)} />;
+  redirect(personPath(id));
 }

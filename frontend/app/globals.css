@@ -2,40 +2,38 @@
 @config "../tailwind.config.ts";
 
 :root {
-  /* Signal — warm bone ground + amber-ember accent */
-  --ground: #F4F1EA;
-  --surface: #FDFCF8;
-  --ink: #211D1A;
-  --ink2: #5C5548;
-  --ink3: #8B8373;
-  --accent: #9C540E;
-  --accent-soft: #F6E2C3;
-  --rule: #E3DDD0;
-  --rust: #9A3E22;
-  --rust-soft: #F1DDCF;
-  --amber: #7A5D12;
-  --amber-soft: #F0E8C6;
+  /* Actintro: deeper lobby dusk field (not white noise) */
+  --ground: #BFC9D6;
+  --surface: #D0D8E4;
+  --surface-raised: #E2E8F0;
+  --ink: #10141C;
+  --ink2: #3A4354;
+  --ink3: #5C6678;
+  --accent: #E23D2B;
+  --accent-soft: #F7C9C2;
+  --accent-deep: #B82E20;
+  --signal: #0F6E5C;
+  --signal-soft: #B8DFD4;
+  --rule: #A0AAB8;
+  --rust: #B42318;
+  --rust-soft: #F8E2DF;
+  --amber: #A16207;
+  --amber-soft: #F5EBD0;
+  --app-nav-h: 3.25rem;
 
   color-scheme: light;
   caret-color: var(--accent);
 }
 
 ::selection {
-  background: rgba(156, 84, 14, 0.2);
-  color: #211D1A;
+  background: rgba(226, 61, 43, 0.22);
+  color: #10141C;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E3DDD0;
+  background: #C5CCD6;
 }
 
-/* These are base-reset-style defaults: they must lose to any Tailwind
-   utility class present on an element (e.g. `text-tab-idle`, or the
-   `focus-visible:outline-*` overrides in FollowUpStoryDeck), and only apply
-   as a fallback. Tailwind v4 emits utilities inside `@layer utilities`; an
-   unlayered rule beats every layered rule regardless of specificity, so
-   these must live in `@layer base` (base < components < utilities) to
-   correctly lose that fight. */
 @layer base {
   a {
     color: inherit;
@@ -43,15 +41,13 @@
     text-decoration-thickness: 1px;
   }
 
-  /* Every interactive element gets the same visible ring by default; nothing
-     anywhere sets outline:none without this replacing it. */
   a:focus-visible,
   button:focus-visible,
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible,
   [tabindex]:focus-visible {
-    outline: 2px solid #9C540E;
+    outline: 2px solid #E23D2B;
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -59,29 +55,25 @@
 
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: #9C540E;
+  accent-color: #E23D2B;
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Text fields read their focus as a filled ring rather than an outline, so the
-   field itself looks "active" and not annotated. */
 .field {
   transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
 }
 .field:focus {
   outline: none;
-  border-color: #9C540E;
-  box-shadow: 0 0 0 3px rgba(156, 84, 14, 0.16);
+  border-color: #E23D2B;
+  box-shadow: 0 0 0 3px rgba(226, 61, 43, 0.16);
 }
 .field:focus-visible {
   outline: none;
 }
 
-/* MOTION — cards lift 2px on hover, press settles back in. Transform/opacity
-   only, so it stays on the compositor. */
 .lift {
   transition: transform 150ms ease-out, box-shadow 150ms ease-out;
 }
@@ -91,26 +83,24 @@ input[type="radio"] {
 
 @media (prefers-reduced-motion: no-preference) {
   .lift:hover:not(:disabled) {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 }
 
-/* Live dot: a soft ring expands out of it. The ring is its own element so the
-   animation is transform + opacity, never box-shadow. */
 .live-dot {
   position: relative;
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #9C540E;
+  background: #E23D2B;
 }
 .live-dot::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: rgba(156, 84, 14, 0.4);
+  background: rgba(226, 61, 43, 0.4);
   animation: liveRing 2.2s ease-out infinite;
 }
 
@@ -125,7 +115,7 @@ input[type="radio"] {
 }
 
 @keyframes riseIn {
-  0% { transform: translateY(10px) scale(0.98); opacity: 0; }
+  0% { transform: translateY(8px) scale(0.99); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
@@ -145,34 +135,26 @@ input[type="radio"] {
   }
 }
 
-/* Slow, subtle zoom on full-bleed editorial photos — reads as "alive," not
-   as a slideshow effect, because it never reverses or loops. */
 .kenburns {
   animation: kenburns 14s ease-out both;
 }
 @keyframes kenburns {
-  0% { transform: scale(1.08); }
+  0% { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .kenburns { animation: none; }
 }
 
-/* PRODUCT UI MOTION — /attendees: fast, occasional-frequency transitions.
-   Rows/panes stay under the 250ms UI budget; CSS transitions/keyframes only
-   (no JS scroll listeners), so rapid tab-switching never queues or jitters. */
 @keyframes rowIn {
-  0% { opacity: 0; transform: translateY(5px); }
+  0% { opacity: 0; transform: translateY(4px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes paneIn {
-  0% { opacity: 0; filter: blur(2px); }
-  100% { opacity: 1; filter: blur(0); }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
-/* Fine grain so flat color fields (ground/surface) read as material rather
-   than flat paper. Fixed + pointer-events:none per perf guidance: it never
-   repaints on scroll since it isn't inside a scrolling stacking context. */
 .grain-overlay {
   position: fixed;
   inset: 0;
@@ -183,10 +165,34 @@ input[type="radio"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Breathing room at the end of a page mounted under AppNav. AppNav itself
-   can no longer overlap this content (it's a non-fixed sibling pane, see
-   layout.tsx/AppNav.tsx) — this is just air so the last row/button doesn't
-   sit flush against the bar's top border. */
 .pb-appnav {
   padding-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .pb-appnav {
+    padding-bottom: 2.5rem;
+  }
+}
+
+/* Home field — dusk slate, no white blast. */
+.home-stage {
+  background:
+    radial-gradient(980px 520px at 8% -18%, rgba(226, 61, 43, 0.14), transparent 58%),
+    radial-gradient(1100px 560px at 96% 0%, rgba(15, 110, 92, 0.16), transparent 52%),
+    radial-gradient(800px 420px at 50% 110%, rgba(16, 20, 28, 0.08), transparent 55%),
+    linear-gradient(168deg, #BFC9D6 0%, #C8D0DB 42%, #B8C3D0 100%);
+}
+
+/* Phone Home fills the flex-1 region under nav — photo then takes leftover via grid 1fr. */
+.phone-focus-shell {
+  height: 100%;
+  max-height: 100%;
+}
+
+@media (min-width: 768px) {
+  .phone-focus-shell {
+    height: auto;
+    max-height: none;
+  }
 }
