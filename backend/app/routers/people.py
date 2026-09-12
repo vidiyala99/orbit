@@ -12,7 +12,8 @@ from ..auth import get_current_user
 from ..db import get_db
 from ..models import Event, Person, SyncRun, User
 from ..people import person_from_create, apply_person_update
-from ..schemas import PeopleImportOut, PersonCreate, PersonOut, PersonUpdate
+from ..schemas import PeopleImportOut, PersonCreate, PersonOut, PersonTriageUpdate, PersonUpdate
+from ..signals import ensure_person_signals
 
 router = APIRouter(tags=["people"])
 
@@ -30,7 +31,16 @@ def _list_people(db: Session, user: User, event_id: uuid.UUID | None) -> list[Pe
     query = db.query(Person).filter(Person.user_id == user.id)
     if event_id is not None:
         query = query.filter(Person.event_id == event_id)
-    return query.order_by(Person.name.asc()).all()
+    people = query.order_by(Person.name.asc()).all()
+    dirty = False
+    for person in people:
+        before = person.signals
+        ensure_person_signals(person, persist=True)
+        if person.signals != before:
+            dirty = True
+    if dirty:
+        db.commit()
+    return people
 
 
 @router.get("/people", response_model=list[PersonOut])
@@ -109,6 +119,20 @@ def needs_follow_up(
     )
 
 
+@router.get("/inbox", response_model=list[PersonOut])
+def list_inbox(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Kept Attendees — the Inbox tab."""
+    return (
+        db.query(Person)
+        .filter(Person.user_id == user.id, Person.triage_state == "kept")
+        .order_by(Person.triaged_at.desc().nulls_last(), Person.name.asc())
+        .all()
+    )
+
+
 @router.get("/people/{person_id}", response_model=PersonOut)
 def get_person(
     person_id: uuid.UUID,
@@ -116,6 +140,22 @@ def get_person(
     user: User = Depends(get_current_user),
 ):
     return _owned_person(db, user, person_id)
+
+
+@router.patch("/people/{person_id}/triage", response_model=PersonOut)
+def triage_person(
+    person_id: uuid.UUID,
+    body: PersonTriageUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Keep, skip, or undo (state=null) an Attendee on the Focus card."""
+    person = _owned_person(db, user, person_id)
+    person.triage_state = body.state
+    person.triaged_at = datetime.now(timezone.utc) if body.state else None
+    db.commit()
+    db.refresh(person)
+    return person
 
 
 @router.patch("/people/{person_id}", response_model=PersonOut)

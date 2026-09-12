@@ -80,6 +80,7 @@ FIXTURE_PEOPLE: list[dict] = [
         "priority": "needs_you",
         "linkedin_connected": True,
         "x_interacted": True,
+        "signals": ["Investor", "Just got funded"],
     },
     {
         "name": "Sam Okonkwo",
@@ -119,6 +120,7 @@ FIXTURE_PEOPLE: list[dict] = [
         "priority": "high",
         "linkedin_connected": False,
         "x_interacted": True,
+        "signals": ["Starting new startup", "Looking for beta testers"],
     },
     {
         "name": "Riley Park",
@@ -162,6 +164,7 @@ FIXTURE_PEOPLE: list[dict] = [
         "priority": "later",
         "linkedin_connected": True,
         "x_interacted": False,
+        "signals": ["Potentially hiring", "Posted about hiring"],
     },
 ]
 
@@ -191,6 +194,7 @@ def seed_fixture_people(db: Session, user: User) -> list[Person]:
             existing.x_interacted = raw["x_interacted"]
             existing.linkedin_url = linkedin_url
             existing.x_url = x_url
+            existing.signals = raw.get("signals")
             if not existing.note_payload:
                 existing.note_payload = existing.note or raw["note"]
             if not existing.dm_payload:
@@ -221,6 +225,7 @@ def seed_fixture_people(db: Session, user: User) -> list[Person]:
             email_draft=raw["email_draft"],
             score=raw["score"],
             evidence=raw["evidence"],
+            signals=raw.get("signals"),
             # Same facts as note/dm, stored as clipboard strings Face copies.
             note_payload=note,
             dm_payload=dm,

@@ -43,8 +43,10 @@ def _seed(db):
 def test_ranking_scores_the_focus_match_higher_and_writes_why_meet(db_session):
     user, event, match, other = _seed(db_session)
     provider = ScriptedProvider(replies=[
-        StructuredReply('{"items": [{"name": "Eval Person", "why": "Runs evals in prod."}]}',
-                        Usage(input_tokens=50, cached_tokens=0, output_tokens=10)),
+    StructuredReply(
+        '{"items": [{"name": "Eval Person", "why": "Runs evals in prod.", "signals": ["Looking for beta testers", "Design partner"]}]}',
+        Usage(input_tokens=50, cached_tokens=0, output_tokens=10),
+    ),
     ])
     gateway = LLMGateway(db_session, provider)
 
@@ -55,6 +57,7 @@ def test_ranking_scores_the_focus_match_higher_and_writes_why_meet(db_session):
     assert match.score > other.score
     assert match.priority == "needs_you"
     assert match.relevance == "Runs evals in prod."
+    assert match.signals == ["Looking for beta testers", "Design partner", "Starting new startup"]
     # The run is metered: one embed + one why-meet completion.
     meter = gateway.run_meter(run.id)
     assert meter.status == "succeeded"

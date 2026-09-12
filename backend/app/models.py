@@ -110,6 +110,8 @@ class Person(Base):
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
     # JSON list of {source_id, quote} — Brain fills later; fixtures seed it.
     evidence: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # JSON list of situational match tags, e.g. "Potentially hiring".
+    signals: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # Clipboard strings. May equal note/dm; Face copies these, not live sends.
     note_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
     dm_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -124,6 +126,10 @@ class Person(Base):
     # Set when Copy note/Copy DM fires for this person, post-event. Backs
     # the cross-event "needs follow-up" dashboard rollup.
     followed_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Keep/skip on the Focus card. Enum-ish at the Pydantic layer:
+    #   triage_state: kept | skipped | null (undecided)
+    triage_state: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    triaged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class SyncRun(Base):

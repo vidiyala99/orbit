@@ -296,3 +296,58 @@ def test_patch_person_persists_followed_up_at_and_clears_follow_up_list(db_sessi
     res = client.get("/people/needs-follow-up")
     assert res.status_code == 200
     assert res.json() == []
+
+
+def test_triage_keep_lands_in_inbox_and_skip_does_not(db_session):
+    from app.models import Person as PersonModel
+
+    client = _auth_client(db_session)
+    user_id = client.get("/me").json()["id"]
+
+    event = Event(
+        user_id=user_id,
+        title="Build Fridays",
+        starts_at=datetime.now(timezone.utc) + timedelta(days=1),
+    )
+    db_session.add(event)
+    db_session.flush()
+
+    keep = PersonModel(user_id=user_id, name="Keep Me", event_id=event.id, priority="needs_you")
+    skip = PersonModel(user_id=user_id, name="Skip Me", event_id=event.id, priority="high")
+    db_session.add_all([keep, skip])
+    db_session.commit()
+    db_session.refresh(keep)
+    db_session.refresh(skip)
+
+    assert client.get("/inbox").json() == []
+
+    kept = client.patch(f"/people/{keep.id}/triage", json={"state": "kept"})
+    assert kept.status_code == 200
+    assert kept.json()["triage_state"] == "kept"
+    assert kept.json()["triaged_at"] is not None
+
+    skipped = client.patch(f"/people/{skip.id}/triage", json={"state": "skipped"})
+    assert skipped.status_code == 200
+    assert skipped.json()["triage_state"] == "skipped"
+
+    inbox = client.get("/inbox").json()
+    assert [p["name"] for p in inbox] == ["Keep Me"]
+
+    undone = client.patch(f"/people/{keep.id}/triage", json={"state": None})
+    assert undone.status_code == 200
+    assert undone.json()["triage_state"] is None
+    assert client.get("/inbox").json() == []
+
+
+def test_triage_rejects_invalid_state(db_session):
+    from app.models import Person as PersonModel
+
+    client = _auth_client(db_session)
+    user_id = client.get("/me").json()["id"]
+    person = PersonModel(user_id=user_id, name="Ada")
+    db_session.add(person)
+    db_session.commit()
+    db_session.refresh(person)
+
+    res = client.patch(f"/people/{person.id}/triage", json={"state": "maybe"})
+    assert res.status_code == 422

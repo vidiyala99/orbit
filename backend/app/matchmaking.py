@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from .llm.gateway import Completion, Embeddings, LLMGateway, Prompt, Task
 from .models import ActionRun, Event, Person, User
+from .signals import SIGNAL_VOCAB, infer_signals, merge_signals, normalize_signals
 
 # How many top-ranked attendees get a written "why meet" and land in the
 # high-priority buckets. The rest are ranked but not LLM-annotated (ADR: don't
@@ -25,6 +26,7 @@ _NEEDS_YOU = 5
 class _WhyMeetItem(BaseModel):
     name: str
     why: str
+    signals: list[str] = []
 
 
 class _WhyMeetBatch(BaseModel):
@@ -92,19 +94,34 @@ def _write_why_meet(gateway: LLMGateway, run: ActionRun, focus: str, top: list[P
     if not top:
         return
     roster = "\n".join(f"- {p.name}: {p.role or p.what_talked or '(no bio)'}" for p in top)
+    vocab = "; ".join(SIGNAL_VOCAB)
     prompt = Prompt(
         instructions=(
-            "For each attendee, write one specific sentence (max 20 words) on why this "
-            "person is worth meeting given the user's Focus. Return every attendee by exact name."
+            "For each attendee: (1) write one specific sentence (max 20 words) on why this "
+            "person is worth meeting given the user's Focus; (2) attach 1–2 signals from this "
+            f"exact vocabulary only: {vocab}. Prefer hiring / funding / startup / beta / "
+            "customer / intro / investor labels when the bio supports them. "
+            "Return every attendee by exact name."
         ),
         context=(f"User's Focus: {focus}",),
         variable=f"Attendees:\n{roster}",
     )
     result = gateway.complete(run, Task.WHY_MEET, _WhyMeetBatch, prompt)
-    if not isinstance(result, Completion):
-        return
-    by_name = {item.name: item.why for item in result.value.items}
+    by_name: dict[str, _WhyMeetItem] = {}
+    if isinstance(result, Completion):
+        by_name = {item.name: item for item in result.value.items}
+
     for person in top:
-        why = by_name.get(person.name)
-        if why:
-            person.relevance = why[:280]
+        item = by_name.get(person.name)
+        if item and item.why:
+            person.relevance = item.why[:280]
+        llm_tags = normalize_signals(item.signals if item else None)
+        heuristic = infer_signals(
+            role=person.role,
+            what_talked=person.what_talked,
+            relevance=person.relevance,
+            intent=person.intent,
+            note=person.note,
+            priority=person.priority,
+        )
+        person.signals = merge_signals(llm_tags, heuristic) or None

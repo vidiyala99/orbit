@@ -132,6 +132,7 @@ class LumaSyncOut(BaseModel):
 # not DB CHECK constraints.
 INVITE_STATE_KEYS = {"pending", "accepted", "needs_message"}
 PRIORITY_KEYS = {"needs_you", "high", "later"}
+TRIAGE_KEYS = {"kept", "skipped"}
 SYNC_SOURCE_KEYS = {"csv", "fixture"}
 
 
@@ -160,6 +161,7 @@ class PersonCreate(BaseModel):
     email_draft: str | None = None
     score: float | None = None
     evidence: list[EvidenceItem] | None = None
+    signals: list[str] | None = None
     note_payload: str | None = None
     dm_payload: str | None = None
     event_id: uuid.UUID | None = None
@@ -214,6 +216,7 @@ class PersonUpdate(BaseModel):
     email_draft: str | None = None
     score: float | None = None
     evidence: list[EvidenceItem] | None = None
+    signals: list[str] | None = None
     note_payload: str | None = None
     dm_payload: str | None = None
     event_id: uuid.UUID | None = None
@@ -272,6 +275,7 @@ class PersonOut(BaseModel):
     email_draft: str | None
     score: float | None
     evidence: list[EvidenceItem] | None
+    signals: list[str] | None = None
     note_payload: str | None
     dm_payload: str | None
     event_id: uuid.UUID | None
@@ -279,9 +283,25 @@ class PersonOut(BaseModel):
     linkedin_connected: bool
     x_interacted: bool
     followed_up_at: datetime | None
+    triage_state: str | None = None
+    triaged_at: datetime | None = None
 
     class Config:
         from_attributes = True
+
+
+class PersonTriageUpdate(BaseModel):
+    """Keep / skip / undo on the Focus card."""
+    state: str | None = None
+
+    @field_validator("state")
+    @classmethod
+    def _valid_state(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if value not in TRIAGE_KEYS:
+            raise ValueError(f"invalid triage state: {value}")
+        return value
 
 
 class PeopleImportOut(BaseModel):

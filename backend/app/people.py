@@ -62,6 +62,7 @@ def person_from_create(user_id, body: PersonCreate) -> Person:
         email_draft=body.email_draft,
         score=body.score,
         evidence=_evidence_dump(body.evidence),
+        signals=body.signals,
         note_payload=body.note_payload,
         dm_payload=body.dm_payload,
         event_id=body.event_id,
@@ -88,6 +89,7 @@ def apply_person_update(person: Person, body: PersonUpdate) -> None:
         "pending_since", "accepted_at", "last_touch_at", "intent",
         "note", "dm", "email_draft", "score", "note_payload", "dm_payload",
         "event_id", "priority", "linkedin_connected", "x_interacted", "followed_up_at",
+        "signals",
     )
     for field in assignable:
         if field in fields_set:
