@@ -117,19 +117,23 @@ function ProfileDossier({
 }) {
   const why = person.why?.trim() || "";
   const role = person.role?.trim() || "";
-  const rawContext = (person.what_talked || person.note || person.note_payload || "").trim();
-  const sameText = (a: string, b: string) =>
-    a.replace(/\s+/g, " ").trim().toLowerCase() === b.replace(/\s+/g, " ").trim().toLowerCase();
-  // Role already sits under the name; Context often repeats the same Luma bio.
-  const context =
-    rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : "";
+  const rawContext = (person.what_talked || "").trim();
+  const norm = (a: string) => a.replace(/\s+/g, " ").trim().toLowerCase();
+  const sameText = (a: string, b: string) => Boolean(a && b) && norm(a) === norm(b);
+  const overlaps = (a: string, b: string) => {
+    if (!a || !b) return false;
+    const x = norm(a);
+    const y = norm(b);
+    if (x === y) return true;
+    // One contains the other (common when Recent is pasted into Context).
+    if (x.length >= 40 && y.includes(x)) return true;
+    if (y.length >= 40 && x.includes(y)) return true;
+    return false;
+  };
+
   const evidence = (person.evidence ?? []).filter((e) => e?.quote?.trim());
   const approachEvidence = evidence.find((e) => e.source_id === "approach")?.quote?.trim();
   const recentEvidence = evidence.find((e) => e.source_id === "recent")?.quote?.trim();
-  const otherEvidence = evidence.filter(
-    (e) => e.source_id !== "approach" && e.source_id !== "recent",
-  );
-  const hasResearch = evidence.length > 0 || Boolean(context);
   const approach =
     approachEvidence ||
     personApproachTip({
@@ -141,30 +145,60 @@ function ProfileDossier({
       eventKind,
     });
 
+  // One "recent work" slot — prefer evidence.recent, else what_talked, never both.
+  const recent =
+    recentEvidence ||
+    (rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : "");
+
+  // Alignment only if it adds something beyond approach / recent / role.
+  const alignment =
+    why &&
+    !sameText(why, role) &&
+    !overlaps(why, approach) &&
+    !overlaps(why, recent)
+      ? why
+      : "";
+
+  const seen = new Set(
+    [role, approach, recent, alignment].filter(Boolean).map(norm),
+  );
+  const extraQuotes = evidence
+    .filter((e) => e.source_id !== "approach" && e.source_id !== "recent")
+    .map((e) => e.quote.trim())
+    .filter((q) => {
+      const n = norm(q);
+      if (!n || seen.has(n)) return false;
+      // Skip LinkedIn headline that restates the role line under the name.
+      if (overlaps(q, role)) return false;
+      if (overlaps(q, approach) || overlaps(q, recent) || overlaps(q, alignment)) return false;
+      seen.add(n);
+      return true;
+    })
+    // Cap — dossier should stay short for demo.
+    .slice(0, 1);
+
+  const hasResearch = Boolean(approachEvidence || recent || extraQuotes.length);
+
   return (
     <div className="flex flex-col gap-3.5">
       <DossierSection label="How to approach">{approach}</DossierSection>
-      {why && !sameText(why, role) ? <DossierSection label="Alignment">{why}</DossierSection> : null}
+      {alignment ? <DossierSection label="Why meet">{alignment}</DossierSection> : null}
+      {recent ? <DossierSection label="Recent">{recent}</DossierSection> : null}
       {!hideSignals && signals.length ? (
         <DossierSection label="Signals">
           <SignalChips tags={signals} />
         </DossierSection>
       ) : null}
-      {person.event_title ? <DossierSection label="Event">{person.event_title}</DossierSection> : null}
-      {recentEvidence ? (
-        <DossierSection label="Recent">{recentEvidence}</DossierSection>
-      ) : null}
-      {context ? <DossierSection label="Context">{context}</DossierSection> : null}
-      {otherEvidence.length ? (
-        <DossierSection label="Evidence">
+      {extraQuotes.length ? (
+        <DossierSection label="Background">
           <ul className="flex flex-col gap-1.5">
-            {otherEvidence.map((item) => (
-              <li key={`${item.source_id}:${item.quote}`}>“{item.quote}”</li>
+            {extraQuotes.map((quote) => (
+              <li key={quote}>“{quote}”</li>
             ))}
           </ul>
         </DossierSection>
       ) : null}
-      {!hasResearch ? (
+      {!hasResearch && !approachEvidence ? (
         <DossierSection label="Trajectory & recent work" muted>
           Not researched yet — enrichment fills trajectory, recent posts, and accomplishments from
           LinkedIn/X.
