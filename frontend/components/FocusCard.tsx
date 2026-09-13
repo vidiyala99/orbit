@@ -124,15 +124,22 @@ function ProfileDossier({
   const context =
     rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : "";
   const evidence = (person.evidence ?? []).filter((e) => e?.quote?.trim());
+  const approachEvidence = evidence.find((e) => e.source_id === "approach")?.quote?.trim();
+  const recentEvidence = evidence.find((e) => e.source_id === "recent")?.quote?.trim();
+  const otherEvidence = evidence.filter(
+    (e) => e.source_id !== "approach" && e.source_id !== "recent",
+  );
   const hasResearch = evidence.length > 0 || Boolean(context);
-  const approach = personApproachTip({
-    signals: person.signals,
-    role: person.role,
-    why: person.why,
-    intent: person.intent,
-    priority: person.priority,
-    eventKind,
-  });
+  const approach =
+    approachEvidence ||
+    personApproachTip({
+      signals: person.signals,
+      role: person.role,
+      why: person.why,
+      intent: person.intent,
+      priority: person.priority,
+      eventKind,
+    });
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -144,11 +151,14 @@ function ProfileDossier({
         </DossierSection>
       ) : null}
       {person.event_title ? <DossierSection label="Event">{person.event_title}</DossierSection> : null}
+      {recentEvidence ? (
+        <DossierSection label="Recent">{recentEvidence}</DossierSection>
+      ) : null}
       {context ? <DossierSection label="Context">{context}</DossierSection> : null}
-      {evidence.length ? (
+      {otherEvidence.length ? (
         <DossierSection label="Evidence">
           <ul className="flex flex-col gap-1.5">
-            {evidence.map((item) => (
+            {otherEvidence.map((item) => (
               <li key={`${item.source_id}:${item.quote}`}>“{item.quote}”</li>
             ))}
           </ul>
@@ -479,14 +489,17 @@ function PhoneStage({
   const signals = personSignals(person);
   const why = person.why?.trim() || "";
   const { url: photoUrl, advance: advancePhoto } = useResolvedAvatar(person);
-  const approach = personApproachTip({
-    signals: person.signals,
-    role: person.role,
-    why: person.why,
-    intent: person.intent,
-    priority: person.priority,
-    eventKind: eventBrief(person.event_title).kind,
-  });
+  const approachEvidence = (person.evidence ?? []).find((e) => e.source_id === "approach")?.quote?.trim();
+  const approach =
+    approachEvidence ||
+    personApproachTip({
+      signals: person.signals,
+      role: person.role,
+      why: person.why,
+      intent: person.intent,
+      priority: person.priority,
+      eventKind: eventBrief(person.event_title).kind,
+    });
 
   useEffect(() => {
     setOpen(false);
