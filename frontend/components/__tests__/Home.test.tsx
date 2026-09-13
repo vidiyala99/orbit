@@ -42,6 +42,7 @@ const EMPTY: HomeDataT = {
   lastSyncedAt: null,
   featuredEvent: null,
   jobTarget: { targetRole: null, targetIndustries: null },
+  focus: { role: null, struggle: null },
   lumaConnected: false,
 };
 

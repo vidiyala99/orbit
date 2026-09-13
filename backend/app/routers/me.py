@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..db import get_db
 from ..models import User
-from ..schemas import JobTargetRequest, OnboardingRequest, UserOut
+from ..schemas import FocusUpdate, JobTargetRequest, OnboardingRequest, UserOut
 
 router = APIRouter(tags=["me"])
 
@@ -40,6 +40,20 @@ def update_job_target(
     user.target_role = body.target_role
     user.target_industries = body.target_industries
 
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.patch("/me/focus", response_model=UserOut)
+def update_focus(
+    body: FocusUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Set Focus (Role + Struggle) for ranking and Your-angle tips."""
+    user.focus_role = body.focus_role
+    user.focus_struggle = body.focus_struggle
     db.commit()
     db.refresh(user)
     return user

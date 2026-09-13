@@ -20,6 +20,7 @@ import { APP_INBOX } from "@/lib/routes";
 import { resolveSignalTags } from "@/lib/signalTags";
 import { eventBrief, type EventKind } from "@/lib/eventBrief";
 import { personApproachTip } from "@/lib/personApproach";
+import { personYourAngle, type UserFocusT } from "@/lib/personYourAngle";
 import { PhotoFallback } from "./PhotoFallback";
 
 const PHONE_MAX = "(max-width: 767px)";
@@ -67,14 +68,18 @@ function personSignals(person: PersonSummaryT) {
   });
 }
 
-function SignalChips({ tags }: { tags: string[] }) {
+function SignalChips({ tags, dense = false }: { tags: string[]; dense?: boolean }) {
   if (!tags.length) return null;
   return (
-    <ul className="flex flex-wrap gap-1.5" aria-label="Match signals">
+    <ul className={`flex flex-wrap ${dense ? "gap-1" : "gap-1.5"}`} aria-label="Match signals">
       {tags.map((tag) => (
         <li
           key={tag}
-          className="rounded-md bg-accent px-2.5 py-1 font-mono text-[0.6875rem] font-semibold tracking-[0.02em] text-white"
+          className={
+            dense
+              ? "rounded-sm bg-accent px-2 py-0.5 font-mono text-[0.625rem] font-semibold tracking-[0.02em] text-white"
+              : "rounded-md bg-accent px-2.5 py-1 font-mono text-[0.6875rem] font-semibold tracking-[0.02em] text-white"
+          }
         >
           {tag}
         </li>
@@ -83,22 +88,64 @@ function SignalChips({ tags }: { tags: string[] }) {
   );
 }
 
+/** Soften research/internal jargon before it hits the Focus brief. */
+function polishBriefCopy(text: string): string {
+  return text
+    .replace(/\bhiring_power\b/gi, "hiring opportunity")
+    .replace(/\bfounder_peer\b/gi, "founder peer")
+    .replace(/\bwarm_intro\b/gi, "warm intro")
+    .replace(/\bAI\s*[×x]\s*/gi, "AI × ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function DossierSection({
   label,
   children,
   muted,
+  lead = false,
+  compact = false,
 }: {
   label: string;
   children: ReactNode;
   muted?: boolean;
+  /** Primary act — approach tip or why-meet. */
+  lead?: boolean;
+  compact?: boolean;
 }) {
+  if (lead) {
+    return (
+      <div
+        className={`rounded-md border-l-[3px] border-accent bg-accent-soft/40 ${
+          compact ? "px-3.5 py-3" : "px-3.5 py-3.5"
+        }`}
+      >
+        <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-accent">
+          {label}
+        </p>
+        <div
+          className={`mt-2 max-w-[36em] font-sans text-[0.9375rem] font-medium leading-[1.45] tracking-[-0.01em] text-ink ${
+            compact ? "" : "md:text-[1rem] md:leading-[1.5]"
+          }`}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div>
-      <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-ink3">{label}</p>
-      <div className={`mt-1 text-[0.9375rem] leading-relaxed ${muted ? "text-ink3" : "font-medium text-ink"}`}>
+    <section className={compact ? "mt-5 first:mt-0" : "border-t border-ink/10 pt-5 first:border-t-0 first:pt-0"}>
+      <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-ink3">
+        {label}
+      </p>
+      <div
+        className={`mt-2 max-w-[36em] font-sans text-[0.9375rem] leading-[1.55] ${
+          muted ? "text-ink3" : "text-ink2"
+        }`}
+      >
         {children}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -108,14 +155,22 @@ function ProfileDossier({
   signals,
   hideSignals = false,
   eventKind = null,
+  /** Phone expanded sheet — tighter type, denser chips. */
+  compact = false,
+  /** Phone already shows approach in the collapse chrome — don't repeat. */
+  omitApproach = false,
+  focus = null,
 }: {
   person: PersonSummaryT;
   signals: string[];
   /** When chips already sit under the name (desktop). */
   hideSignals?: boolean;
   eventKind?: EventKind | null;
+  compact?: boolean;
+  omitApproach?: boolean;
+  focus?: UserFocusT | null;
 }) {
-  const why = person.why?.trim() || "";
+  const why = polishBriefCopy(person.why?.trim() || "");
   const role = person.role?.trim() || "";
   const rawContext = (person.what_talked || "").trim();
   const norm = (a: string) => a.replace(/\s+/g, " ").trim().toLowerCase();
@@ -125,7 +180,6 @@ function ProfileDossier({
     const x = norm(a);
     const y = norm(b);
     if (x === y) return true;
-    // One contains the other (common when Recent is pasted into Context).
     if (x.length >= 40 && y.includes(x)) return true;
     if (y.length >= 40 && x.includes(y)) return true;
     return false;
@@ -134,74 +188,92 @@ function ProfileDossier({
   const evidence = (person.evidence ?? []).filter((e) => e?.quote?.trim());
   const approachEvidence = evidence.find((e) => e.source_id === "approach")?.quote?.trim();
   const recentEvidence = evidence.find((e) => e.source_id === "recent")?.quote?.trim();
-  const approach =
+  const trajectoryEvidence = evidence.find((e) => e.source_id === "trajectory")?.quote?.trim();
+  const approach = polishBriefCopy(
     approachEvidence ||
-    personApproachTip({
-      signals: person.signals,
-      role: person.role,
-      why: person.why,
-      intent: person.intent,
-      priority: person.priority,
-      eventKind,
-    });
+      personApproachTip({
+        signals: person.signals,
+        role: person.role,
+        why: person.why,
+        intent: person.intent,
+        priority: person.priority,
+        eventKind,
+      }),
+  );
 
-  // One "recent work" slot — prefer evidence.recent, else what_talked, never both.
-  const recent =
+  const recent = polishBriefCopy(
     recentEvidence ||
-    (rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : "");
+      (rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : ""),
+  );
 
-  // Alignment only if it adds something beyond approach / recent / role.
+  const trajectory = polishBriefCopy(trajectoryEvidence || "");
+
   const alignment =
     why &&
     !sameText(why, role) &&
     !overlaps(why, approach) &&
-    !overlaps(why, recent)
+    !overlaps(why, recent) &&
+    !overlaps(why, trajectory)
       ? why
       : "";
 
-  const seen = new Set(
-    [role, approach, recent, alignment].filter(Boolean).map(norm),
-  );
-  const extraQuotes = evidence
-    .filter((e) => e.source_id !== "approach" && e.source_id !== "recent")
-    .map((e) => e.quote.trim())
-    .filter((q) => {
-      const n = norm(q);
-      if (!n || seen.has(n)) return false;
-      // Skip LinkedIn headline that restates the role line under the name.
-      if (overlaps(q, role)) return false;
-      if (overlaps(q, approach) || overlaps(q, recent) || overlaps(q, alignment)) return false;
-      seen.add(n);
-      return true;
-    })
-    // Cap — dossier should stay short for demo.
-    .slice(0, 1);
+  const yourAngle =
+    focus &&
+    personYourAngle({
+      focus,
+      signals: person.signals,
+      intent: person.intent,
+      role: person.role,
+      why: person.why,
+      recent,
+      personKey: person.id,
+    });
 
-  const hasResearch = Boolean(approachEvidence || recent || extraQuotes.length);
+  const hasResearch = Boolean(approachEvidence || recent || trajectory);
+  const showApproach = !omitApproach;
+  // On phone expand, Why meet is the lead act (approach already sits in the chrome).
+  const whyIsLead = omitApproach && Boolean(alignment);
 
   return (
-    <div className="flex flex-col gap-3.5">
-      <DossierSection label="How to approach">{approach}</DossierSection>
-      {alignment ? <DossierSection label="Why meet">{alignment}</DossierSection> : null}
-      {recent ? <DossierSection label="Recent">{recent}</DossierSection> : null}
-      {!hideSignals && signals.length ? (
-        <DossierSection label="Signals">
-          <SignalChips tags={signals} />
+    <div className={compact ? "flex flex-col gap-0 pb-1" : "flex flex-col gap-0"}>
+      {showApproach ? (
+        <DossierSection label="How to approach" lead compact={compact}>
+          {approach}
         </DossierSection>
       ) : null}
-      {extraQuotes.length ? (
-        <DossierSection label="Background">
-          <ul className="flex flex-col gap-1.5">
-            {extraQuotes.map((quote) => (
-              <li key={quote}>“{quote}”</li>
-            ))}
-          </ul>
+      {!hideSignals && signals.length ? (
+        <div className={showApproach || whyIsLead ? "mt-5" : undefined}>
+          <p className="mb-2 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-ink3">
+            Signals
+          </p>
+          <SignalChips tags={signals} dense={compact} />
+        </div>
+      ) : null}
+      {alignment ? (
+        <div className={showApproach || (!hideSignals && signals.length) ? "mt-5" : undefined}>
+          <DossierSection label="Why meet" lead={whyIsLead} compact={compact}>
+            {alignment}
+          </DossierSection>
+        </div>
+      ) : null}
+      {yourAngle ? (
+        <DossierSection label="Your angle" compact={compact}>
+          {yourAngle}
+        </DossierSection>
+      ) : null}
+      {recent ? (
+        <DossierSection label="Recent" compact={compact}>
+          {recent}
+        </DossierSection>
+      ) : null}
+      {trajectory && !overlaps(trajectory, recent) ? (
+        <DossierSection label="Trajectory" compact={compact}>
+          {trajectory}
         </DossierSection>
       ) : null}
       {!hasResearch && !approachEvidence ? (
-        <DossierSection label="Trajectory & recent work" muted>
-          Not researched yet — enrichment fills trajectory, recent posts, and accomplishments from
-          LinkedIn/X.
+        <DossierSection label="Recent work" muted compact={compact}>
+          Not researched yet — LinkedIn and X enrichment will fill recent posts and trajectory.
         </DossierSection>
       ) : null}
     </div>
@@ -293,46 +365,19 @@ function ProfilePhoto({
   signals?: string[];
   socialName?: string;
 }) {
-  const frameRef = useRef<HTMLDivElement>(null);
   const { url, advance } = useResolvedAvatar(person);
-  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    setNatural(null);
-  }, [url]);
-
-  useEffect(() => {
-    const el = frameRef.current;
-    if (!el) return;
-    const measure = () => setWidth(el.clientWidth);
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [url]);
-
-  const minH = 140;
-  let frameH = Math.min(220, maxH);
-  let objectPos = "object-[center_28%]";
-  if (!url) {
-    frameH = Math.min(Math.max(280, Math.round(maxH * 0.55)), maxH);
-  } else if (natural && natural.w > 0 && width > 0) {
-    const ratio = natural.w / natural.h;
-    const ideal = width / ratio;
-    frameH = Math.round(Math.min(maxH, Math.max(minH, ideal)));
-    objectPos =
-      ratio > 1.25 ? "object-center" : ratio < 0.85 ? "object-[center_22%]" : "object-[center_28%]";
-  }
-
   const showOverlay = signals.length > 0 || person.linkedin_url || person.x_url;
 
+  // Stable portrait frame — Luma/LinkedIn headshots are usually square; sizing
+  // height from natural ratio in a wide desktop column over-crops faces.
   return (
     <div
-      ref={frameRef}
-      className="relative w-full overflow-hidden rounded-md bg-ink/[0.06]"
-      style={{ height: frameH }}
+      className="relative mx-auto max-w-full overflow-hidden rounded-md bg-ink/[0.06]"
+      style={{
+        height: `min(${maxH}px, 52vh)`,
+        aspectRatio: "4 / 5",
+        width: "auto",
+      }}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -341,13 +386,7 @@ function ProfilePhoto({
           src={url}
           alt=""
           onError={advance}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-              setNatural({ w: img.naturalWidth, h: img.naturalHeight });
-            }
-          }}
-          className={`absolute inset-0 h-full w-full object-cover ${objectPos}`}
+          className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
         />
       ) : (
         <PhotoFallback initials={initialsLabel} urgent={urgent} />
@@ -495,6 +534,7 @@ function PhoneStage({
   total,
   pending,
   error,
+  focus,
   onPrev,
   onNext,
   onSkip,
@@ -505,13 +545,13 @@ function PhoneStage({
   total: number;
   pending: boolean;
   error: string | null;
+  focus: UserFocusT | null;
   onPrev: () => void;
   onNext: () => void;
   onSkip: () => void;
   onKeep: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
   const stageRef = useRef<HTMLDivElement>(null);
   const dossierScrollRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
@@ -521,7 +561,6 @@ function PhoneStage({
   const linkedin = person.linkedin_url?.trim() || null;
   const x = person.x_url?.trim() || null;
   const signals = personSignals(person);
-  const why = person.why?.trim() || "";
   const { url: photoUrl, advance: advancePhoto } = useResolvedAvatar(person);
   const approachEvidence = (person.evidence ?? []).find((e) => e.source_id === "approach")?.quote?.trim();
   const approach =
@@ -553,7 +592,7 @@ function PhoneStage({
       }
       if (e.deltaY < -18 && open) {
         const panel = dossierScrollRef.current;
-        if (!panel || panel.scrollTop <= 0) {
+        if (!panel || panel.scrollTop <= 2) {
           e.preventDefault();
           setOpen(false);
         }
@@ -581,7 +620,8 @@ function PhoneStage({
     }
     if (dy < -48 && open) {
       const panel = dossierScrollRef.current;
-      if (!panel || panel.scrollTop <= 0) setOpen(false);
+      // Only collapse when the brief is scrolled to the top — otherwise let the panel scroll.
+      if (!panel || panel.scrollTop <= 2) setOpen(false);
     }
   }
 
@@ -591,7 +631,9 @@ function PhoneStage({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       className={`grid h-full min-h-0 w-full min-w-0 max-w-full overflow-hidden ${
-        open ? "grid-rows-[auto_minmax(5.5rem,0.3fr)_minmax(0,1fr)]" : "grid-rows-[auto_minmax(0,1fr)_auto]"
+        open
+          ? "grid-rows-[auto_minmax(3.25rem,0.2fr)_minmax(0,1fr)]"
+          : "grid-rows-[auto_minmax(0,1fr)_auto]"
       }`}
     >
       {total > 1 ? (
@@ -666,52 +708,70 @@ function PhoneStage({
       </div>
 
       <div className="flex min-h-0 flex-col gap-2 pt-2 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-ink/10 bg-surface-raised shadow-sm">
+        <div
+          className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border shadow-sm transition-[border-color,box-shadow,background-color] ${
+            open
+              ? "border-accent/30 bg-surface-raised shadow-card"
+              : "border-ink/10 bg-surface-raised/90"
+          }`}
+        >
           <button
             type="button"
             aria-expanded={open}
-            aria-label={open ? "Collapse profile" : "Expand profile"}
+            aria-label={open ? "Collapse profile brief" : "Expand profile brief"}
             onClick={() => setOpen((v) => !v)}
-            className="btn-press flex w-full shrink-0 items-center justify-between gap-3 px-4 pt-2 pb-1 text-left"
+            className={`btn-press flex w-full shrink-0 items-center justify-between gap-3 px-4 text-left ${
+              open
+                ? "border-b border-accent/15 bg-accent-soft/25 py-3"
+                : "border-b border-ink/10 py-2.5"
+            }`}
           >
-            <span className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-accent">
-              {open ? "Profile" : "Why meet"}
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-accent">
+                {open ? "Brief" : "Approach"}
+              </span>
+              {!open ? (
+                <span className="line-clamp-2 font-sans text-[0.9375rem] font-medium leading-[1.4] tracking-[-0.01em] text-ink">
+                  {approach}
+                </span>
+              ) : (
+                <span className="truncate font-sans text-[0.8125rem] leading-snug text-ink3">
+                  {person.role?.trim() || label}
+                </span>
+              )}
             </span>
-            <span aria-hidden="true" className="font-display text-[0.75rem] font-bold tracking-[-0.02em] text-accent">
-              {open ? "Less" : "More"}
+            <span
+              aria-hidden="true"
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/25 bg-accent-soft/50 font-display text-[0.8125rem] font-bold text-accent transition-transform ${
+                open ? "rotate-180" : ""
+              }`}
+            >
+              ⌃
             </span>
           </button>
 
-          <motion.div
-            ref={dossierScrollRef}
-            initial={false}
-            animate={{ height: open ? "auto" : "2.85rem" }}
-            transition={
-              reduceMotion
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 420, damping: 36, mass: 0.8 }
-            }
-            className={`min-h-0 overflow-hidden px-4 ${open ? "overflow-y-auto" : ""}`}
-          >
-            {!open ? (
-              <div className="pb-3">
-                <p className="font-mono text-[0.625rem] font-medium uppercase tracking-[0.07em] text-accent">
-                  How to approach
-                </p>
-                <p className="mt-1 line-clamp-2 text-[0.875rem] font-medium leading-snug text-ink">
-                  {approach}
-                </p>
-              </div>
-            ) : (
-              <div className="pb-3">
-                <ProfileDossier
-                  person={person}
-                  signals={signals}
-                  eventKind={eventBrief(person.event_title).kind}
-                />
-              </div>
-            )}
-          </motion.div>
+          {open ? (
+            <div
+              ref={dossierScrollRef}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-4 [-webkit-overflow-scrolling:touch]"
+            >
+              <ProfileDossier
+                person={person}
+                signals={signals}
+                hideSignals={Boolean(signals.length && !open)}
+                compact
+                omitApproach
+                focus={focus}
+                eventKind={eventBrief(person.event_title).kind}
+              />
+            </div>
+          ) : (
+            <div className="px-4 pb-3 pt-0">
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.07em] text-ink3">
+                Swipe up or tap for why + recent
+              </p>
+            </div>
+          )}
         </div>
 
         {error ? (
@@ -750,9 +810,11 @@ function PhoneStage({
 function FocusCard({
   queueState,
   showFilmstrip,
+  focus,
 }: {
   queueState: QueueState;
   showFilmstrip: boolean;
+  focus: UserFocusT | null;
 }) {
   const { index, total, current, pending, error, lastKeptName, go, act } = queueState;
   const [direction, setDirection] = useState(1);
@@ -817,6 +879,7 @@ function FocusCard({
               total={total}
               pending={pending}
               error={error}
+              focus={focus}
               onPrev={() => advance(-1)}
               onNext={() => advance(1)}
               onSkip={() => void act("skipped")}
@@ -904,11 +967,12 @@ function FocusCard({
               </p>
             ) : null}
 
-            <div className="rounded-md border border-ink/10 bg-surface-raised px-4 py-3">
+            <div className="rounded-lg border border-ink/10 bg-surface-raised px-4 py-3.5 shadow-sm">
               <ProfileDossier
                 person={current}
                 signals={desktopSignals}
                 hideSignals
+                focus={focus}
                 eventKind={eventBrief(current.event_title).kind}
               />
             </div>
@@ -921,7 +985,13 @@ function FocusCard({
   );
 }
 
-export default function FollowUpFocus({ people }: { people: PersonSummaryT[] }) {
+export default function FollowUpFocus({
+  people,
+  focus = null,
+}: {
+  people: PersonSummaryT[];
+  focus?: UserFocusT | null;
+}) {
   const queueState = useReviewQueue(people);
   const ready = useIsClient();
   const layout = useHomeLayout();
@@ -940,7 +1010,7 @@ export default function FollowUpFocus({ people }: { people: PersonSummaryT[] }) 
           : "flex min-h-0 min-w-0 max-w-full flex-col overflow-visible"
       }
     >
-      <FocusCard queueState={queueState} showFilmstrip={!phone} />
+      <FocusCard queueState={queueState} showFilmstrip={!phone} focus={focus} />
     </div>
   );
 }

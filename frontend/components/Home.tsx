@@ -236,7 +236,7 @@ export default function Home({ data }: { data: HomeDataT }) {
               No event ready yet. Open Events when a synced room is available.
             </EmptyRow>
           ) : (
-            <FollowUpFocus people={data.reviewQueue} />
+            <FollowUpFocus people={data.reviewQueue} focus={data.focus} />
           )}
         </div>
 

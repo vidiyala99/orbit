@@ -1,10 +1,12 @@
 import { ApiRequestError, demoLogin } from "./api";
 import { resolveApiBase } from "./apiBase";
-import { isFocusWorthyGuest } from "./avatarCandidates";
-import { focusQueueScore, hasHiringTitle } from "./hiringTitles";
-
 import { getClientToken, setClientToken } from "./auth";
+import { isFocusWorthyGuest } from "./avatarCandidates";
 import { DEMO_OFFLINE_TOKEN } from "./demoFixtures";
+import { focusQueueScore, hasHiringTitle } from "./hiringTitles";
+import type { UserFocusT } from "./personYourAngle";
+
+export type { UserFocusT };
 
 export type EventT = {
   id: string;
@@ -147,6 +149,8 @@ export type HomeDataT = {
   lastSyncedAt: string | null;
   featuredEvent: { id: string; title: string; location: string | null } | null;
   jobTarget: JobTargetT;
+  /** Role + Struggle for Your-angle tips. */
+  focus: UserFocusT;
   lumaConnected: boolean;
 };
 
@@ -160,6 +164,7 @@ const EMPTY_HOME: HomeDataT = {
   lastSyncedAt: null,
   featuredEvent: null,
   jobTarget: { targetRole: null, targetIndustries: null },
+  focus: { role: null, struggle: null },
   lumaConnected: false,
 };
 
@@ -254,7 +259,13 @@ type RawInbox = {
   dm_payload: string | null;
   email_draft: string | null;
 };
-type RawMe = { target_role: string | null; target_industries: string[] | null; luma_connected: boolean };
+type RawMe = {
+  target_role: string | null;
+  target_industries: string[] | null;
+  focus_role?: string | null;
+  focus_struggle?: string | null;
+  luma_connected: boolean;
+};
 
 /** Home Focus only needs a short queue — never block SSR on a full 500+ guest dump. */
 const HOME_REVIEW_LIMIT = 40;
@@ -329,6 +340,10 @@ async function fetchHomeData(token: string): Promise<HomeDataT> {
     targetRole: me.target_role ?? null,
     targetIndustries: me.target_industries ?? null,
   };
+  const focus: UserFocusT = {
+    role: me.focus_role ?? me.target_role ?? null,
+    struggle: me.focus_struggle ?? null,
+  };
   const lumaConnected = me.luma_connected ?? false;
   const now = Date.now();
   const upcoming = events
@@ -363,6 +378,7 @@ async function fetchHomeData(token: string): Promise<HomeDataT> {
     lastSyncedAt,
     featuredEvent,
     jobTarget,
+    focus,
     lumaConnected,
   };
 }

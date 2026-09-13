@@ -15,6 +15,8 @@ class UserOut(BaseModel):
     last_name: str | None
     target_role: str | None
     target_industries: list[str] | None
+    focus_role: str | None = None
+    focus_struggle: str | None = None
     onboarded_at: datetime | None
     # Read off the user row but never sent to the client — only the derived
     # boolean below is.
@@ -61,6 +63,12 @@ class OnboardingRequest(BaseModel):
 class JobTargetRequest(BaseModel):
     target_role: str | None = Field(default=None, max_length=160)
     target_industries: list[str] | None = Field(default=None)
+
+
+class FocusUpdate(BaseModel):
+    focus_role: str | None = Field(default=None, max_length=200)
+    focus_struggle: str | None = Field(default=None, max_length=400)
+
 
 class LoginRequest(BaseModel):
     email: str

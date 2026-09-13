@@ -13,6 +13,7 @@ vi.mock("@/lib/events", () => ({
     lastSyncedAt: null,
     featuredEvent: null,
     jobTarget: { targetRole: null, targetIndustries: null },
+    focus: { role: null, struggle: null },
     lumaConnected: false,
   }),
 }));

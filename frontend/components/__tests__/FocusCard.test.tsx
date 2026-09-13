@@ -145,8 +145,8 @@ describe("FocusCard — Keep/Skip", () => {
     render(<FollowUpFocus people={people} />);
     fireEvent.click(screen.getByRole("button", { name: /expand profile/i }));
     expect(screen.getByText(/backs early infra bets across the bay/i)).toBeInTheDocument();
-    expect(screen.getByText(/alignment/i)).toBeInTheDocument();
-    expect(screen.getByText(/trajectory & recent work/i)).toBeInTheDocument();
+    expect(screen.getByText(/why meet/i)).toBeInTheDocument();
+    expect(screen.getByText(/recent work/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /collapse profile/i })).toHaveAttribute(
       "aria-expanded",
       "true",
