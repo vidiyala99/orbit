@@ -186,7 +186,7 @@ function EventStrip({
               <span className="ml-1 hidden normal-case tracking-normal text-ink3 md:inline">inbox</span>
             </p>
           </div>
-          <h1 className="mt-1.5 truncate font-display text-[1.125rem] font-bold leading-[1.05] tracking-[-0.04em] text-ink sm:text-[1.25rem] md:mt-2 md:text-[1.75rem] md:text-balance md:whitespace-normal">
+          <h1 className="mt-1.5 truncate font-display text-[1.125rem] font-bold leading-[1.05] tracking-[-0.04em] text-ink sm:text-[1.25rem] md:mt-1.5 md:text-[1.375rem] md:text-balance md:whitespace-normal">
             {title}
           </h1>
           {where ? (
@@ -208,8 +208,8 @@ export default function Home({ data }: { data: HomeDataT }) {
     !data.featuredEvent && (data.events.length > 0 || data.catchUp.length > 0);
 
   return (
-    <main className="home-stage phone-focus-shell flex w-full min-w-0 max-w-[100vw] flex-col overflow-hidden md:min-h-full md:max-w-none md:overflow-visible">
-      <div className="mx-auto flex h-full min-h-0 w-full min-w-0 max-w-[1240px] flex-1 flex-col px-4 pt-2 md:h-auto md:justify-start md:px-8 md:pt-4 lg:px-10">
+    <main className="home-stage phone-focus-shell flex w-full min-w-0 max-w-[100vw] flex-col overflow-hidden md:min-h-0 md:max-w-none md:flex-1 md:overflow-y-auto md:overscroll-y-contain">
+      <div className="mx-auto flex h-full min-h-0 w-full min-w-0 max-w-[1240px] flex-1 flex-col px-4 pt-2 md:h-auto md:min-h-0 md:justify-start md:px-8 md:pt-4 md:pb-8 lg:px-10">
         {data.featuredEvent ? (
           <div className="shrink-0">
             <EventStrip
@@ -228,7 +228,7 @@ export default function Home({ data }: { data: HomeDataT }) {
           </header>
         )}
 
-        <div className="mt-2 flex min-h-0 flex-1 flex-col md:mt-4 md:flex-none">
+        <div className="mt-2 flex min-h-0 flex-1 flex-col md:mt-3 md:flex-none md:overflow-visible">
           {showFallback ? (
             <HomeFallback events={data.events} catchUp={data.catchUp} />
           ) : data.reviewQueue.length === 0 && !data.featuredEvent ? (

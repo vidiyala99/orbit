@@ -792,7 +792,7 @@ function FocusCard({
   const desktopSignals = personSignals(current);
 
   return (
-    <div className="flex h-full min-h-0 flex-col md:justify-start">
+    <div className="flex min-h-0 flex-col md:justify-start">
       <AnimatePresence mode="popLayout" initial={false} custom={direction}>
         <motion.div
           key={current.id}
@@ -802,19 +802,19 @@ function FocusCard({
           animate="center"
           exit="exit"
           transition={reduceMotion ? { duration: 0 } : CARD_SPRING}
-          className="grid items-stretch gap-5 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-7"
+          className="grid items-start gap-4 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-6"
         >
-          <div className="relative min-w-0">
+          <div className="relative min-w-0 md:sticky md:top-0">
             <ProfilePhoto
               person={current}
               urgent={urgent}
-              maxH={560}
+              maxH={360}
               initialsLabel={initials(current)}
               signals={desktopSignals}
               socialName={`${current.first_name} ${current.last_name}`.trim()}
             />
           </div>
-          <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-2.5">
             <div>
               <p className="text-fl-xs font-medium text-ink3">
                 {PRIORITY_LABEL[current.priority] ?? current.priority}
@@ -883,9 +883,17 @@ export default function FollowUpFocus({ people }: { people: PersonSummaryT[] }) 
     return <div className="h-full min-h-0 min-w-0 flex-1" aria-busy="true" />;
   }
 
+  const phone = layout === "phone";
+
   return (
-    <div className="flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden">
-      <FocusCard queueState={queueState} showFilmstrip={layout !== "phone"} />
+    <div
+      className={
+        phone
+          ? "flex h-full min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden"
+          : "flex min-h-0 min-w-0 max-w-full flex-col overflow-visible"
+      }
+    >
+      <FocusCard queueState={queueState} showFilmstrip={!phone} />
     </div>
   );
 }
