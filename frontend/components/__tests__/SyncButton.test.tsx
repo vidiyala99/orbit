@@ -31,7 +31,11 @@ describe("SyncButton", () => {
 
   it("calls Luma sync, shows pending state, and refreshes on success", async () => {
     vi.spyOn(auth, "ensureClientToken").mockResolvedValue("token-123");
-    let resolveSync: (value: unknown) => void = () => {};
+    let resolveSync: (value: {
+      events: number;
+      people: number;
+      connected: boolean;
+    }) => void = () => {};
     const syncLuma = vi.spyOn(api, "syncLuma").mockReturnValue(
       new Promise((resolve) => {
         resolveSync = resolve;
