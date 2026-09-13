@@ -104,9 +104,9 @@ describe("Home", () => {
     expect(await screen.findByText(/room reviewed/i)).toBeInTheDocument();
   });
 
-  it("prompts to connect when there is no featured event", () => {
+  it("prompts when there is no featured event", () => {
     render(<Home data={EMPTY} />);
-    expect(screen.getByText(/no upcoming event yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no event ready yet/i)).toBeInTheDocument();
   });
 
   it("shows events and catch-up when there is no Focus room but data exists", () => {
@@ -153,9 +153,10 @@ describe("Home", () => {
     expect(screen.queryByText(/no upcoming event yet/i)).not.toBeInTheDocument();
   });
 
-  it("renders Sync now and review counts", () => {
+  it("renders review and inbox counts without Connect/Sync chrome", () => {
     render(<Home data={DATA} />);
-    expect(screen.getByRole("button", { name: /sync now/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sync now/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /connect luma/i })).not.toBeInTheDocument();
     expect(screen.getByText(/left/i)).toBeInTheDocument();
     expect(screen.getByText(/inbox/i)).toBeInTheDocument();
   });

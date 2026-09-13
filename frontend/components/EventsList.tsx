@@ -93,7 +93,7 @@ export default function EventsList({ events }: { events: EventT[] }) {
           Events
         </h1>
         <p className="mt-3 max-w-xl text-fl-sm text-ink3">
-          No synced events yet. Connect Luma and sync — rooms show up here for catch-up browsing.
+          No synced events yet. Rooms show up here once guests are imported.
         </p>
       </Shell>
     );

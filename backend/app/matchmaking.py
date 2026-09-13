@@ -12,6 +12,7 @@ import math
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from .hiring_titles import hiring_title_boost
 from .llm.gateway import Completion, Embeddings, LLMGateway, Prompt, Task
 from .models import ActionRun, Event, Person, User
 from .signals import SIGNAL_VOCAB, infer_signals, merge_signals, normalize_signals
@@ -76,7 +77,10 @@ def rank_event(db: Session, gateway: LLMGateway, user: User, event: Event) -> Ac
     focus_vec, person_vecs = embedded.vectors[0], embedded.vectors[1:]
 
     scored = sorted(
-        zip(people, (_cosine(focus_vec, v) for v in person_vecs)),
+        (
+            (person, _cosine(focus_vec, vec) + hiring_title_boost(person.role, person.what_talked))
+            for person, vec in zip(people, person_vecs)
+        ),
         key=lambda pair: pair[1],
         reverse=True,
     )

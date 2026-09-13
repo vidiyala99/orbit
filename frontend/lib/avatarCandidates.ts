@@ -1,6 +1,8 @@
 /** Display photo candidates — Luma first, then LinkedIn. Never X (platform
  *  defaults look like real images and wreck the stage). */
 
+import { isTagPileRole } from "./guestHeadline";
+
 export function linkedInSlugFromUrl(url: string | null | undefined): string | null {
   if (!url?.trim()) return null;
   try {
@@ -39,4 +41,18 @@ export function hasFocusSocialProof(input: {
   if (input.avatar_url?.trim()) return true;
   if (input.linkedin_url?.trim()) return true;
   return false;
+}
+
+/**
+ * Focus triage quality: social proof PLUS a usable role/bio.
+ * Tag piles ("Network , AI , cyber security") stay on Attendees, not Top match.
+ */
+export function isFocusWorthyGuest(input: {
+  avatar_url?: string | null;
+  linkedin_url?: string | null;
+  role?: string | null;
+}): boolean {
+  if (!hasFocusSocialProof(input)) return false;
+  if (isTagPileRole(input.role)) return false;
+  return true;
 }

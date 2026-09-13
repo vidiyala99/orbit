@@ -14,6 +14,16 @@ function errorMessage(err: unknown): string {
   return "Something went wrong";
 }
 
+function isBotCheckError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("blocked the automated") ||
+    lower.includes("turnstile") ||
+    lower.includes("additional-verification") ||
+    lower.includes("try continue with luma again")
+  );
+}
+
 /** Connected state — status chip, sync, disconnect. */
 function ConnectedView({ lastSyncedAt }: { lastSyncedAt?: string | null }) {
   const router = useRouter();
@@ -95,16 +105,22 @@ function ConnectedView({ lastSyncedAt }: { lastSyncedAt?: string | null }) {
   );
 }
 
-type Step = "email" | "code";
+type Step = "email" | "code" | "magic";
 
-/** Actintro-only: email → Luma emails a code → enter code here. Never opens luma.com. */
+/** Email code first; magic-link paste when Luma blocks our automated browser. */
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [magicLink, setMagicLink] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function goMagic(reason?: string | null) {
+    setStep("magic");
+    setError(reason ?? null);
+  }
 
   async function handleSendCode() {
     const trimmed = email.trim();
@@ -124,7 +140,14 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
       await startLumaConnect({ email: trimmed }, token);
       setStep("code");
     } catch (err) {
-      setError(errorMessage(err));
+      const msg = errorMessage(err);
+      if (isBotCheckError(msg)) {
+        goMagic(
+          "Luma blocked our automated check. Sign in on Luma in your browser, then paste the email link here.",
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }
@@ -159,8 +182,33 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function handleMagicConnect() {
+    const link = magicLink.trim();
+    if (!link.startsWith("http")) {
+      setError("Paste the full Luma sign-in link from your email");
+      return;
+    }
+    const token = await ensureClientToken();
+    if (!token) {
+      setError("Couldn’t start a session — refresh and try again.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await connectLuma({ magic_link: link }, token);
+      onClose();
+      router.refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const canSend = !busy && email.trim().includes("@");
   const canConnect = !busy && code.trim().length >= 4;
+  const canMagic = !busy && magicLink.trim().startsWith("http");
 
   return (
     <div
@@ -173,10 +221,12 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-h-[min(100dvh,28rem)] w-full max-w-sm overflow-y-auto rounded-t-card bg-surface px-4 py-4 shadow-raised sm:rounded-card sm:px-5 sm:py-5">
+      <div className="max-h-[min(100dvh,32rem)] w-full max-w-sm overflow-y-auto rounded-t-card bg-surface px-4 py-4 shadow-raised sm:rounded-card sm:px-5 sm:py-5">
         <h2 className="font-display text-fl-lg font-semibold text-ink">Connect Luma</h2>
         <p className="mt-0.5 text-fl-xs text-ink3">
-          Stay in Actintro — no Luma tab. Enter your email, then the code from your inbox.
+          {step === "magic"
+            ? "Bypass the bot wall: get a sign-in link from Luma, paste it here once."
+            : "Enter your email for a code. If Luma blocks us, switch to an email link."}
         </p>
 
         {step === "email" ? (
@@ -196,8 +246,18 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
               }}
               className="w-full rounded-field border border-rule bg-ground px-3 py-2 text-fl-sm text-ink placeholder:text-ink3 focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
+            <button
+              type="button"
+              className="text-fl-xs font-semibold text-accent hover:underline"
+              disabled={busy}
+              onClick={() => goMagic(null)}
+            >
+              Use email link instead
+            </button>
           </div>
-        ) : (
+        ) : null}
+
+        {step === "code" ? (
           <div className="mt-3 space-y-2">
             <p className="text-fl-xs text-ink2">
               Code sent to <span className="font-semibold text-ink">{email.trim()}</span>. Check
@@ -232,7 +292,51 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
               Use a different email
             </button>
           </div>
-        )}
+        ) : null}
+
+        {step === "magic" ? (
+          <div className="mt-3 space-y-2">
+            <ol className="list-decimal space-y-1 pl-4 text-fl-xs text-ink2">
+              <li>
+                Open{" "}
+                <a
+                  href="https://luma.com/signin"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-accent underline"
+                >
+                  luma.com/signin
+                </a>{" "}
+                in your browser
+              </li>
+              <li>Request a sign-in email (you pass any bot check there)</li>
+              <li>Copy the link from the email and paste it below — don’t open it first</li>
+            </ol>
+            <label className="block text-fl-xs font-semibold text-ink2" htmlFor="luma-magic">
+              Luma sign-in link
+            </label>
+            <textarea
+              id="luma-magic"
+              rows={3}
+              placeholder="https://luma.com/…"
+              value={magicLink}
+              onChange={(e) => setMagicLink(e.target.value)}
+              className="w-full resize-y rounded-field border border-rule bg-ground px-3 py-2 font-mono text-fl-xs text-ink placeholder:text-ink3 focus:outline-none focus:ring-2 focus:ring-accent/30"
+            />
+            <button
+              type="button"
+              className="text-fl-xs font-semibold text-accent hover:underline"
+              disabled={busy}
+              onClick={() => {
+                setStep("email");
+                setMagicLink("");
+                setError(null);
+              }}
+            >
+              Back to email code
+            </button>
+          </div>
+        ) : null}
 
         {error ? (
           <p
@@ -260,7 +364,8 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
             >
               {busy ? "Sending…" : "Continue with Luma"}
             </button>
-          ) : (
+          ) : null}
+          {step === "code" ? (
             <button
               type="button"
               onClick={handleConnect}
@@ -269,7 +374,17 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
             >
               {busy ? "Connecting…" : "Connect"}
             </button>
-          )}
+          ) : null}
+          {step === "magic" ? (
+            <button
+              type="button"
+              onClick={handleMagicConnect}
+              disabled={!canMagic}
+              className="lift btn-press rounded-md bg-accent px-4 py-2 text-fl-sm font-bold text-white disabled:opacity-70"
+            >
+              {busy ? "Connecting…" : "Connect with link"}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

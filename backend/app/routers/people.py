@@ -13,7 +13,6 @@ from ..db import get_db
 from ..models import Event, Person, SyncRun, User
 from ..people import person_from_create, apply_person_update
 from ..schemas import PeopleImportOut, PersonCreate, PersonOut, PersonTriageUpdate, PersonUpdate
-from ..signals import ensure_person_signals
 
 router = APIRouter(tags=["people"])
 
@@ -28,19 +27,11 @@ def _owned_person(db: Session, user: User, person_id: uuid.UUID) -> Person:
 
 
 def _list_people(db: Session, user: User, event_id: uuid.UUID | None) -> list[Person]:
+    """Guest directory — no per-row signal rewrite (that wedged 500+ room loads)."""
     query = db.query(Person).filter(Person.user_id == user.id)
     if event_id is not None:
         query = query.filter(Person.event_id == event_id)
-    people = query.order_by(Person.name.asc()).all()
-    dirty = False
-    for person in people:
-        before = person.signals
-        ensure_person_signals(person, persist=True)
-        if person.signals != before:
-            dirty = True
-    if dirty:
-        db.commit()
-    return people
+    return query.order_by(Person.name.asc()).all()
 
 
 @router.get("/people", response_model=list[PersonOut])

@@ -31,10 +31,14 @@ describe("Landing page", () => {
     );
   });
 
-  it("leads with the Luma-to-ranked-attendees promise and a waitlist CTA", () => {
+  it("leads with the before-room promise, waitlist CTA, and after-room loop in the sub", () => {
     render(<Page />);
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/who to meet/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /know who to meet before you walk in/i,
+    );
+    expect(screen.getByText(/match before\. act after/i)).toBeInTheDocument();
+    expect(screen.getByText(/note and dm drafts in inbox/i)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /join waitlist/i }).length).toBeGreaterThan(0);
     const demoLinks = screen.getAllByRole("link", { name: /try the demo/i });
     expect(demoLinks.length).toBeGreaterThan(0);
@@ -82,12 +86,14 @@ describe("Landing page", () => {
     expect(within(preview).getAllByText("Sam Okonkwo").length).toBeGreaterThan(0);
   });
 
-  it("explains the loop in the product's own words: guest list, Focus, Inbox", () => {
+  it("explains the full loop: guest list, Focus, Keep, Act from Inbox", () => {
     render(<Page />);
 
     expect(screen.getByRole("heading", { name: /pull the guest list/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /set focus/i })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { name: /keep or skip/i }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /act from inbox/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /the room ends\. the thread should not/i })).toBeInTheDocument();
     expect(screen.getByText(/keep files the person/i)).toBeInTheDocument();
     expect(screen.getByText(/starts with luma/i)).toBeInTheDocument();
   });
@@ -101,9 +107,10 @@ describe("Landing page", () => {
 
   it("ships multiple marketing sections beyond a single hero", () => {
     render(<Page />);
-    expect(screen.getByRole("heading", { name: /guest list in\. focus on/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /guest list in\. focus on\. keep\. then act/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /the room, ordered for you/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /get in before the next lobby/i })).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.getByText(/match before the room\. act after/i)).toBeInTheDocument();
   });
 });

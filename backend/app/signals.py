@@ -30,7 +30,9 @@ _RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "Potentially hiring",
         re.compile(
-            r"\b(hiring|recruit(er|ing)?|talent|open role|looking for (an? )?(engineer|pm|designer|founding))\b",
+            r"\b(hiring|recruit(er|ing)?|talent|open role|"
+            r"looking for (an? )?(engineer|pm|designer|founding)|"
+            r"co-?founders?|founders?|\bceo\b|\bcto\b|\bcoo\b)\b",
             re.I,
         ),
     ),
@@ -49,14 +51,14 @@ _RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "Looking for beta testers",
         re.compile(
-            r"\b(beta|testers|early users|design partners?|mvp|prototype|shipping|deploying)\b",
+            r"\b(beta|testers|early users|mvp|prototype)\b",
             re.I,
         ),
     ),
     (
         "Design partner",
         re.compile(
-            r"\b(design partners?|ai (product|engineer|builder)|ml engineer|eval|agent)\b",
+            r"\b(design[- ]partners?|looking for (a )?design partner|want(s|ed)? (a )?design partner)\b",
             re.I,
         ),
     ),
@@ -139,12 +141,8 @@ def infer_signals(
 
     # Shortlist people should never render with zero situational chips.
     if not found:
-        if priority == "needs_you":
-            found.append("Design partner")
-        elif priority == "high":
+        if priority in ("needs_you", "high") or role:
             found.append("Warm intro")
-        elif role:
-            found.append("Starting new startup")
 
     return found[:limit]
 

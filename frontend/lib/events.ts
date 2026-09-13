@@ -1,6 +1,8 @@
 import { ApiRequestError, demoLogin } from "./api";
 import { resolveApiBase } from "./apiBase";
-import { hasFocusSocialProof } from "./avatarCandidates";
+import { isFocusWorthyGuest } from "./avatarCandidates";
+import { focusQueueScore, hasHiringTitle } from "./hiringTitles";
+
 import { getClientToken, setClientToken } from "./auth";
 import { DEMO_OFFLINE_TOKEN } from "./demoFixtures";
 
@@ -35,11 +37,21 @@ export function isFocusEvent(
   return now <= eventFocusEndsAt(event);
 }
 
-/** Build/demo: prefer the room we actually have guests for (latest sync). */
-export function pickFeaturedEvent(events: EventT[]): EventT | null {
+/**
+ * Prefer the soonest live/upcoming room that already has guests.
+ * Only fall back to latest sync when nothing is in the Focus window
+ * (so tomorrow's Going event beats a stale synced mixer from earlier today).
+ */
+export function pickFeaturedEvent(events: EventT[], now = Date.now()): EventT | null {
   const withGuests = events.filter((e) => (e.guest_count ?? 0) > 0);
   const pool = withGuests.length ? withGuests : events;
   if (!pool.length) return null;
+
+  const inFocus = pool
+    .filter((e) => isFocusEvent(e, now))
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  if (inFocus.length) return inFocus[0];
+
   return [...pool].sort((a, b) => {
     const as = a.synced_at ? new Date(a.synced_at).getTime() : 0;
     const bs = b.synced_at ? new Date(b.synced_at).getTime() : 0;
@@ -244,18 +256,37 @@ type RawInbox = {
 };
 type RawMe = { target_role: string | null; target_industries: string[] | null; luma_connected: boolean };
 
+/** Home Focus only needs a short queue — never block SSR on a full 500+ guest dump. */
+const HOME_REVIEW_LIMIT = 40;
+
 async function fetchReviewQueue(
   token: string,
   event: EventT,
 ): Promise<PersonSummaryT[]> {
-  const guests = (await fetchJson(`/events/${event.id}/guests`, token)) as RawGuest[];
+  let guests: RawGuest[] = [];
+  try {
+    guests = (await fetchJson(`/events/${event.id}/guests`, token)) as RawGuest[];
+  } catch {
+    return [];
+  }
   const upcoming = new Date(event.starts_at).getTime() > Date.now();
   const undecided = guests
-    .filter((g) => !g.triage_state && (g.priority === "needs_you" || g.priority === "high"))
-    .filter((g) =>
-      hasFocusSocialProof({ avatar_url: g.avatar_url, linkedin_url: g.linkedin_url }),
+    .filter((g) => !g.triage_state)
+    .filter(
+      (g) =>
+        g.priority === "needs_you" ||
+        g.priority === "high" ||
+        hasHiringTitle(g.role),
     )
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    .filter((g) =>
+      isFocusWorthyGuest({
+        avatar_url: g.avatar_url,
+        linkedin_url: g.linkedin_url,
+        role: g.role,
+      }),
+    )
+    .sort((a, b) => focusQueueScore(b) - focusQueueScore(a))
+    .slice(0, HOME_REVIEW_LIMIT);
 
   return undecided.map((p) => {
     const split = splitName(p.name);

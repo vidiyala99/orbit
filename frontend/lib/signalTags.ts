@@ -22,7 +22,7 @@ const RULES: { tag: SignalTag; re: RegExp }[] = [
   { tag: "Posted about hiring", re: /posted.{0,40}(hir|open role|we'?re hiring)/i },
   {
     tag: "Potentially hiring",
-    re: /\b(hiring|recruit(er|ing)?|talent|open role|looking for (an? )?(engineer|pm|designer|founding))\b/i,
+    re: /\b(hiring|recruit(er|ing)?|talent|open role|looking for (an? )?(engineer|pm|designer|founding)|co-?founders?|founders?|\bceo\b|\bcto\b|\bcoo\b)\b/i,
   },
   { tag: "Just got funded", re: /\b(funded|raised|series [a-c]\b|seed round|closed fund|writing .+ checks)\b/i },
   {
@@ -31,11 +31,11 @@ const RULES: { tag: SignalTag; re: RegExp }[] = [
   },
   {
     tag: "Looking for beta testers",
-    re: /\b(beta|testers|early users|design partners?|mvp|prototype|shipping|deploying)\b/i,
+    re: /\b(beta|testers|early users|mvp|prototype)\b/i,
   },
   {
     tag: "Design partner",
-    re: /\b(design partners?|ai (product|engineer|builder)|ml engineer|eval|agent)\b/i,
+    re: /\b(design[- ]partners?|looking for (a )?design partner|want(s|ed)? (a )?design partner)\b/i,
   },
   {
     tag: "Potential customer",
@@ -97,14 +97,15 @@ function inferFromText(
   }
   // Shortlist people should never render with zero chips.
   if (!found.length) {
-    if (priority === "needs_you") found.push("Design partner");
-    else if (priority === "high") found.push("Warm intro");
-    else if (role) found.push("Starting new startup");
+    if (priority === "needs_you" || priority === "high") found.push("Warm intro");
+    else if (role) found.push("Warm intro");
   }
   return found.slice(0, limit);
 }
 
-/** Merge stored API signals with heuristics so live Luma guests still get chips. */
+/** Merge stored API signals with heuristics so live Luma guests still get chips.
+ *  Weak filler-only chips are re-inferred so tightened rules (e.g. no blanket
+ *  Design partner) win without rewriting every guest row on list. */
 export function resolveSignalTags(
   input: {
     signals?: string[] | null;
@@ -116,7 +117,11 @@ export function resolveSignalTags(
   limit = 3,
 ): SignalTag[] {
   const stored = normalize(input.signals, limit);
-  if (stored.length) return stored;
+  const weakOnly =
+    stored.length > 0 &&
+    stored.every((s) => s === "Design partner" || s === "Warm intro" || s === "Starting new startup");
+  if (stored.length && !weakOnly) return stored;
   const blob = [input.role, input.why].filter(Boolean).join(" ");
-  return inferFromText(blob, input.intent, input.priority, input.role, limit);
+  const inferred = inferFromText(blob, input.intent, input.priority, input.role, limit);
+  return inferred.length ? inferred : stored;
 }

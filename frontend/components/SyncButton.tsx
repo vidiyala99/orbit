@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { syncEvent } from "@/lib/api";
-import { getClientToken } from "@/lib/auth";
+import { syncLuma } from "@/lib/api";
+import { ensureClientToken } from "@/lib/auth";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "never";
@@ -17,31 +17,48 @@ function timeAgo(iso: string | null): string {
 }
 
 function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : "Could not sync";
+  if (err instanceof Error) {
+    const msg = err.message;
+    if (msg && msg !== "[object Object]") return msg;
+  }
+  return "Could not sync";
 }
 
 export default function SyncButton({
   lastSyncedAt,
-  eventId,
+  lumaConnected = false,
   stack = false,
 }: {
   lastSyncedAt: string | null;
-  eventId: string | null;
+  /** When false, Sync now explains Connect Luma instead of a silent local stamp. */
+  lumaConnected?: boolean;
   /** Vertical layout for the narrow workbench rail. */
   stack?: boolean;
 }) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function onClick() {
-    if (!eventId) return;
-    const token = getClientToken();
-    if (!token) return;
+    if (!lumaConnected) {
+      setResult(null);
+      setError("Connect Luma first — Sync pulls live Going events and guests.");
+      return;
+    }
     setSyncing(true);
     setError(null);
+    setResult(null);
     try {
-      await syncEvent(eventId, token);
+      const token = await ensureClientToken();
+      if (!token) {
+        setError("Couldn’t start a session — refresh and try again.");
+        return;
+      }
+      const out = await syncLuma(token);
+      const evtLabel = out.events === 1 ? "1 event" : `${out.events} events`;
+      const pplLabel = out.people === 1 ? "1 guest" : `${out.people} guests`;
+      setResult(`Synced ${evtLabel}, ${pplLabel}`);
       router.refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -58,11 +75,12 @@ export default function SyncButton({
       <button
         type="button"
         onClick={onClick}
-        disabled={syncing || !eventId}
+        disabled={syncing}
         className={`lift btn-press rounded-md border border-ink/15 bg-transparent px-3.5 py-2 text-fl-sm font-medium text-ink2 hover:bg-ink/[0.05] disabled:opacity-70 ${stack ? "w-full" : ""}`}
       >
         {syncing ? "Syncing…" : "Sync now"}
       </button>
+      {result ? <p className="text-fl-xs text-ink2">{result}</p> : null}
       {error ? (
         <p role="alert" className="text-fl-xs font-semibold text-accent">
           {error}

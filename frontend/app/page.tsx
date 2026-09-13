@@ -9,7 +9,7 @@ import { APP_HOME } from "@/lib/routes";
 
 const H1 = "Know who to meet before you walk in.";
 const SUB =
-  "Actintro ranks real event guests against your Focus, helps you Keep who matters, and gets you ready to act from Inbox. Starts with Luma; built for any room with a guest list.";
+  "Actintro ranks real event guests against your Focus, helps you Keep who matters, and puts note and DM drafts in Inbox so the hallway ask does not die on the ride home. Starts with Luma; built for any room with a guest list.";
 
 const STEPS = [
   {
@@ -25,19 +25,24 @@ const STEPS = [
   {
     n: "03",
     title: "Keep or skip",
-    body: "One person at a time on Home. Keep stashes them in Inbox with note and DM drafts ready.",
+    body: "One person at a time on Home. Keep stashes them for later. Skip clears the stage.",
+  },
+  {
+    n: "04",
+    title: "Act from Inbox",
+    body: "Open a kept person when you are ready. Note and DM drafts are waiting so follow-up is a send, not a blank box.",
   },
 ];
 
 const INBOX_ROWS = [
   {
     name: "Alex Chen",
-    why: "Agent infra overlap. Draft the hallway ask before doors open.",
+    why: "Agent infra overlap. Draft ready for the LinkedIn DM after the mixer.",
     src: "https://i.pravatar.cc/80?img=12",
   },
   {
     name: "Priya Raman",
-    why: "Hiring an ML engineer. You just shipped a ranking stack.",
+    why: "Hiring an ML engineer. Note draft so the hallway intro becomes a real next step.",
     src: "https://i.pravatar.cc/80?img=47",
   },
 ];
@@ -59,7 +64,7 @@ export default function Page() {
               style={{ animation: "riseIn 500ms cubic-bezier(0.16,1,0.3,1) both" }}
               className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-accent"
             >
-              For the hour before the room
+              Match before. Act after.
             </p>
             <h1
               style={{ animation: "riseIn 550ms cubic-bezier(0.16,1,0.3,1) 40ms both" }}
@@ -106,24 +111,26 @@ export default function Page() {
         <div className="absolute inset-0 flex items-center">
           <Reveal as="div" className="mx-auto max-w-3xl px-6">
             <p className="text-center font-display text-fl-2xl font-medium leading-snug text-ground text-balance">
-              Two hundred names on a guest list will not tell you which fifteen are worth your evening.
+              Two hundred names will not tell you who matters. Most hallway intros still die on the
+              ride home.
             </p>
           </Reveal>
         </div>
       </section>
 
-      {/* 3. Numbered horizontal steps */}
+      {/* 3. Numbered loop steps */}
       <section className="border-t border-rule bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
           <Reveal>
             <h2 className="max-w-xl font-display text-fl-2xl font-bold tracking-[-0.03em] text-ink text-balance">
-              Guest list in. Focus on. Inbox when it matters.
+              Guest list in. Focus on. Keep. Then act.
             </h2>
             <p className="mt-3 max-w-lg text-fl-md font-medium text-ink2">
-              Three moves. No CRM theater. Luma first; the same loop for any event list we wire next.
+              One loop for the hour before the room and the follow-up after. No CRM theater. Luma
+              first; the same path for any event list we wire next.
             </p>
           </Reveal>
-          <ol className="mt-12 grid gap-8 md:grid-cols-3 md:gap-6">
+          <ol className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
             {STEPS.map((step, i) => (
               <Reveal key={step.n} delayMs={80 * i} as="li" className="relative border-t border-rule pt-5">
                 <p className="font-mono text-fl-sm font-bold tabular-nums text-accent">{step.n}</p>
@@ -194,16 +201,19 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 5. Ink spotlight: Keep sends to Inbox */}
+      {/* 5. Ink spotlight: Inbox is the after */}
       <section className="border-t border-rule bg-ink px-5 py-16 text-ground lg:px-8 lg:py-24">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl">
-            <h2 className="font-display text-fl-2xl font-bold tracking-[-0.03em] text-balance">
-              Keep or skip. Inbox holds the ones that matter.
+            <p className="font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-accent">
+              Inbox
+            </p>
+            <h2 className="mt-3 font-display text-fl-2xl font-bold tracking-[-0.03em] text-balance">
+              The room ends. The thread should not.
             </h2>
             <p className="mt-4 max-w-xl text-fl-md font-medium leading-relaxed text-ground/75">
-              Skip clears the stage. Keep files the person with context so note and DM drafts are
-              ready when you introduce yourself.
+              Keep files the person with context. Inbox holds note and DM drafts so you can act on
+              the intro when you get home, not stare at a blank composer.
             </p>
           </Reveal>
           <Reveal delayMs={140} className="mt-10 grid gap-4 md:grid-cols-2">
@@ -282,7 +292,7 @@ export default function Page() {
             Actintro
           </Link>
           <p className="text-fl-sm font-medium text-ink3">
-            Personal matchmaking for event nights.{" "}
+            Match before the room. Act after.{" "}
             <a href="mailto:hello@actintro.com" className="text-ink2 hover:text-accent">
               hello@actintro.com
             </a>

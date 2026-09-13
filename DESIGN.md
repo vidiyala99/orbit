@@ -207,4 +207,5 @@ Minimal: Keep/Skip `scale 0.97`; person swap opacity ≤180ms. No page-load chor
 | 2026-09-12 | Waitlist via Next /api/waitlist → Formspree (no Postgres revive) | Marketing-only; keep local Operate separate |
 | 2026-09-12 | Landing overhaul: Focus-stage mock + 8 sections; dusk ground deepen | Fake ranked-list mock ≠ Home; actintro.com needs real Persuade depth |
 | 2026-09-12 | Coral accent kept; slate field pushed deeper (`#BFC9D6`) | User OK to play with brand colors; Keep stays loud |
+| 2026-09-12 | Landing narrative = match before + act after (4 steps → Inbox drafts) | Full loop; not pre-event ranking alone |
 

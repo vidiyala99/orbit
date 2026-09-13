@@ -19,6 +19,13 @@ function clipAtWord(s: string, max: number): string {
   return `${base.replace(/[.,;:\-–—]+$/, "")}…`;
 }
 
+/** Luma interest piles like "Network , AI , cyber security" — not a real role. */
+export function isTagPileRole(role: string | null | undefined): boolean {
+  const raw = cleanSpaces(role ?? "");
+  if (!raw) return false;
+  return (raw.match(/,/g) ?? []).length >= 2 && raw.length < 120 && !/[.!?]/.test(raw);
+}
+
 /**
  * List-view headline from a Luma role/bio.
  * - Comma tag piles → "A · B · C"
@@ -30,7 +37,7 @@ export function guestHeadline(role: string | null | undefined): string | null {
   if (!raw) return null;
 
   // Tag pile: "Network , AI , cyber security"
-  if ((raw.match(/,/g) ?? []).length >= 2 && raw.length < 120 && !/[.!?]/.test(raw)) {
+  if (isTagPileRole(raw)) {
     const tags = raw
       .split(",")
       .map((t) => t.trim())

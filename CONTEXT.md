@@ -35,12 +35,20 @@ What Orbit knows about a person from their public footprint (LinkedIn, X, person
 _Avoid_: Bio (just the Luma one-liner), lead, prospect
 
 **Enrichment**:
-Turning an Attendee's handles into a Profile: agents fetch their public pages and extract structure. Nobody signs up, so there's no cold start.
-_Avoid_: Scraping (the mechanism, not the concept), lookup
+Turning an Attendee's handles into a Profile: agents fetch public pages and extract structure (what they’re building, funding, accolades, pain, how to approach). Runs **after Keep** for depth — not mass-scrape of Everyone. Focus cards stay honest (“not researched yet”) until then.
+_Avoid_: Scraping (the mechanism, not the concept), lookup, rank
 
 **Focus**:
-What the signed-in user is trying to get out of an event, in two parts: what they do (**Role**) and what they're struggling with right now (**Struggle**). It's inferred from the user's own Profile and confirmed or edited in one tap, never typed into an onboarding form. Domain-agnostic: a Role can be "backend engineer", "seed investor", or "rock climber". On **Home**, Focus triage runs for the **active room** (most recently synced Event that still has guests).
+What the signed-in user is trying to get out of an event, in two parts: what they do (**Role**) and what they're struggling with right now (**Struggle**). It's inferred from the user's own Profile and confirmed or edited in one tap, never typed into an onboarding form. Domain-agnostic: a Role can be "backend engineer", "seed investor", or "rock climber". On **Home**, Focus triage runs for the **active room** (soonest in-window Event with guests). Rank is a blend of Focus fit, **Situation**, and **Evidence** — never title alone.
 _Avoid_: Job Target, target role/industries (old, job-hunt-specific naming)
+
+**Situation**:
+Why an Attendee might matter for this user's Focus, beyond topic overlap. Primary Situations for a job-seeking Focus: **hiring power** (can open a seat, even without saying “hiring”), **peer / recently hired** (path advice), and **warm intro / referral**. Others (builder peer, investor/advisor, buyer) turn on when Struggle implies them. Until Enrichment, light heuristics may propose Situations; they never override strong Focus fit or weak Evidence by themselves.
+_Avoid_: Signal chip (UI label), title (one weak prior)
+
+**Evidence**:
+How grounded a match is: Luma bio alone is thin; a researched **Profile** is strong. Noise (tag-pile bios, no social proof) stays off Focus.
+_Avoid_: Confidence score (implementation), scrape success
 
 **Role**:
 One half of Focus: what the user does, in free text.
@@ -49,3 +57,15 @@ _Avoid_: Job title (too narrow, since a Role isn't necessarily employment)
 **Struggle**:
 The other half of Focus: what the user hopes to solve by attending, always stated in relation to their Role.
 _Avoid_: Pain point, goal (too vague)
+
+**Connect**:
+The one-time (or rare) handshake that links the signed-in user's Luma account to Actintro. The user only provides email and a 6-digit code — never cookies, magic links, or a babysat browser.
+_Avoid_: Sync (pulling events), login (Actintro auth), OAuth
+
+**Luma session**:
+The durable credential Actintro keeps after Connect, equivalent to staying logged in on Edge across restarts. One session covers the whole Luma account: Sync discovers Going **Events** (including new RSVPs) until Luma invalidates the session. Re-Connect is only when that happens — soft prompt for another code, not a dead empty Home.
+_Avoid_: Per-event login, API key (optional alternate path), browser profile (implementation)
+
+**Sync**:
+Refreshing Going Events and Attendee lists using the stored **Luma session**. Happens quietly when the user opens Home or Events if the last Sync is stale; not a button users should babysit.
+_Avoid_: Connect, scrape, import

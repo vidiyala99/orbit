@@ -118,7 +118,7 @@ describe("AttendeesList", () => {
   it("Everyone paginates the room instead of one endless list", async () => {
     const many: AttendeesDataT = {
       ...DATA,
-      attendees: Array.from({ length: 25 }, (_, i) => ({
+      attendees: Array.from({ length: 30 }, (_, i) => ({
         id: `g-${i}`,
         name: `Guest ${String(i + 1).padStart(2, "0")}`,
         role: `Role ${i + 1}`,
@@ -134,11 +134,11 @@ describe("AttendeesList", () => {
     render(<AttendeesList data={many} />);
     fireEvent.click(screen.getByRole("button", { name: /everyone/i }));
     await waitFor(() => expect(screen.getByText("Guest 01")).toBeInTheDocument());
-    expect(screen.getByText("Guest 10")).toBeInTheDocument();
-    expect(screen.queryByText("Guest 11")).not.toBeInTheDocument();
+    expect(screen.getByText("Guest 24")).toBeInTheDocument();
+    expect(screen.queryByText("Guest 25")).not.toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: /guest pages/i })).toHaveTextContent("1");
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
-    await waitFor(() => expect(screen.getByText("Guest 11")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Guest 25")).toBeInTheDocument());
     expect(screen.queryByText("Guest 01")).not.toBeInTheDocument();
   });
 

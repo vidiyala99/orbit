@@ -282,7 +282,10 @@ export async function syncLuma(token: string): Promise<{ events: number; people:
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error((await res.json()).detail ?? "Could not sync Luma");
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}));
+    throw new Error(formatApiDetail(payload.detail, "Could not sync Luma"));
+  }
   return res.json();
 }
 

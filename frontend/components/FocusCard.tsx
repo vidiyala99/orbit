@@ -116,9 +116,15 @@ function ProfileDossier({
   eventKind?: EventKind | null;
 }) {
   const why = person.why?.trim() || "";
-  const context = (person.what_talked || person.note || person.note_payload || "").trim();
+  const role = person.role?.trim() || "";
+  const rawContext = (person.what_talked || person.note || person.note_payload || "").trim();
+  const sameText = (a: string, b: string) =>
+    a.replace(/\s+/g, " ").trim().toLowerCase() === b.replace(/\s+/g, " ").trim().toLowerCase();
+  // Role already sits under the name; Context often repeats the same Luma bio.
+  const context =
+    rawContext && !sameText(rawContext, role) && !sameText(rawContext, why) ? rawContext : "";
   const evidence = (person.evidence ?? []).filter((e) => e?.quote?.trim());
-  const hasResearch = evidence.length > 0 || Boolean(context && context !== why);
+  const hasResearch = evidence.length > 0 || Boolean(context);
   const approach = personApproachTip({
     signals: person.signals,
     role: person.role,
@@ -131,13 +137,12 @@ function ProfileDossier({
   return (
     <div className="flex flex-col gap-3.5">
       <DossierSection label="How to approach">{approach}</DossierSection>
-      {why ? <DossierSection label="Alignment">{why}</DossierSection> : null}
+      {why && !sameText(why, role) ? <DossierSection label="Alignment">{why}</DossierSection> : null}
       {!hideSignals && signals.length ? (
         <DossierSection label="Signals">
           <SignalChips tags={signals} />
         </DossierSection>
       ) : null}
-      {person.role ? <DossierSection label="Role">{person.role}</DossierSection> : null}
       {person.event_title ? <DossierSection label="Event">{person.event_title}</DossierSection> : null}
       {context ? <DossierSection label="Context">{context}</DossierSection> : null}
       {evidence.length ? (

@@ -4,19 +4,18 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import { displayInitials } from "@/lib/displayAvatar";
 import { eventBrief } from "@/lib/eventBrief";
 import type { AttendeeListItemT, AttendeesDataT } from "@/lib/events";
 import { APP_EVENTS, personPath } from "@/lib/routes";
 import { guestHeadline } from "@/lib/guestHeadline";
+import { focusQueueScore, hasHiringTitle } from "@/lib/hiringTitles";
 
 type Mode = "best" | "everyone" | "kept" | "skipped";
 
 const BEST_CAP = 15;
-const PAGE_SIZE = 10;
-const STAGGER_CAP = 10;
-const EASE = [0.23, 1, 0.32, 1] as const;
+const PAGE_SIZE = 24;
 
 function matchesQuery(person: AttendeeListItemT, q: string): boolean {
   if (!q) return true;
@@ -39,13 +38,16 @@ function byMatchScore(a: AttendeeListItemT, b: AttendeeListItemT): number {
 
 function pickBestMatches(ranked: AttendeeListItemT[]): AttendeeListItemT[] {
   const priorityPool = ranked.filter(
-    (p) => p.priority === "needs_you" || p.priority === "high",
+    (p) =>
+      p.priority === "needs_you" ||
+      p.priority === "high" ||
+      hasHiringTitle(p.role),
   );
   const pool =
-    priorityPool.length > 0 && priorityPool.length <= BEST_CAP * 2
+    priorityPool.length > 0 && priorityPool.length <= BEST_CAP * 3
       ? priorityPool
       : ranked;
-  return pool.slice(0, BEST_CAP);
+  return [...pool].sort((a, b) => focusQueueScore(b) - focusQueueScore(a)).slice(0, BEST_CAP);
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -55,14 +57,14 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
       <img
         src={url}
         alt=""
-        className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-ink/15"
+        className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-ink/15"
       />
     );
   }
   return (
     <span
       aria-hidden="true"
-      className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-fl-xs font-semibold text-ink2"
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-[0.6875rem] font-semibold text-ink2"
     >
       {displayInitials(name)}
     </span>
@@ -73,15 +75,11 @@ function Row({
   person,
   rank,
   mode,
-  index,
-  reduceMotion,
   eventId,
 }: {
   person: AttendeeListItemT;
   rank: number;
   mode: Mode;
-  index: number;
-  reduceMotion: boolean;
   eventId: string | null;
 }) {
   const kept = person.triage_state === "kept";
@@ -94,31 +92,24 @@ function Row({
 
   const headline = guestHeadline(person.role);
 
-  const delay = reduceMotion || index >= STAGGER_CAP ? 0 : index * 0.025;
-
   return (
-    <motion.li
-      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay, ease: EASE }}
-    >
+    <li className="min-w-0">
       <Link
         href={href}
-        className="btn-press flex items-start gap-3 rounded-md border border-ink/10 bg-surface-raised px-3 py-3.5 shadow-sm transition-colors hover:border-ink/20"
+        className="btn-press flex min-w-0 items-start gap-3 rounded-md border border-ink/10 bg-surface-raised px-3 py-3 shadow-sm transition-colors hover:border-ink/20"
       >
-        {bestMode ? (
-          <span className="w-7 shrink-0 pt-1.5 text-center font-mono text-[0.75rem] font-semibold tabular text-accent">
-            {rank}
-          </span>
-        ) : (
-          <span className="w-7 shrink-0 pt-1.5 text-center font-mono text-[0.6875rem] tabular text-ink3">
-            {rank}
-          </span>
-        )}
+        <span
+          className={[
+            "w-6 shrink-0 pt-1 text-center font-mono text-[0.6875rem] tabular",
+            bestMode ? "font-semibold text-accent" : "text-ink3",
+          ].join(" ")}
+        >
+          {rank}
+        </span>
         <Avatar name={person.name} url={person.avatar_url} />
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-display text-[1.125rem] font-bold leading-tight tracking-[-0.035em] text-ink">
+        <span className="min-w-0 flex-1 overflow-hidden">
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="truncate font-display text-[1.0625rem] font-bold leading-tight tracking-[-0.035em] text-ink">
               {person.name}
             </span>
             {kept ? (
@@ -134,17 +125,15 @@ function Row({
           </span>
 
           {headline ? (
-            <span className="mt-1.5 line-clamp-2 block text-[0.9375rem] font-semibold leading-snug tracking-[-0.015em] text-ink">
+            <span className="mt-1 line-clamp-2 block text-[0.875rem] font-semibold leading-snug tracking-[-0.015em] text-ink">
               {headline}
             </span>
           ) : (
-            <span className="mt-1.5 block text-[0.8125rem] font-medium text-ink3">
-              Role not on Luma
-            </span>
+            <span className="mt-1 block text-[0.8125rem] font-medium text-ink3">Role not on Luma</span>
           )}
 
           {showWhy ? (
-            <span className="mt-2.5 block border-t border-ink/[0.06] pt-2.5">
+            <span className="mt-2 block border-t border-ink/[0.06] pt-2">
               <span className="font-mono text-[0.625rem] font-semibold uppercase tracking-[0.08em] text-ink3">
                 Why meet
               </span>
@@ -154,11 +143,11 @@ function Row({
             </span>
           ) : null}
         </span>
-        <span aria-hidden="true" className="shrink-0 self-center text-fl-base font-semibold text-ink3">
+        <span aria-hidden="true" className="shrink-0 self-center text-fl-sm font-semibold text-ink3">
           →
         </span>
       </Link>
-    </motion.li>
+    </li>
   );
 }
 
@@ -300,8 +289,8 @@ export default function AttendeesList({ data }: { data: AttendeesDataT }) {
 
   if (!data.event) {
     return (
-      <main className="home-stage min-h-full w-full min-w-0 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1240px] px-4 py-8 md:px-8 lg:px-10">
+      <main className="home-stage min-h-0 w-full min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-[720px] px-4 py-8 md:px-8">
           <Link
             href={APP_EVENTS}
             className="btn-press inline-flex min-h-11 items-center text-fl-sm font-semibold text-accent hover:underline"
@@ -324,112 +313,105 @@ export default function AttendeesList({ data }: { data: AttendeesDataT }) {
     mode === "best"
       ? "Focus shortlist — strongest matches first"
       : mode === "everyone"
-        ? paginated
-          ? `${PAGE_SIZE} per page — search or step through`
-          : "Full room — search anyone"
+        ? `${PAGE_SIZE} per page — search or step through`
         : mode === "kept"
           ? "People you kept"
           : "People you skipped";
 
   return (
-    <main className="home-stage min-h-full w-full min-w-0 overflow-y-auto overscroll-y-contain">
-      <div className="mx-auto w-full max-w-[1240px] px-4 pb-10 pt-3 md:px-8 md:pt-5 lg:px-10">
-      <Link
-        href={APP_EVENTS}
-        className="btn-press inline-flex min-h-11 items-center text-fl-sm font-semibold text-accent hover:underline"
-      >
-        ← Events
-      </Link>
+    <main className="home-stage flex min-h-0 w-full min-w-0 max-w-[100vw] flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain">
+      <div className="mx-auto w-full min-w-0 max-w-[720px] px-4 pb-10 pt-3 md:max-w-[880px] md:px-8 md:pt-5">
+        <Link
+          href={APP_EVENTS}
+          className="btn-press inline-flex min-h-11 items-center text-fl-sm font-semibold text-accent hover:underline"
+        >
+          ← Events
+        </Link>
 
-      <header className="mt-2 min-w-0 rounded-md border border-ink/10 bg-surface-raised px-4 py-3.5 shadow-sm md:px-5 md:py-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="rounded-md bg-accent px-2 py-0.5 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-white">
-            {brief.kind}
-          </span>
-          <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-ink3">
-            <span className="tabular text-ink">{data.attendees.length}</span>
-            <span className="ml-1 normal-case tracking-normal">in the room</span>
+        <header className="mt-2 min-w-0 rounded-md border border-ink/10 bg-surface-raised px-4 py-3.5 shadow-sm">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="rounded-md bg-accent px-2 py-0.5 font-mono text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-white">
+              {brief.kind}
+            </span>
+            <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-ink3">
+              <span className="tabular text-ink">{data.attendees.length}</span>
+              <span className="ml-1 normal-case tracking-normal">in the room</span>
+            </p>
+          </div>
+          <h1 className="mt-1.5 truncate font-display text-[1.25rem] font-bold leading-[1.05] tracking-[-0.04em] text-ink md:text-[1.5rem]">
+            {data.event.title}
+          </h1>
+          {data.event.location ? (
+            <p className="mt-1 truncate text-[0.8125rem] font-medium text-ink2">
+              {data.event.location}
+            </p>
+          ) : null}
+        </header>
+
+        <div className="sticky top-0 z-10 mt-4 rounded-md border border-ink/10 bg-surface-raised/95 px-3 py-3 shadow-sm backdrop-blur-md">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Guest view">
+            <ModeChip
+              active={mode === "best"}
+              label="Best"
+              count={counts.best}
+              accent
+              onClick={() => setMode("best")}
+            />
+            <ModeChip
+              active={mode === "everyone"}
+              label="Everyone"
+              count={counts.everyone}
+              onClick={() => setMode("everyone")}
+            />
+            <ModeChip
+              active={mode === "kept"}
+              label="Kept"
+              count={counts.kept}
+              onClick={() => setMode("kept")}
+            />
+            <ModeChip
+              active={mode === "skipped"}
+              label="Skipped"
+              count={counts.skipped}
+              onClick={() => setMode("skipped")}
+            />
+          </div>
+
+          <label className="sr-only" htmlFor="attendee-search">
+            Search attendees
+          </label>
+          <input
+            id="attendee-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={
+              mode === "best" ? "Filter best matches…" : "Search name, role, company…"
+            }
+            autoComplete="off"
+            className="field mt-3 w-full rounded-md border border-rule bg-surface px-3.5 py-2.5 text-fl-base text-ink transition-shadow placeholder:text-ink3 focus:border-ink/25 focus:shadow-sm"
+          />
+          <p className="mt-2 text-fl-xs text-ink3">
+            <span className="font-mono tabular text-ink2">{filtered.length}</span>
+            {query.trim() ? " matching" : ""} · {modeHint}
           </p>
         </div>
-        <h1 className="mt-1.5 truncate font-display text-[1.25rem] font-bold leading-[1.05] tracking-[-0.04em] text-ink md:text-[1.75rem]">
-          {data.event.title}
-        </h1>
-        {data.event.location ? (
-          <p className="mt-1 truncate text-[0.8125rem] font-medium text-ink2 md:text-[0.9375rem]">
-            {data.event.location}
+
+        {filtered.length === 0 ? (
+          <p className="mt-8 text-fl-sm text-ink3">
+            {query.trim()
+              ? `No one matches “${query.trim()}”. Try another name or company.`
+              : mode === "best"
+                ? "No strong matches yet — open Everyone or sync again."
+                : "No guests in this view."}
           </p>
-        ) : null}
-      </header>
-
-      <div className="sticky top-0 z-10 -mx-4 mt-4 border-b border-ink/[0.06] bg-ground/95 px-4 py-3 backdrop-blur-md md:-mx-8 md:px-8 lg:-mx-10 lg:px-10">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Guest view">
-          <ModeChip
-            active={mode === "best"}
-            label="Best"
-            count={counts.best}
-            accent
-            onClick={() => setMode("best")}
-          />
-          <ModeChip
-            active={mode === "everyone"}
-            label="Everyone"
-            count={counts.everyone}
-            onClick={() => setMode("everyone")}
-          />
-          <ModeChip
-            active={mode === "kept"}
-            label="Kept"
-            count={counts.kept}
-            onClick={() => setMode("kept")}
-          />
-          <ModeChip
-            active={mode === "skipped"}
-            label="Skipped"
-            count={counts.skipped}
-            onClick={() => setMode("skipped")}
-          />
-        </div>
-
-        <label className="sr-only" htmlFor="attendee-search">
-          Search attendees
-        </label>
-        <input
-          id="attendee-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={
-            mode === "best" ? "Filter best matches…" : "Search name, role, company…"
-          }
-          autoComplete="off"
-          className="field mt-3 w-full max-w-2xl rounded-md border border-rule bg-surface-raised px-3.5 py-3 text-fl-base text-ink transition-shadow placeholder:text-ink3 focus:border-ink/25 focus:shadow-sm"
-        />
-        <p className="mt-2 text-fl-xs text-ink3">
-          <span className="font-mono tabular text-ink2">{filtered.length}</span>
-          {query.trim() ? " matching" : ""} · {modeHint}
-        </p>
-      </div>
-
-      {filtered.length === 0 ? (
-        <p className="mt-8 text-fl-sm text-ink3">
-          {query.trim()
-            ? `No one matches “${query.trim()}”. Try another name or company.`
-            : mode === "best"
-              ? "No strong matches yet — open Everyone or sync again."
-              : "No guests in this view."}
-        </p>
-      ) : (
-        <>
-          <AnimatePresence initial={false}>
-            <motion.ul
-              key={`${mode}-${page}-${query}`}
+        ) : (
+          <>
+            <ul
               className={[
-                "mt-4 grid grid-cols-1 gap-2.5",
-                mode === "best" ? "md:grid-cols-2 md:gap-3" : "md:grid-cols-2 lg:grid-cols-3 md:gap-3",
+                "mt-4 grid grid-cols-1 gap-2",
+                mode === "best" ? "sm:grid-cols-2 sm:gap-2.5" : "",
               ].join(" ")}
-              initial={reduceMotion ? false : { opacity: 0.72 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.14, ease: EASE }}
             >
               {visible.map((person, i) => (
                 <Row
@@ -437,23 +419,20 @@ export default function AttendeesList({ data }: { data: AttendeesDataT }) {
                   person={person}
                   rank={rankOffset + i + 1}
                   mode={mode}
-                  index={i}
-                  reduceMotion={reduceMotion}
                   eventId={data.event?.id ?? null}
                 />
               ))}
-            </motion.ul>
-          </AnimatePresence>
-          {paginated ? (
-            <PageNav
-              page={page}
-              pageCount={pageCount}
-              onPrev={() => goPage(Math.max(1, page - 1))}
-              onNext={() => goPage(Math.min(pageCount, page + 1))}
-            />
-          ) : null}
-        </>
-      )}
+            </ul>
+            {paginated ? (
+              <PageNav
+                page={page}
+                pageCount={pageCount}
+                onPrev={() => goPage(Math.max(1, page - 1))}
+                onNext={() => goPage(Math.min(pageCount, page + 1))}
+              />
+            ) : null}
+          </>
+        )}
       </div>
     </main>
   );

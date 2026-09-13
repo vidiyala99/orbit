@@ -18,5 +18,23 @@ def test_infer_hiring_and_funded():
     assert "Just got funded" in tags or "Investor" in tags
 
 
+def test_ai_engineer_is_not_design_partner():
+    tags = infer_signals(
+        role="AI Engineer @ Bright Pattern",
+        relevance="As an AI Engineer at Bright Pattern, Sasha may offer relevant engineering insights.",
+        priority="needs_you",
+    )
+    assert "Design partner" not in tags
+
+
+def test_explicit_design_partner_still_matches():
+    tags = infer_signals(
+        role="Founder",
+        relevance="Looking for a design partner who runs evals",
+        priority="needs_you",
+    )
+    assert "Design partner" in tags
+
+
 def test_merge_prefers_first_group():
     assert merge_signals(["Warm intro"], ["Investor", "Warm intro"]) == ["Warm intro", "Investor"]

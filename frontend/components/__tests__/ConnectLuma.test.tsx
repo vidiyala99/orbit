@@ -21,13 +21,13 @@ describe("ConnectLuma — not connected", () => {
     expect(screen.getByRole("button", { name: /connect luma/i })).toBeInTheDocument();
   });
 
-  it("opens Actintro-only email step — no Luma redirect CTA", () => {
+  it("opens email step with magic-link fallback", () => {
     render(<ConnectLuma lumaConnected={false} />);
     fireEvent.click(screen.getByRole("button", { name: /connect luma/i }));
     expect(screen.getByRole("dialog", { name: /connect luma/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/luma email/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /continue with luma/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /open luma/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /use email link instead/i })).toBeInTheDocument();
   });
 
   it("sends code then shows code step", async () => {
@@ -96,6 +96,44 @@ describe("ConnectLuma — not connected", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn’t send/i);
     expect(screen.getByLabelText(/luma email/i)).toBeInTheDocument();
+  });
+
+  it("switches to magic-link step when Luma blocks the automated check", async () => {
+    vi.spyOn(auth, "ensureClientToken").mockResolvedValue("tok-abc");
+    vi.spyOn(api, "startLumaConnect").mockRejectedValue(
+      new Error("Luma blocked the automated browser check. Try Continue with Luma again in a few seconds."),
+    );
+
+    render(<ConnectLuma lumaConnected={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /connect luma/i }));
+    fireEvent.change(screen.getByLabelText(/luma email/i), {
+      target: { value: "me@luma.test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /continue with luma/i }));
+
+    expect(await screen.findByLabelText(/luma sign-in link/i)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/blocked our automated check/i);
+  });
+
+  it("connects with a pasted magic link", async () => {
+    vi.spyOn(auth, "ensureClientToken").mockResolvedValue("tok-abc");
+    const connectSpy = vi.spyOn(api, "connectLuma").mockResolvedValue({} as never);
+
+    render(<ConnectLuma lumaConnected={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /connect luma/i }));
+    fireEvent.click(screen.getByRole("button", { name: /use email link instead/i }));
+    fireEvent.change(screen.getByLabelText(/luma sign-in link/i), {
+      target: { value: "https://luma.com/signin/magic?token=abc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /connect with link/i }));
+
+    await waitFor(() =>
+      expect(connectSpy).toHaveBeenCalledWith(
+        { magic_link: "https://luma.com/signin/magic?token=abc" },
+        "tok-abc",
+      ),
+    );
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it("closes the modal when Cancel is clicked", () => {

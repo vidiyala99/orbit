@@ -240,7 +240,7 @@ async def _browser_code_request(email: str) -> dict:
             "status": "error",
             "detail": (
                 "Luma blocked the automated browser check. "
-                "Try Continue with Luma again in a few seconds."
+                "Use the email-link fallback in Connect Luma instead of retrying."
             ),
         }
     return {

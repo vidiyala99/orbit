@@ -5,8 +5,6 @@ import type { EventT, HomeDataT, InboxPersonT } from "@/lib/events";
 import { eventFocusEndsAt } from "@/lib/events";
 import { eventBrief } from "@/lib/eventBrief";
 import { APP_EVENTS, APP_INBOX, eventPath, personPath } from "@/lib/routes";
-import SyncButton from "./SyncButton";
-import ConnectLuma from "./ConnectLuma";
 import FollowUpFocus from "./FocusCard";
 
 function formatDay(iso: string): { num: string; mon: string } {
@@ -156,20 +154,12 @@ function EventStrip({
   featuredMeta,
   toReview,
   inbox,
-  synced: _synced,
-  lumaConnected,
-  lastSyncedAt,
-  eventId,
 }: {
   title: string;
   location?: string | null;
   featuredMeta?: string;
   toReview: number;
   inbox: number;
-  synced: number;
-  lumaConnected: boolean;
-  lastSyncedAt: string | null;
-  eventId: string | null;
 }) {
   const brief = eventBrief(title, location);
   const where = location?.trim() || null;
@@ -203,17 +193,12 @@ function EventStrip({
             <p className="mt-1 truncate text-[0.8125rem] font-medium text-ink2">{where}</p>
           ) : null}
         </div>
-        <div className="hidden shrink-0 flex-wrap items-center gap-2 md:flex">
-          <ConnectLuma lumaConnected={lumaConnected} lastSyncedAt={lastSyncedAt} />
-          <SyncButton lastSyncedAt={lastSyncedAt} eventId={eventId} />
-        </div>
       </div>
     </header>
   );
 }
 
 export default function Home({ data }: { data: HomeDataT }) {
-  const guestsSynced = data.events.reduce((sum, e) => sum + (e.guest_count ?? 0), 0);
   const featured = data.featuredEvent
     ? data.events.find((e) => e.id === data.featuredEvent!.id) ??
       data.upcoming.find((e) => e.id === data.featuredEvent!.id)
@@ -233,10 +218,6 @@ export default function Home({ data }: { data: HomeDataT }) {
               featuredMeta={featuredMeta}
               toReview={data.reviewQueue.length}
               inbox={data.inboxCount}
-              synced={guestsSynced}
-              lumaConnected={data.lumaConnected}
-              lastSyncedAt={data.lastSyncedAt}
-              eventId={data.featuredEvent.id}
             />
           </div>
         ) : (
@@ -244,10 +225,6 @@ export default function Home({ data }: { data: HomeDataT }) {
             <h1 className="font-display text-fl-xl font-bold tracking-[-0.04em] text-ink">
               {showFallback ? "Where to next" : "Good to see you."}
             </h1>
-            <div className="flex flex-wrap items-center gap-2">
-              <ConnectLuma lumaConnected={data.lumaConnected} lastSyncedAt={data.lastSyncedAt} />
-              <SyncButton lastSyncedAt={data.lastSyncedAt} eventId={null} />
-            </div>
           </header>
         )}
 
@@ -256,7 +233,7 @@ export default function Home({ data }: { data: HomeDataT }) {
             <HomeFallback events={data.events} catchUp={data.catchUp} />
           ) : data.reviewQueue.length === 0 && !data.featuredEvent ? (
             <EmptyRow>
-              No upcoming event yet. Connect Luma and sync — your next Going event shows up here.
+              No event ready yet. Open Events when a synced room is available.
             </EmptyRow>
           ) : (
             <FollowUpFocus people={data.reviewQueue} />

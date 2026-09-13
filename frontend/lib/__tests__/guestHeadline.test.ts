@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { guestHeadline } from "../guestHeadline";
+import { guestHeadline, isTagPileRole } from "../guestHeadline";
+
+describe("isTagPileRole", () => {
+  it("flags Network/AI/cyber piles", () => {
+    expect(isTagPileRole("Network , AI , cyber security")).toBe(true);
+  });
+
+  it("keeps real titles", () => {
+    expect(isTagPileRole("AI Engineer @ Bright Pattern")).toBe(false);
+  });
+});
 
 describe("guestHeadline", () => {
   it("returns null for empty", () => {
