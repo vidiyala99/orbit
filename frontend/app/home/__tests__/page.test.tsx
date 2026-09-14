@@ -19,13 +19,14 @@ vi.mock("@/lib/events", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/home",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
 }));
 
 describe("HomePage", () => {
-  it("renders without a signed-in session", async () => {
+  it("renders the empty room without a signed-in session", async () => {
     render(await HomePage());
-    expect(screen.getByText(/good to see you/i)).toBeInTheDocument();
-    expect(screen.getByText(/no upcoming event yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no event to review yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /go to events/i })).toHaveAttribute("href", "/events");
   });
 });

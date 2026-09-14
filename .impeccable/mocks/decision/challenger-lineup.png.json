@@ -1,0 +1,6 @@
+{
+  "prompt": "High-fidelity mobile app UI comp, one portrait iPhone screen, looks like a real shipped app screenshot, not a poster print. App name Actintro. Screen: Home for tonight's event, designed in the grammar of a music festival lineup poster where billing size equals rank. Regions top to bottom: (1) iOS status bar. (2) Header in small type: 'AI Security Hackathon', 'Sat 10:00', 'Ranked by your Focus'. (3) Dominant lineup block on a saturated electric blue #1F2BFF ground in white ink, one condensed sans face at many sizes: top headliner row 'MAYA OKAFOR' spanning the full width, next row 'DEV PATEL' and 'LENA VOSS' slightly smaller, then rows of smaller names, then a dense justified block of many small names at the foot; one mid-size name 'JONAH REYES' inverted as the selected state. (4) A bottom sheet peeking up in white for the selected headliner: small candid photo, 'Maya Okafor, Head of Security Engineering, Northwind Labs', Why line 'Hiring security engineers. Fits your Focus. From LinkedIn.', a 'Skip' text button and a 'Keep' solid button in acid yellow #F2FF5C with black text. (5) Bottom tab bar: Home, Events, Inbox. No imagery in the lineup, typography does the hierarchy, no gradients, all text sharp and readable.",
+  "createdAt": "2026-09-14T01:19:07.725Z",
+  "tool": "impeccable generate-image",
+  "model": "gpt-image-2"
+}

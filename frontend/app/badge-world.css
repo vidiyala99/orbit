@@ -1,0 +1,426 @@
+/* Badge world: the redesigned Home (approved comps .impeccable/mocks/home-badge-c*.png).
+   Scoped under .badge-world so pages not yet redesigned keep their look. */
+
+.badge-world {
+  --bw-ground: #f2f3f5;
+  --bw-ground-raised: #ffffff;
+  --bw-ink: #111214;
+  --bw-ink-muted: #4b5059;
+  --bw-rule: #c9ccd2;
+  --bw-card: #f2efeb;
+  --bw-card-edge: #d9d4d0;
+  --bw-card-shadow: 0 1px 2px rgba(17, 18, 20, 0.06), 0 10px 28px rgba(17, 18, 20, 0.08);
+  --bw-card-ink: #0b0b0c;
+  --bw-card-muted: #4a4745;
+  --bw-card-rule: #cfc8c4;
+  --bw-lanyard: #0b3bcd;
+  --bw-keep: #f8376b;
+  --bw-keep-press: #de2a5a;
+  --bw-keep-ink: #0a0a0b;
+  --bw-tier: #68b86a;
+  --bw-tier-ink: #0a0a09;
+  --bw-tier-high: #c9e5c9;
+  --bw-tier-later: #e4e1de;
+  --bw-skip-mark: #6d727a;
+  --bw-focus: #0b3bcd;
+  --bw-skeleton: #e2e4e8;
+  --bw-name-xl: 4.6rem;
+  --bw-name-lg: 3.9rem;
+  --bw-name-md: 3.2rem;
+  --bw-name-sm: 2.6rem;
+  --bw-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  color-scheme: light;
+  background: var(--bw-ground);
+  color: var(--bw-ink);
+  font-family: var(--font-badge-ui), system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  .badge-world {
+    --bw-ground: #0a0b0b;
+    --bw-ground-raised: #17181a;
+    --bw-ink: #f3f3f4;
+    --bw-ink-muted: #a8abb1;
+    --bw-rule: #3a3c40;
+    --bw-card: #f2efeb;
+    --bw-card-edge: #f2efeb;
+    --bw-card-shadow: none;
+    --bw-card-ink: #0a0a0a;
+    --bw-card-muted: #474645;
+    --bw-card-rule: #c2c0c1;
+    --bw-skip-mark: #9ea2a9;
+    --bw-focus: #8fa8ff;
+    --bw-skeleton: #1d1f22;
+    color-scheme: dark;
+  }
+}
+
+.badge-world :where(a, button):focus-visible {
+  outline: 2px solid var(--bw-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Page and column. The page paints the full width; the column holds the content. */
+.bw-page { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; background: var(--bw-ground); }
+/* Fixed to the screen height (not just a minimum) so the badge shrinks to fit and the dock stays above the tabs. */
+.bw-home {
+  display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; max-width: 34rem; margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Header */
+.bw-header { padding: 0.5rem 1rem 0.25rem; }
+.bw-header-top { display: flex; align-items: center; justify-content: space-between; min-height: 2rem; }
+.bw-wordmark { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; color: var(--bw-ink); text-decoration: none; }
+.bw-header-main { margin-top: 0.15rem; }
+.bw-event-title { font-size: 1.45rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.bw-header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2.25rem; }
+.bw-event-time { font-size: 0.95rem; color: var(--bw-ink-muted); font-variant-numeric: tabular-nums; }
+/* Phones browse by swipe or by tapping a rail badge (the ringed badge shows position); counter + chevrons are wide-screen only. */
+.bw-counter { display: none; align-items: center; gap: 0.15rem; flex-shrink: 0; }
+.bw-counter-box {
+  display: inline-flex; align-items: center; gap: 0.3rem; min-height: 1.9rem; padding: 0 0.55rem;
+  border: 1px solid var(--bw-rule); border-radius: 0.45rem; font-size: 0.95rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.bw-counter-of { font-weight: 400; color: var(--bw-ink-muted); }
+.bw-chevron {
+  display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.45rem; color: var(--bw-ink);
+  transition: background-color 150ms ease, transform 120ms var(--bw-ease);
+}
+.bw-chevron:disabled { color: var(--bw-rule); }
+.bw-chevron:active:not(:disabled) { transform: scale(0.94); }
+.bw-topnav { display: none; }
+
+/* Rail: the queue on one lanyard */
+.bw-rail { margin-top: 0.35rem; }
+.bw-lanyard {
+  height: 0.8rem; background-color: var(--bw-lanyard); background-image: url("/badge/lanyard-strap.png");
+  background-repeat: repeat-x; background-size: auto 100%;
+}
+.bw-rail-list { gap: 0.15rem; padding: 0.05rem 0.75rem 0.35rem; scrollbar-width: none; scroll-snap-type: x proximity; }
+.bw-rail-list::-webkit-scrollbar { display: none; }
+/* Centered when the queue fits, left-anchored and fully scrollable when it overflows. */
+.bw-rail-list > :first-child { margin-left: auto; }
+.bw-rail-list > :last-child { margin-right: auto; }
+.bw-mini-clip { width: 0.28rem; height: 0.7rem; border-radius: 1px; background: linear-gradient(180deg, #e7e7e7, #8f8f8f); }
+/* ~30px pitch so the whole queue is visible: above WCAG 2.2 AA's 24px, with swipe, chevrons and arrow keys as alternatives. */
+.bw-mini-hit { display: grid; place-items: start center; min-width: 1.9rem; height: 2.35rem; scroll-snap-align: center; }
+.bw-mini-badge {
+  position: relative; display: block; width: 1.5rem; height: 1.95rem; padding: 0.14rem; border-radius: 0.25rem;
+  background: var(--bw-card);
+}
+.bw-mini-current::after {
+  content: ""; position: absolute; inset: -0.3rem -0.5rem; border: 2px solid var(--bw-ink); border-radius: 9999px;
+}
+.bw-punch {
+  position: absolute; left: -0.3rem; bottom: -0.3rem; display: grid; place-items: center; width: 0.95rem; height: 0.95rem;
+  border-radius: 9999px;
+}
+.bw-punch-kept { background: var(--bw-keep); color: var(--bw-keep-ink); }
+.bw-punch-skipped { background: var(--bw-skip-mark); color: var(--bw-ground); }
+
+/* Stage: the badge grows to fill the screen; the dock stays within thumb reach. */
+.bw-main { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; padding: 0.35rem 1rem 0.9rem; }
+.bw-card-stage { flex: 1; display: flex; flex-direction: column; min-height: 13rem; max-height: 36rem; }
+.bw-clip {
+  align-self: center; flex-shrink: 0; width: 1rem; height: 1.25rem; margin-bottom: -0.5rem; z-index: 1; border-radius: 0.2rem;
+  background: linear-gradient(90deg, #8c8c8c, #e9e9e9 45%, #b5b5b5); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+.bw-card {
+  position: relative; flex: 1; display: flex; min-height: 0; perspective: 1400px; touch-action: pan-y;
+  -webkit-user-select: none; user-select: none; cursor: pointer;
+}
+.bw-card-inner { position: relative; flex: 1; display: grid; grid-template-rows: minmax(0, 1fr); transform-style: preserve-3d; transition: transform 260ms var(--bw-ease); }
+.bw-card-inner > * { grid-area: 1 / 1; min-height: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* The front sets the badge's size; the back overlays it and scrolls inside. */
+.bw-card-inner > :last-child { position: absolute; inset: 0; transform: rotateY(180deg); }
+.bw-flipped .bw-card-inner { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .bw-card-inner { transition: none; transform: none !important; }
+  .bw-card-inner > :last-child { transform: none; }
+  .bw-card-inner > * { transition: opacity 180ms ease; }
+  .bw-card:not(.bw-flipped) .bw-card-inner > :last-child,
+  .bw-flipped .bw-card-inner > :first-child { opacity: 0; }
+}
+
+.bw-face {
+  position: relative; height: 100%; overflow: hidden; border-radius: 0.85rem; background: var(--bw-card);
+  color: var(--bw-card-ink); border: 1px solid var(--bw-card-edge); box-shadow: var(--bw-card-shadow);
+}
+.bw-slot {
+  position: absolute; top: 0.55rem; left: 50%; width: 2.4rem; height: 0.42rem; transform: translateX(-50%);
+  border-radius: 9999px; background: #0a0a0a;
+}
+
+.bw-front { display: flex; flex-direction: column; padding: 1.35rem 0 0.9rem 0.8rem; }
+/* Explicit shrinkable row: content never grows the badge past the space the screen gives it. */
+.bw-front-grid { flex: 1; display: grid; grid-template-columns: 42% 1fr; grid-template-rows: minmax(0, 1fr); gap: 0.75rem; min-height: 0; }
+.bw-photo-frame { height: 100%; min-height: 0; overflow: hidden; border-radius: 0.45rem; background: var(--bw-card-rule); }
+.bw-photo { width: 100%; height: 100%; object-fit: cover; }
+/* Top clearance so the card's punched slot never sits on the first name's cap height. */
+.bw-identity { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding-top: 0.55rem; }
+/* Container query width so the first name can size itself to the column (see firstNameSize). */
+.bw-identity-text { flex: 1; min-height: 0; overflow: hidden; padding-right: 0.8rem; container-type: inline-size; }
+.bw-first-name {
+  font-family: var(--font-badge-name), "Arial Narrow", sans-serif; font-weight: 900; line-height: 0.86;
+  text-transform: uppercase; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden;
+}
+.bw-last-name { margin-top: 0.45rem; font-size: 1.4rem; line-height: 1.1; font-weight: 700; overflow-wrap: anywhere; }
+.bw-name-rule { margin: 0.55rem 0 0.45rem; border: 0; border-top: 1px solid var(--bw-card-rule); }
+.bw-job-title {
+  font-size: 0.85rem; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bw-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+.bw-chip {
+  display: inline-flex; align-items: center; gap: 0.25rem; max-width: 100%; padding: 0.15rem 0.45rem;
+  border: 1px solid var(--bw-card-ink); border-radius: 0.3rem; font-size: 0.72rem; font-weight: 700; line-height: 1.25;
+  color: var(--bw-card-ink); overflow-wrap: anywhere;
+}
+.bw-chip-company { background: var(--bw-card-ink); color: var(--bw-card); }
+.bw-label { font-size: 0.8rem; font-weight: 700; color: var(--bw-card-ink); }
+.bw-front-lead { margin-top: 0.7rem; }
+/* The opener is the most useful line on the card: shown in full, never clamped (short phones excepted). */
+.bw-front-approach { margin-top: 0.15rem; font-size: 0.88rem; line-height: 1.38; }
+.bw-front-why { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; margin-top: 0.6rem; }
+.bw-front-why-text {
+  /* Phones: Why moves to the flip side so the opener has room; tablets show it here. */
+  margin-top: 0.5rem; font-size: 0.82rem; line-height: 1.38; display: none; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bw-front-pending { color: var(--bw-card-muted); }
+/* Company bullets and Recent sit on the back on phones (never clipped); tablets have room to show them on the front. */
+.bw-front-company, .bw-front-recent { display: none; margin-top: 0.7rem; padding-top: 0.55rem; border-top: 1px solid var(--bw-card-rule); }
+.bw-front-recent p:last-child { font-size: 0.95rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.bw-front-company-name { font-size: 0.82rem; font-weight: 700; }
+.bw-front-company ul { margin-top: 0.2rem; padding-left: 0.95rem; list-style: disc; font-size: 0.8rem; line-height: 1.38; }
+.bw-front-note {
+  margin-top: 0.7rem; padding-top: 0.55rem; border-top: 1px dashed var(--bw-card-rule);
+  font-size: 0.78rem; line-height: 1.35; color: var(--bw-card-muted);
+}
+.bw-back-pending { color: var(--bw-card-muted); }
+.bw-tier {
+  display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0 -0.35rem; padding: 0.3rem 0.8rem;
+  font-size: 0.82rem; font-weight: 700; color: var(--bw-tier-ink); background: var(--bw-tier);
+}
+.bw-tier-high { background: var(--bw-tier-high); }
+.bw-tier-later { background: var(--bw-tier-later); }
+
+.bw-back { display: flex; flex-direction: column; padding: 1.35rem 0.9rem 0.85rem; }
+.bw-back-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.bw-back-identity { display: flex; align-items: center; gap: 0.65rem; padding-bottom: 0.1rem; }
+.bw-back-photo { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 0.35rem; }
+.bw-back-name { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+.bw-back-title { font-size: 0.82rem; line-height: 1.3; color: var(--bw-card-muted); }
+.bw-back-section { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px solid var(--bw-card-rule); }
+.bw-back-heading { font-size: 0.95rem; font-weight: 700; }
+.bw-back-text { margin-top: 0.2rem; font-size: 0.85rem; line-height: 1.4; }
+.bw-back-bullets { margin-top: 0.2rem; padding-left: 1rem; list-style: disc; font-size: 0.85rem; line-height: 1.45; }
+.bw-clamp-4 { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.bw-clamp-5 { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.bw-back-approach { font-weight: 700; }
+.bw-back-subheading { margin-top: 0.55rem; }
+/* Phones: the front carries the opener, so the flip side leads with Why. Tablets: the front carries both.
+   Desktop: the right card carries both. Unresearched people always get both on the back. */
+.bw-back:not(.bw-back-thin) .bw-back-approach-section { display: none; }
+.bw-back-footer { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
+.bw-full-profile {
+  align-self: center; display: inline-flex; align-items: center; min-height: 2.75rem; font-size: 0.9rem; font-weight: 700;
+  color: var(--bw-card-ink); text-decoration: underline;
+}
+
+.bw-source-tag {
+  display: inline-flex; align-items: center; flex-shrink: 0; padding: 0.15rem 0.45rem; border-radius: 0.3rem;
+  font-size: 0.72rem; font-weight: 700; color: var(--bw-ink); background: var(--bw-ground-raised); border: 1px solid var(--bw-rule);
+}
+.bw-face .bw-source-tag { color: var(--bw-card-muted); background: transparent; border-color: var(--bw-card-rule); }
+.bw-back .bw-source-tag { margin-top: 0.35rem; }
+
+/* Dock: LinkedIn/X, then the decision */
+.bw-dock { display: flex; flex-direction: column; gap: 0.5rem; }
+.bw-socials { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 0.5rem; }
+.bw-social {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem;
+  border: 1.5px solid var(--bw-ink); border-radius: 0.5rem; font-size: 0.95rem; font-weight: 700; color: var(--bw-ink);
+  text-decoration: none; transition: transform 120ms var(--bw-ease), background-color 150ms ease;
+}
+.bw-social:active { transform: scale(0.97); }
+.bw-social svg { width: 1.15rem; height: 1.15rem; }
+.bw-back .bw-social { color: var(--bw-card-ink); border-color: var(--bw-card-ink); }
+.bw-li-glyph { display: inline-flex; }
+/* The shared LinkedIn glyph hardcodes an off-white "in"; knock it out to the surface behind the button. */
+.bw-li-glyph path { fill: var(--bw-ground); }
+.bw-back .bw-li-glyph path { fill: var(--bw-card); }
+
+.bw-actions { display: grid; grid-template-columns: 2fr 3fr; gap: 0.5rem; }
+.bw-skip, .bw-keep {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; min-height: 3rem;
+  border-radius: 0.5rem; font-size: 1.15rem; font-weight: 700; transition: transform 120ms var(--bw-ease), background-color 150ms ease;
+}
+.bw-skip { color: var(--bw-ink); background: transparent; border: 1.5px solid var(--bw-ink); }
+.bw-keep { color: var(--bw-keep-ink); background: var(--bw-keep); }
+.bw-skip:active, .bw-keep:active { transform: scale(0.97); }
+.bw-kbd {
+  display: none; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 0.3rem; border-radius: 0.3rem;
+  border: 1px solid currentColor; font-family: inherit; font-size: 0.75rem; font-weight: 700; opacity: 0.75;
+}
+.bw-hint { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .bw-chevron:hover:not(:disabled) { background: var(--bw-ground-raised); }
+  .bw-keep:hover { background: var(--bw-keep-press); }
+  .bw-skip:hover, .bw-social:hover { background: var(--bw-ground-raised); }
+}
+
+/* Toast */
+.bw-toast-region {
+  position: fixed; left: 0; right: 0; bottom: calc(4.4rem + env(safe-area-inset-bottom)); z-index: 30;
+  display: flex; justify-content: center; padding: 0 1rem; pointer-events: none;
+}
+.bw-toast {
+  display: flex; align-items: center; gap: 0.75rem; max-width: 26rem; padding: 0.55rem 0.55rem 0.55rem 0.9rem;
+  border-radius: 0.6rem; background: var(--bw-ink); color: var(--bw-ground); font-size: 0.9rem; pointer-events: auto;
+}
+.bw-toast-undo { min-height: 2.5rem; padding: 0 0.75rem; border-radius: 0.4rem; font-weight: 700; color: var(--bw-keep); }
+
+/* Bottom tabs (phone) */
+.bw-tabbar-wrap { position: sticky; bottom: 0; z-index: 10; }
+.bw-tabbar {
+  display: grid; grid-template-columns: repeat(3, 1fr); padding: 0.2rem 0 calc(0.25rem + env(safe-area-inset-bottom));
+  background: var(--bw-ground-raised); border-top: 1px solid var(--bw-rule);
+}
+.bw-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; min-height: 2.9rem;
+  font-size: 0.8rem; font-weight: 700; color: var(--bw-ink-muted); text-decoration: none;
+}
+.bw-tab[aria-current="page"] { color: var(--bw-keep); }
+
+/* Empty, loading, fallbacks */
+.bw-empty { margin: 2rem auto; max-width: 22rem; text-align: center; }
+.bw-empty-title { font-size: 1.25rem; font-weight: 700; }
+.bw-empty-text { margin-top: 0.4rem; line-height: 1.45; color: var(--bw-ink-muted); }
+.bw-empty-link {
+  display: inline-flex; align-items: center; min-height: 2.75rem; margin-top: 1rem; padding: 0 1rem;
+  border: 1.5px solid var(--bw-ink); border-radius: 0.5rem; font-weight: 700; color: var(--bw-ink); text-decoration: none;
+}
+/* Avatar: initials underneath, photo on top once it has loaded. */
+.bw-avatar { position: relative; display: block; overflow: hidden; }
+.bw-avatar-fallback {
+  position: absolute; inset: 0; display: grid; place-items: center; background: var(--bw-card-rule); color: var(--bw-card-ink);
+  font-family: var(--font-badge-name), "Arial Narrow", sans-serif; font-weight: 800; font-size: 0.75rem; line-height: 1;
+}
+.bw-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.bw-photo .bw-avatar-fallback { font-size: 3rem; }
+.bw-skeleton { background: var(--bw-skeleton); }
+.bw-skeleton-card { background: var(--bw-skeleton); border-color: var(--bw-skeleton); }
+@media (prefers-reduced-motion: no-preference) {
+  .bw-skeleton { animation: bwPulse 1.4s ease-in-out infinite; }
+}
+@keyframes bwPulse { 50% { opacity: 0.55; } }
+
+/* Short phones: shrink the name and header so the dock stays above the tabs. */
+@media (max-width: 899px) and (max-height: 720px) {
+  .badge-world { --bw-name-xl: 3.6rem; --bw-name-lg: 3.1rem; --bw-name-md: 2.6rem; --bw-name-sm: 2.2rem; }
+  .bw-header { padding-top: 0.25rem; }
+  .bw-header-top { min-height: 1.6rem; }
+  .bw-event-title { font-size: 1.25rem; }
+  .bw-header-row { min-height: 2rem; }
+  .bw-rail { margin-top: 0.2rem; }
+  .bw-main { gap: 0.5rem; padding-bottom: 0.5rem; }
+  .bw-dock { gap: 0.4rem; }
+  .bw-front { padding-top: 1.1rem; padding-bottom: 0.7rem; }
+  .bw-last-name { margin-top: 0.3rem; font-size: 1.2rem; }
+  /* Short phones: a clamped opener on the front (with ellipsis); the flip side shows it in full. */
+  .bw-front-approach { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .badge-world .bw-back .bw-back-approach-section { display: block; }
+  .bw-chips { margin-top: 0.35rem; }
+  .bw-front-company { display: none; }
+}
+
+/* Tablets: the phone layout, roomier. */
+@media (min-width: 600px) and (max-width: 899px) {
+  .badge-world { --bw-name-xl: 5.8rem; --bw-name-lg: 4.9rem; --bw-name-md: 4rem; --bw-name-sm: 3.3rem; }
+  .bw-home { max-width: 42rem; }
+  .bw-card-stage { max-height: none; }
+  .bw-tabbar-wrap { margin-inline: calc(50% - 50vw); }
+  .bw-front-why-text { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+  .bw-back:not(.bw-back-thin) .bw-back-why-section { display: none; }
+  .bw-last-name { font-size: 1.75rem; }
+  .bw-job-title { font-size: 1rem; }
+  .bw-front-why-text { font-size: 0.98rem; -webkit-line-clamp: 7; }
+  .bw-front-company, .bw-front-recent { display: block; }
+  .bw-front-company-name { font-size: 0.98rem; }
+  .bw-front-company ul { font-size: 0.95rem; }
+}
+
+/* Wide screens: the open badge holder. Front and back side by side, no flip. */
+@media (min-width: 900px) {
+  .badge-world { --bw-name-xl: 6.5rem; --bw-name-lg: 5.4rem; --bw-name-md: 4.4rem; --bw-name-sm: 3.6rem; }
+  .bw-home { height: auto; min-height: 100%; max-width: 78rem; padding: 0 2rem; }
+  .bw-header { padding: 0.9rem 0 0.4rem; }
+  .bw-header-top { padding-bottom: 0.6rem; border-bottom: 1px solid var(--bw-rule); }
+  .bw-wordmark { font-size: 1.2rem; }
+  .bw-topnav { display: flex; gap: 0.25rem; }
+  .bw-topnav .bw-tab { flex-direction: row; min-height: 2.75rem; padding: 0 0.9rem; font-size: 1rem; }
+  .bw-topnav .bw-tab[aria-current="page"] { color: var(--bw-ink); box-shadow: inset 0 -2px 0 var(--bw-keep); }
+  .bw-header-main { display: grid; grid-template-columns: 1fr auto; column-gap: 1.5rem; align-items: center; margin-top: 0.9rem; }
+  .bw-header-row { display: contents; }
+  .bw-event-title { grid-column: 1; grid-row: 1; font-size: 1.9rem; }
+  .bw-event-time { grid-column: 1; grid-row: 2; font-size: 1.05rem; }
+  .bw-counter { display: flex; grid-column: 2; grid-row: 1 / span 2; }
+  .bw-counter-box { min-height: 2.5rem; font-size: 1.1rem; padding: 0 0.8rem; }
+  .bw-chevron { width: 2.75rem; height: 2.75rem; }
+
+  .bw-rail { margin: 0.8rem -2rem 0; }
+  .bw-lanyard { height: 1.1rem; }
+  .bw-rail-list { gap: 0.5rem; padding: 0.05rem 2rem 0.5rem; }
+  .bw-mini-clip { height: 0.95rem; }
+  .bw-mini-hit { min-width: 3rem; height: 3.5rem; }
+  .bw-mini-badge { width: 2.3rem; height: 3rem; padding: 0.2rem; }
+
+  .bw-main { align-items: center; gap: 1rem; padding: 1.4rem 0 2rem; }
+  .bw-card-stage { flex: 0 0 auto; width: 100%; max-width: 68rem; min-height: 0; max-height: none; }
+  .bw-clip { display: none; }
+  .bw-card { cursor: default; }
+  .bw-card-inner {
+    grid-template-columns: 1fr 1fr; column-gap: 1.5rem; height: clamp(22rem, calc(100dvh - 24rem), 34rem);
+    transform: none !important; transition: none;
+  }
+  .bw-card-inner > * { grid-area: auto; opacity: 1 !important; backface-visibility: visible; -webkit-backface-visibility: visible; }
+  .bw-card-inner > :last-child { position: relative; inset: auto; transform: none; }
+
+  .bw-front { padding: 1.6rem 0 1.2rem 1.1rem; }
+  .bw-front-grid { grid-template-columns: 45% 1fr; gap: 1.1rem; }
+  .bw-identity-text { padding-right: 1.1rem; }
+  .bw-last-name { font-size: 1.8rem; }
+  .bw-job-title { font-size: 1.05rem; }
+  /* Front carries Why; the back carries company and About, so nothing repeats side by side. */
+  .bw-front-why-text { font-size: 1.02rem; -webkit-line-clamp: 6; }
+  /* Desktop: the left card is identity only; the right card carries every piece of context. */
+  .bw-front-lead, .bw-front-why-text, .bw-front-recent, .bw-front-company { display: none; }
+  .bw-chip { font-size: 0.8rem; }
+  .badge-world .bw-back .bw-back-approach-section,
+  .badge-world .bw-back .bw-back-why-section { display: block; }
+  .bw-back-identity + .bw-back-approach-section { margin-top: 0; padding-top: 0; border-top: 0; }
+  .bw-back-approach { font-size: 1.05rem; }
+  /* Buttons follow the content instead of pinning to the bottom and leaving a gap. */
+  .bw-back-scroll { flex: 0 1 auto; }
+  .bw-back-footer { margin-top: 1.1rem; }
+  .bw-tier { padding: 0.45rem 1.1rem; font-size: 0.95rem; }
+
+  .bw-back { padding: 1.6rem 1.4rem 1.2rem; }
+  .bw-back-identity { display: none; }
+  .bw-back-identity + .bw-back-section,
+  .bw-back-identity + .bw-back-why + .bw-back-section { margin-top: 0; padding-top: 0; border-top: 0; }
+  .bw-back-heading { font-size: 1.1rem; }
+  .bw-back-text, .bw-back-bullets { font-size: 0.98rem; }
+
+  .bw-dock { width: 100%; max-width: 40rem; }
+  .bw-socials-main { display: none; }
+  .bw-kbd { display: inline-grid; }
+  .bw-hint { display: block; text-align: center; font-size: 0.9rem; color: var(--bw-ink-muted); }
+  .bw-tabbar-wrap { display: none; }
+  .bw-toast-region { bottom: 1.5rem; }
+}

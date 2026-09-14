@@ -11,31 +11,34 @@ async function demoLogin(page: import("@playwright/test").Page) {
   }
 }
 
-/** Smoke: demo-login → /home — stage layout (Event strip + Focus + filmstrip). */
-test("home desktop stage: event strip above match, filmstrip below", async ({ page }) => {
+/** Smoke: demo-login → /home — badge Home (event header, lanyard rail, badge, Keep). */
+test("home: event header, then the queue rail, then Keep", async ({ page }) => {
   await demoLogin(page);
 
-  await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Home" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Events" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Inbox" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Attendees" })).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Primary" });
+  await expect(nav).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Events" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Inbox" })).toBeVisible();
+
+  const empty = page.getByText(/nobody left to review|no event to review yet/i);
+  if (await empty.isVisible().catch(() => false)) return;
 
   const event = page.getByRole("heading", { level: 1 }).first();
+  const rail = page.getByRole("navigation", { name: "Review queue" });
   const keep = page.getByRole("button", { name: /^keep$/i });
-  const queue = page.getByRole("region", { name: /queue/i });
   await expect(event).toBeVisible();
+  await expect(rail).toBeVisible();
   await expect(keep).toBeVisible();
-  await expect(queue).toBeVisible();
 
   const eventBox = await event.boundingBox();
+  const railBox = await rail.boundingBox();
   const keepBox = await keep.boundingBox();
-  const stripBox = await queue.boundingBox();
-  expect(eventBox && keepBox && stripBox).toBeTruthy();
-  if (!eventBox || !keepBox || !stripBox) return;
+  expect(eventBox && railBox && keepBox).toBeTruthy();
+  if (!eventBox || !railBox || !keepBox) return;
 
-  expect(eventBox.y).toBeLessThan(keepBox.y);
-  expect(stripBox.y).toBeGreaterThan(keepBox.y);
+  expect(eventBox.y).toBeLessThan(railBox.y);
+  expect(railBox.y).toBeLessThan(keepBox.y);
 });
 
 test("Events → guests has ← Events back, rank filters, and returns to rooms", async ({

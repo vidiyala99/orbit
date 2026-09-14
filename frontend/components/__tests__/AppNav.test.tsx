@@ -12,8 +12,8 @@ vi.mock("next/navigation", () => ({
 vi.spyOn(auth, "ensureClientToken").mockResolvedValue(null);
 
 describe("AppNav", () => {
-  it("renders Home, Events, and Inbox tabs on /home", () => {
-    mockPathname = "/home";
+  it("renders Home, Events, and Inbox tabs on /events", () => {
+    mockPathname = "/events";
     render(<AppNav />);
     expect(screen.getByRole("tab", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Events" })).toHaveAttribute("href", "/events");
@@ -50,10 +50,10 @@ describe("AppNav", () => {
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
   });
 
-  it("marks Home active on /home", () => {
+  it("renders nothing on /home, which draws its own header and tabs", () => {
     mockPathname = "/home";
-    render(<AppNav />);
-    expect(screen.getByRole("tab", { name: "Home" })).toHaveAttribute("aria-current", "page");
+    const { container } = render(<AppNav />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("renders nothing on the marketing homepage", () => {
@@ -79,7 +79,7 @@ describe("AppNav", () => {
   });
 
   it("uses a distinct raised top chrome with a tab group", () => {
-    mockPathname = "/home";
+    mockPathname = "/inbox";
     const { container } = render(<AppNav />);
     const nav = container.querySelector("nav");
     expect(nav?.className).toMatch(/border-b/);

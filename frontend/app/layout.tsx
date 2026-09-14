@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Syne, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import { Syne, IBM_Plex_Sans, JetBrains_Mono, Big_Shoulders, Carlito } from "next/font/google";
 import AppNav from "@/components/AppNav";
 import "./globals.css";
+import "./badge-world.css";
 
 const LINE = "Match the right people. Act on the intro.";
 
@@ -30,9 +31,23 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
+/** Badge world (redesign): condensed badge names + a plain UI face, matched to the approved comp. */
+const bigShoulders = Big_Shoulders({
+  subsets: ["latin"],
+  variable: "--font-badge-name",
+});
+const carlito = Carlito({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-badge-ui",
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${syne.variable} ${ibmPlex.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${syne.variable} ${ibmPlex.variable} ${jetbrainsMono.variable} ${bigShoulders.variable} ${carlito.variable}`}
+    >
       <body className="flex h-dvh max-w-[100vw] flex-col overflow-hidden overflow-x-hidden bg-ground font-sans text-ink antialiased">
         <div className="grain-overlay" aria-hidden="true" />
         <AppNav />

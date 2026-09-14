@@ -13,3 +13,9 @@ venv/
 .claude/worktrees/
 .playwright-cli/
 skills-lock.json
+
+# Scraped attendee research (real people): never commit to this public repo
+.scratch/ai-security-hackathon/
+# Impeccable generated captures and build scratch (may show real guests)
+.impeccable/review/
+.impeccable/build/

@@ -32,7 +32,8 @@ function showAppNav(pathname: string): boolean {
  */
 export default function AppNav() {
   const pathname = usePathname() ?? "";
-  if (!showAppNav(pathname)) return null;
+  // Redesigned Home owns its own chrome (header + bottom tabs).
+  if (pathname === APP_HOME || !showAppNav(pathname)) return null;
 
   return (
     <nav

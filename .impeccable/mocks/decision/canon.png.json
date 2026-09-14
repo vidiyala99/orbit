@@ -1,0 +1,6 @@
+{
+  "prompt": "High-fidelity mobile app UI comp, one portrait iPhone screen, light mode, looks like a real shipped app screenshot. App name Actintro. Screen: Home for tonight's event, executed as the category-standard event networking app (clean, like Brella or Grip), at top craft. Regions: (1) iOS status bar. (2) Large title 'AI Security Hackathon' with subtitle 'Sat 10:00, 553 guests' and a small '3 of 12' counter. (3) A rounded card with a large candid photo of a woman in her thirties, name 'Maya Okafor', 'Head of Security Engineering, Northwind Labs', two soft match reason chips 'Hiring' and 'AI security', and a short line 'Fits your Focus: backend engineer moving into AI security. From LinkedIn.' (4) Two round-cornered buttons below: 'Skip' in light grey, 'Keep' in solid blue #2563EB with white text. (5) Bottom tab bar with icons: Home, Events, Inbox. System font, white #FFFFFF ground, slate text #0F172A, light grey #F1F5F9 surfaces, subtle shadow on the card, all text sharp and readable.",
+  "createdAt": "2026-09-14T01:20:20.100Z",
+  "tool": "impeccable generate-image",
+  "model": "gpt-image-2"
+}

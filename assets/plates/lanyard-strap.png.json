@@ -1,0 +1,9 @@
+{
+  "prompt": "Use the provided crop as the approved visual reference and recreate it as a clean production asset at the target aspect ratio. This is a designed illustration plate. Output the same drawing, same style, same line weight and shading. Preserve silhouette, composition, perspective, palette (#0a0b0b, #f6edea, #f8376b), lighting, material, and texture exactly. Remove every piece of UI text, label, caption, button, and interface chrome that is not part of the artwork itself. Remove letterboxing, borders, card corners, drop shadows, and any layout background that the page will draw in code. Do not add objects. Do not change the concept. Do not restyle. The artwork fills the whole frame edge to edge at the same scale as the reference; no margins, no border, no background band. Region: electric blue woven lanyard strap running edge to edge across the screen.",
+  "createdAt": "2026-09-14T01:46:25.165Z",
+  "tool": "impeccable generate-image",
+  "model": "gpt-image-2",
+  "refs": [
+    ".impeccable/build/crops/lanyard-strap.png"
+  ]
+}
