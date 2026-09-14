@@ -19,3 +19,5 @@ skills-lock.json
 # Impeccable generated captures and build scratch (may show real guests)
 .impeccable/review/
 .impeccable/build/
+# Neon connection strings (secrets)
+backend/.env.neon

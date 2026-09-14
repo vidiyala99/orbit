@@ -12,6 +12,11 @@ function status(page: Page) {
   return page.locator(".bw-status");
 }
 
+/** The badge on screen, not one still animating out. */
+function present(page: Page) {
+  return page.locator('.bw-deck-item[data-present="true"]');
+}
+
 function card(page: Page, name = /Maya Okafor/) {
   return page.getByRole("group", { name });
 }
@@ -22,7 +27,7 @@ async function press(page: Page, key: string, times: number) {
 
 async function firstNameFits(page: Page) {
   return page
-    .locator(".bw-front .bw-first-name")
+    .locator('.bw-deck-item[data-present="true"] .bw-front .bw-first-name')
     .evaluate((el) => el.scrollWidth <= el.clientWidth + 1 && el.getBoundingClientRect().right <= el.closest(".bw-front")!.getBoundingClientRect().right);
 }
 
@@ -44,7 +49,7 @@ test.describe("phone", () => {
   });
 
   test("the front shows work, signals, how to approach and why, with no source tags", async ({ page }) => {
-    const front = page.locator(".bw-front");
+    const front = present(page).locator(".bw-front");
     await expect(front.locator(".bw-chip-company")).toHaveText(/Northwind Labs/);
     await expect(front.getByText("Potentially hiring")).toBeVisible();
     await expect(front.getByText("How to approach")).toBeVisible();
@@ -64,11 +69,11 @@ test.describe("phone", () => {
   test("tapping the badge flips to Recent, Background and company, and back", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Recent" })).toHaveCount(0);
     await card(page).click({ position: { x: 60, y: 140 } });
-    await expect(page.locator(".bw-back").getByRole("heading", { name: "Why meet" })).toBeVisible();
-    await expect(page.locator(".bw-back").getByText("Hiring security engineers.", { exact: false })).toBeVisible();
+    await expect(present(page).locator(".bw-back").getByRole("heading", { name: "Why meet" })).toBeVisible();
+    await expect(present(page).locator(".bw-back").getByText("Hiring security engineers.", { exact: false })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Background" })).toBeVisible();
-    await expect(page.locator(".bw-back").getByText("Series A, team of about 40")).toBeVisible();
+    await expect(present(page).locator(".bw-back").getByText("Series A, team of about 40")).toBeVisible();
     await expect(page.getByRole("link", { name: "Full profile" })).toHaveCount(0);
     await card(page).click({ position: { x: 60, y: 140 } });
     await expect(page.getByRole("heading", { name: "Recent" })).toHaveCount(0);
@@ -96,6 +101,35 @@ test.describe("phone", () => {
     await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12$/);
     await page.keyboard.press("ArrowLeft");
     await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12$/);
+  });
+
+  test("a drag released on a badge already leaving after Keep does not browse again", async ({ page }) => {
+    const box = await card(page).boundingBox();
+    expect(box).toBeTruthy();
+    if (!box) return;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + box.width - 40, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 180, y, { steps: 6 });
+    // Keep while the finger is still down: Maya starts her exit animation.
+    await page.evaluate(() => document.querySelector<HTMLButtonElement>(".bw-keep")?.click());
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+    await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12$/);
+  });
+
+  test("the toast never covers Skip or Keep: tapping Keep twice decides two people", async ({ page }) => {
+    const keep = page.getByRole("button", { name: /^keep$/i });
+    await keep.click();
+    await expect(page.getByText("Kept Maya. Added to Inbox.")).toBeVisible();
+    const toast = await page.locator(".bw-toast").boundingBox();
+    const actions = await page.locator(".bw-actions").boundingBox();
+    const socials = await page.locator(".bw-dock").boundingBox();
+    expect(toast && actions && socials).toBeTruthy();
+    if (toast && socials) expect(toast.y + toast.height).toBeLessThanOrEqual(socials.y);
+    await keep.click({ timeout: 2000 });
+    await expect(page.getByText("Kept Dev. Added to Inbox.")).toBeVisible();
+    await expect(status(page)).toHaveText(/, 5 of 12$/);
   });
 
   test("Keep advances, browsing back shows it pressed, and Undo restores it", async ({ page }) => {
@@ -180,8 +214,8 @@ test.describe("desktop", () => {
   test("front and back are both visible without flipping", async ({ page }) => {
     await page.goto(FIXTURE);
     // Left card is identity only; the right card carries all the context.
-    await expect(page.locator(".bw-front .bw-front-lead")).toBeHidden();
-    const back = page.locator(".bw-back");
+    await expect(present(page).locator(".bw-front .bw-front-lead")).toBeHidden();
+    const back = present(page).locator(".bw-back");
     await expect(back.getByRole("heading", { name: "How to approach" })).toBeVisible();
     await expect(back.getByText("Three security roles are open.", { exact: false })).toBeVisible();
     await expect(back.getByRole("heading", { name: "Why meet" })).toBeVisible();
@@ -189,7 +223,7 @@ test.describe("desktop", () => {
     await expect(back.getByRole("heading", { name: "Background" })).toBeVisible();
     await expect(back.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toHaveCount(1);
-    await expect(page.locator(".bw-back").getByText("Series A, team of about 40")).toBeVisible();
+    await expect(present(page).locator(".bw-back").getByText("Series A, team of about 40")).toBeVisible();
     await expect(page.getByRole("link", { name: "Full profile" })).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Review queue" })).toHaveCount(0);
     await page.keyboard.press(" ");

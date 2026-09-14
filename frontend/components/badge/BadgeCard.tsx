@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { animate, motion, useIsPresent, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { LinkedInIcon, XIcon } from "@/components/SocialIcons";
 import { TIER_LABEL, fullName, titleLine, type BadgePerson } from "@/lib/badge";
 import BadgeAvatar from "./BadgeAvatar";
+import { FLIP_TRANSITION, SWIPE_DISTANCE_PX, SWIPE_VELOCITY_PX_S, keepFlashVariants, type MotionIntent } from "./badgeMotion";
 
-const SWIPE_PX = 48;
-const TAP_SLOP_PX = 8;
 /** Approximate advance of an uppercase Big Shoulders glyph, in ems. */
 const NAME_GLYPH_EM = 0.56;
 
@@ -177,68 +176,84 @@ function BadgeBack({ person }: { person: BadgePerson }) {
 }
 
 /**
- * One badge, two sides. On phones a tap flips it and a horizontal swipe browses the queue;
- * on wide screens (`wide`) both sides sit next to each other and nothing flips.
+ * One badge, two sides. On phones the badge follows a horizontal drag (a far or fast release
+ * browses, a short one springs back) and a tap flips it; on wide screens (`wide`) both sides
+ * sit next to each other and nothing drags or flips.
  */
 export default function BadgeCard({
   person,
+  intent,
   flipped,
   wide,
   onFlip,
   onSwipe,
 }: {
   person: BadgePerson;
+  intent: MotionIntent;
   flipped: boolean;
   wide: boolean;
   onFlip: () => void;
   onSwipe: (direction: 1 | -1) => void;
 }) {
-  const start = useRef<{ x: number; y: number } | null>(null);
   const name = fullName(person);
   const frontHidden = !wide && flipped;
   const backHidden = !wide && !flipped;
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-240, 0, 240], [-7, 0, 7]);
+  // A badge already animating out (after Keep, K, or a swipe) must not browse or flip again.
+  const isPresent = useIsPresent();
+  const reduceMotion = useReducedMotion();
 
-  function onPointerDown(event: React.PointerEvent) {
-    if (!event.isPrimary) return;
-    start.current = { x: event.clientX, y: event.clientY };
-  }
-
-  function onPointerUp(event: React.PointerEvent) {
-    const origin = start.current;
-    start.current = null;
-    if (!origin) return;
-    const dx = event.clientX - origin.x;
-    const dy = event.clientY - origin.y;
-    if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-      onSwipe(dx < 0 ? 1 : -1);
+  function onDragEnd(_: unknown, info: { offset: { x: number }; velocity: { x: number } }) {
+    if (!isPresent) return;
+    const { offset, velocity } = info;
+    if (Math.abs(offset.x) >= SWIPE_DISTANCE_PX || Math.abs(velocity.x) >= SWIPE_VELOCITY_PX_S) {
+      // Leave the badge where the finger let go; the deck carries it the rest of the way out.
+      onSwipe((Math.abs(offset.x) >= SWIPE_DISTANCE_PX ? offset.x : velocity.x) < 0 ? 1 : -1);
       return;
     }
-    if (wide || Math.abs(dx) > TAP_SLOP_PX || Math.abs(dy) > TAP_SLOP_PX) return;
-    if ((event.target as HTMLElement).closest("a, button")) return;
+    // Standalone animate() ignores MotionConfig, so honor reduced motion here directly.
+    if (reduceMotion) x.set(0);
+    else animate(x, 0, { type: "spring", duration: 0.35, bounce: 0.25 });
+  }
+
+  function onTap(event: MouseEvent | TouchEvent | PointerEvent) {
+    if (wide || !isPresent) return;
+    if ((event.target as HTMLElement | null)?.closest("a, button")) return;
     onFlip();
   }
 
   return (
     <div className="bw-card-stage">
       <span aria-hidden="true" className="bw-clip" />
-      <div
+      <motion.div
         role="group"
         aria-roledescription="badge"
         aria-label={wide ? `${name}, badge and details` : `${name}, ${flipped ? "details" : "badge"}. Tap to flip, swipe to browse.`}
         className={`bw-card ${flipped ? "bw-flipped" : ""}`}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => (start.current = null)}
+        style={wide ? undefined : { x, rotate }}
+        drag={wide || !isPresent ? false : "x"}
+        dragDirectionLock
+        dragMomentum={false}
+        onDragEnd={onDragEnd}
+        onTap={onTap}
       >
-        <div className="bw-card-inner">
+        <motion.span aria-hidden="true" className="bw-keep-flash" custom={intent} variants={keepFlashVariants} />
+        <motion.div
+          className="bw-card-inner"
+          initial={false}
+          // Motion skips unchanged keyframe arrays, so each side gets its own array to replay the mid-flip lift.
+          animate={{ rotateY: flipped ? 180 : 0, scale: flipped ? [1, 0.965, 1] : [1, 0.966, 1] }}
+          transition={FLIP_TRANSITION}
+        >
           <div aria-hidden={frontHidden} inert={frontHidden}>
             <BadgeFront person={person} />
           </div>
           <div aria-hidden={backHidden} inert={backHidden}>
             <BadgeBack person={person} />
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
