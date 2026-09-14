@@ -13,7 +13,6 @@
   --bw-card-ink: #0b0b0c;
   --bw-card-muted: #4a4745;
   --bw-card-rule: #cfc8c4;
-  --bw-lanyard: #0b3bcd;
   --bw-keep: #f8376b;
   --bw-keep-press: #de2a5a;
   --bw-keep-ink: #0a0a0b;
@@ -78,7 +77,7 @@
 .bw-event-title { font-size: 1.45rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .bw-header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2.25rem; }
 .bw-event-time { font-size: 0.95rem; color: var(--bw-ink-muted); font-variant-numeric: tabular-nums; }
-/* Phones browse by swipe or by tapping a rail badge (the ringed badge shows position); counter + chevrons are wide-screen only. */
+/* Phones browse by swipe; counter + chevrons are wide-screen only. */
 .bw-counter { display: none; align-items: center; gap: 0.15rem; flex-shrink: 0; }
 .bw-counter-box {
   display: inline-flex; align-items: center; gap: 0.3rem; min-height: 1.9rem; padding: 0 0.55rem;
@@ -94,36 +93,8 @@
 .bw-chevron:active:not(:disabled) { transform: scale(0.94); }
 .bw-topnav { display: none; }
 
-/* Rail: the queue on one lanyard */
-.bw-rail { margin-top: 0.35rem; }
-.bw-lanyard {
-  height: 0.8rem; background-color: var(--bw-lanyard); background-image: url("/badge/lanyard-strap.png");
-  background-repeat: repeat-x; background-size: auto 100%;
-}
-.bw-rail-list { gap: 0.15rem; padding: 0.05rem 0.75rem 0.35rem; scrollbar-width: none; scroll-snap-type: x proximity; }
-.bw-rail-list::-webkit-scrollbar { display: none; }
-/* Centered when the queue fits, left-anchored and fully scrollable when it overflows. */
-.bw-rail-list > :first-child { margin-left: auto; }
-.bw-rail-list > :last-child { margin-right: auto; }
-.bw-mini-clip { width: 0.28rem; height: 0.7rem; border-radius: 1px; background: linear-gradient(180deg, #e7e7e7, #8f8f8f); }
-/* ~30px pitch so the whole queue is visible: above WCAG 2.2 AA's 24px, with swipe, chevrons and arrow keys as alternatives. */
-.bw-mini-hit { display: grid; place-items: start center; min-width: 1.9rem; height: 2.35rem; scroll-snap-align: center; }
-.bw-mini-badge {
-  position: relative; display: block; width: 1.5rem; height: 1.95rem; padding: 0.14rem; border-radius: 0.25rem;
-  background: var(--bw-card);
-}
-.bw-mini-current::after {
-  content: ""; position: absolute; inset: -0.3rem -0.5rem; border: 2px solid var(--bw-ink); border-radius: 9999px;
-}
-.bw-punch {
-  position: absolute; left: -0.3rem; bottom: -0.3rem; display: grid; place-items: center; width: 0.95rem; height: 0.95rem;
-  border-radius: 9999px;
-}
-.bw-punch-kept { background: var(--bw-keep); color: var(--bw-keep-ink); }
-.bw-punch-skipped { background: var(--bw-skip-mark); color: var(--bw-ground); }
-
 /* Stage: the badge grows to fill the screen; the dock stays within thumb reach. */
-.bw-main { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; padding: 0.35rem 1rem 0.9rem; }
+.bw-main { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; padding: 0.6rem 1rem 0.9rem; }
 .bw-card-stage { flex: 1; display: flex; flex-direction: column; min-height: 13rem; max-height: 36rem; }
 .bw-clip {
   align-self: center; flex-shrink: 0; width: 1rem; height: 1.25rem; margin-bottom: -0.5rem; z-index: 1; border-radius: 0.2rem;
@@ -226,7 +197,8 @@
 /* Phones: the front carries the opener, so the flip side leads with Why. Tablets: the front carries both.
    Desktop: the right card carries both. Unresearched people always get both on the back. */
 .bw-back:not(.bw-back-thin) .bw-back-approach-section { display: none; }
-.bw-back-footer { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
+/* Phones and tablets keep LinkedIn/X in the dock under the card, so the flip side carries none. */
+.bw-back-footer { display: none; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
 .bw-full-profile {
   align-self: center; display: inline-flex; align-items: center; min-height: 2.75rem; font-size: 0.9rem; font-weight: 700;
   color: var(--bw-card-ink); text-decoration: underline;
@@ -263,6 +235,9 @@
 .bw-skip { color: var(--bw-ink); background: transparent; border: 1.5px solid var(--bw-ink); }
 .bw-keep { color: var(--bw-keep-ink); background: var(--bw-keep); }
 .bw-skip:active, .bw-keep:active { transform: scale(0.97); }
+/* Browsing back to someone already decided: the chosen button reads as pressed. */
+.bw-skip[aria-pressed="true"] { background: var(--bw-ink); color: var(--bw-ground); }
+.bw-keep[aria-pressed="true"] { box-shadow: inset 0 0 0 2.5px var(--bw-keep-ink); }
 .bw-kbd {
   display: none; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 0.3rem; border-radius: 0.3rem;
   border: 1px solid currentColor; font-family: inherit; font-size: 0.75rem; font-weight: 700; opacity: 0.75;
@@ -327,8 +302,7 @@
   .bw-header-top { min-height: 1.6rem; }
   .bw-event-title { font-size: 1.25rem; }
   .bw-header-row { min-height: 2rem; }
-  .bw-rail { margin-top: 0.2rem; }
-  .bw-main { gap: 0.5rem; padding-bottom: 0.5rem; }
+  .bw-main { gap: 0.5rem; padding-top: 0.4rem; padding-bottom: 0.5rem; }
   .bw-dock { gap: 0.4rem; }
   .bw-front { padding-top: 1.1rem; padding-bottom: 0.7rem; }
   .bw-last-name { margin-top: 0.3rem; font-size: 1.2rem; }
@@ -373,13 +347,6 @@
   .bw-counter-box { min-height: 2.5rem; font-size: 1.1rem; padding: 0 0.8rem; }
   .bw-chevron { width: 2.75rem; height: 2.75rem; }
 
-  .bw-rail { margin: 0.8rem -2rem 0; }
-  .bw-lanyard { height: 1.1rem; }
-  .bw-rail-list { gap: 0.5rem; padding: 0.05rem 2rem 0.5rem; }
-  .bw-mini-clip { height: 0.95rem; }
-  .bw-mini-hit { min-width: 3rem; height: 3.5rem; }
-  .bw-mini-badge { width: 2.3rem; height: 3rem; padding: 0.2rem; }
-
   .bw-main { align-items: center; gap: 1rem; padding: 1.4rem 0 2rem; }
   .bw-card-stage { flex: 0 0 auto; width: 100%; max-width: 68rem; min-height: 0; max-height: none; }
   .bw-clip { display: none; }
@@ -407,7 +374,7 @@
   .bw-back-approach { font-size: 1.05rem; }
   /* Buttons follow the content instead of pinning to the bottom and leaving a gap. */
   .bw-back-scroll { flex: 0 1 auto; }
-  .bw-back-footer { margin-top: 1.1rem; }
+  .bw-back-footer { display: flex; margin-top: 1.1rem; }
   .bw-tier { padding: 0.45rem 1.1rem; font-size: 0.95rem; }
 
   .bw-back { padding: 1.6rem 1.4rem 1.2rem; }

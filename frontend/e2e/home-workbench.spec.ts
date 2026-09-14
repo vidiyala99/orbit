@@ -11,8 +11,8 @@ async function demoLogin(page: import("@playwright/test").Page) {
   }
 }
 
-/** Smoke: demo-login → /home — badge Home (event header, lanyard rail, badge, Keep). */
-test("home: event header, then the queue rail, then Keep", async ({ page }) => {
+/** Smoke: demo-login → /home — badge Home (event header, badge, Keep). */
+test("home: event header, then the badge, then Keep", async ({ page }) => {
   await demoLogin(page);
 
   const nav = page.getByRole("navigation", { name: "Primary" });
@@ -25,20 +25,21 @@ test("home: event header, then the queue rail, then Keep", async ({ page }) => {
   if (await empty.isVisible().catch(() => false)) return;
 
   const event = page.getByRole("heading", { level: 1 }).first();
-  const rail = page.getByRole("navigation", { name: "Review queue" });
+  const card = page.locator(".bw-card");
   const keep = page.getByRole("button", { name: /^keep$/i });
   await expect(event).toBeVisible();
-  await expect(rail).toBeVisible();
+  await expect(card).toBeVisible();
   await expect(keep).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Review queue" })).toHaveCount(0);
 
   const eventBox = await event.boundingBox();
-  const railBox = await rail.boundingBox();
+  const cardBox = await card.boundingBox();
   const keepBox = await keep.boundingBox();
-  expect(eventBox && railBox && keepBox).toBeTruthy();
-  if (!eventBox || !railBox || !keepBox) return;
+  expect(eventBox && cardBox && keepBox).toBeTruthy();
+  if (!eventBox || !cardBox || !keepBox) return;
 
-  expect(eventBox.y).toBeLessThan(railBox.y);
-  expect(railBox.y).toBeLessThan(keepBox.y);
+  expect(eventBox.y).toBeLessThan(cardBox.y);
+  expect(cardBox.y).toBeLessThan(keepBox.y);
 });
 
 test("Events → guests has ← Events back, rank filters, and returns to rooms", async ({

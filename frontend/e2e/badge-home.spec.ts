@@ -7,8 +7,17 @@ function counter(page: Page) {
   return page.locator(".bw-counter-box");
 }
 
+/** Screen-reader status: "Name, n of N[, kept|skipped]". */
+function status(page: Page) {
+  return page.locator(".bw-status");
+}
+
 function card(page: Page, name = /Maya Okafor/) {
   return page.getByRole("group", { name });
+}
+
+async function press(page: Page, key: string, times: number) {
+  for (let i = 0; i < times; i++) await page.keyboard.press(key);
 }
 
 async function firstNameFits(page: Page) {
@@ -25,11 +34,13 @@ test.describe("phone", () => {
     await expect(page.getByRole("heading", { level: 1, name: "AI Security Hackathon" })).toBeVisible();
   });
 
-  test("opens on the third person with the queue state on the rail", async ({ page }) => {
-    await expect(counter(page)).toHaveText(/3\s*of\s*12/);
-    await expect(page.getByRole("button", { name: /Ravi Menon, 1 of 12, kept/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Grace Hughes, 2 of 12, skipped/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Maya Okafor, 3 of 12$/ })).toHaveAttribute("aria-current", "step");
+  test("opens on the third person with nothing between the header and the badge", async ({ page }) => {
+    await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12$/);
+    await expect(page.getByRole("navigation", { name: "Review queue" })).toHaveCount(0);
+    const header = await page.locator(".bw-header").boundingBox();
+    const stage = await page.locator(".bw-card-stage").boundingBox();
+    expect(header && stage).toBeTruthy();
+    if (header && stage) expect(stage.y - (header.y + header.height)).toBeLessThan(24);
   });
 
   test("the front shows work, signals, how to approach and why, with no source tags", async ({ page }) => {
@@ -63,6 +74,16 @@ test.describe("phone", () => {
     await expect(page.getByRole("heading", { name: "Recent" })).toHaveCount(0);
   });
 
+  test("LinkedIn and X appear once, in the dock, on both sides of the badge", async ({ page }) => {
+    await expect(page.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Maya Okafor on X" })).toHaveCount(1);
+    await card(page).click({ position: { x: 60, y: 140 } });
+    await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: "Maya Okafor on X" })).toHaveCount(1);
+    await expect(page.locator(".bw-back-footer")).toBeHidden();
+  });
+
   test("a horizontal swipe browses without deciding", async ({ page }) => {
     const box = await card(page).boundingBox();
     expect(box).toBeTruthy();
@@ -72,61 +93,64 @@ test.describe("phone", () => {
     await page.mouse.down();
     await page.mouse.move(box.x + 40, y, { steps: 6 });
     await page.mouse.up();
-    await expect(counter(page)).toHaveText(/4\s*of\s*12/);
-    await expect(page.getByRole("button", { name: /Maya Okafor, 3 of 12$/ })).toBeVisible();
+    await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12$/);
+    await page.keyboard.press("ArrowLeft");
+    await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12$/);
   });
 
-  test("Keep advances to the next person and Undo restores it", async ({ page }) => {
+  test("Keep advances, browsing back shows it pressed, and Undo restores it", async ({ page }) => {
     await page.getByRole("button", { name: /^keep$/i }).click();
-    await expect(counter(page)).toHaveText(/4\s*of\s*12/);
+    await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12$/);
     await expect(page.getByText("Kept Maya. Added to Inbox.")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Maya Okafor, 3 of 12, kept/ })).toBeVisible();
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12, kept$/);
+    await expect(page.getByRole("button", { name: /^keep$/i })).toHaveAttribute("aria-pressed", "true");
 
     await page.getByRole("button", { name: "Undo" }).click();
-    await expect(counter(page)).toHaveText(/3\s*of\s*12/);
-    await expect(page.getByRole("button", { name: /Maya Okafor, 3 of 12$/ })).toBeVisible();
+    await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12$/);
+    await expect(page.getByRole("button", { name: /^keep$/i })).toHaveAttribute("aria-pressed", "false");
   });
 
   test("keyboard: K keeps, S skips, arrows browse", async ({ page }) => {
     await page.keyboard.press("k");
-    await expect(page.getByRole("button", { name: /Maya Okafor, 3 of 12, kept/ })).toBeVisible();
-    await expect(counter(page)).toHaveText(/4\s*of\s*12/);
+    await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12$/);
     await page.keyboard.press("s");
-    await expect(page.getByRole("button", { name: /Dev Patel, 4 of 12, skipped/ })).toBeVisible();
+    await expect(status(page)).toHaveText(/, 5 of 12$/);
     await page.keyboard.press("ArrowLeft");
-    await expect(counter(page)).toHaveText(/4\s*of\s*12/);
+    await expect(status(page)).toHaveText(/^Dev Patel, 4 of 12, skipped$/);
+    await expect(page.getByRole("button", { name: /^skip$/i })).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("ArrowLeft");
-    await expect(counter(page)).toHaveText(/3\s*of\s*12/);
+    await expect(status(page)).toHaveText(/^Maya Okafor, 3 of 12, kept$/);
   });
 
-  test("no counter or arrows on phones: swipe and the rail do the browsing", async ({ page }) => {
+  test("no counter or arrows on phones: swipe does the browsing", async ({ page }) => {
     await expect(page.locator(".bw-counter")).toBeHidden();
     await expect(page.getByRole("button", { name: "Next person" })).toHaveCount(0);
-    await expect(page.getByRole("navigation", { name: "Review queue" })).toBeVisible();
   });
 
-  test("the queue never hits a wall: last wraps to first and back", async ({ page }) => {
-    await page.getByRole("button", { name: /Elena Garcia, 12 of 12/ }).click();
-    await expect(counter(page)).toHaveText(/12\s*of\s*12/);
+  test("the queue never hits a wall: first wraps to last and back", async ({ page }) => {
+    await press(page, "ArrowLeft", 3);
+    await expect(status(page)).toHaveText(/^Elena Garcia, 12 of 12$/);
     await page.keyboard.press("ArrowRight");
-    await expect(counter(page)).toHaveText(/1\s*of\s*12/);
+    await expect(status(page)).toHaveText(/, 1 of 12/);
     await page.keyboard.press("ArrowLeft");
-    await expect(counter(page)).toHaveText(/12\s*of\s*12/);
+    await expect(status(page)).toHaveText(/^Elena Garcia, 12 of 12$/);
   });
 
   test("a long first name fits inside the badge", async ({ page }) => {
-    await page.getByRole("button", { name: /Maximiliana Brightwater, 6 of 12/ }).click();
+    await press(page, "ArrowRight", 3);
     await expect(card(page, /Maximiliana Brightwater/)).toBeVisible();
     expect(await firstNameFits(page)).toBe(true);
   });
 
   test("LinkedIn and X open the person's profiles in a new tab", async ({ page }) => {
-    const linkedin = page.getByRole("link", { name: "Maya Okafor on LinkedIn" }).first();
+    const linkedin = page.getByRole("link", { name: "Maya Okafor on LinkedIn" });
     await expect(linkedin).toHaveAttribute("href", "https://www.linkedin.com/in/maya-okafor-fixture/");
     await expect(linkedin).toHaveAttribute("target", "_blank");
     const box = await linkedin.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-    await expect(page.getByRole("link", { name: "Maya Okafor on X" }).first()).toHaveAttribute("href", "https://x.com/maya_fixture");
+    await expect(page.getByRole("link", { name: "Maya Okafor on X" })).toHaveAttribute("href", "https://x.com/maya_fixture");
   });
 
   test("no horizontal scroll", async ({ page }) => {
@@ -142,7 +166,7 @@ test.describe("small phone", () => {
     await page.goto(FIXTURE);
     const tabs = await page.getByRole("navigation", { name: "Primary" }).boundingBox();
     const keep = await page.getByRole("button", { name: /^keep$/i }).boundingBox();
-    const linkedin = await page.getByRole("link", { name: "Maya Okafor on LinkedIn" }).first().boundingBox();
+    const linkedin = await page.getByRole("link", { name: "Maya Okafor on LinkedIn" }).boundingBox();
     expect(tabs && keep && linkedin).toBeTruthy();
     if (!tabs || !keep || !linkedin) return;
     expect(keep.y + keep.height).toBeLessThanOrEqual(tabs.y + 1);
@@ -164,26 +188,32 @@ test.describe("desktop", () => {
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
     await expect(back.getByRole("heading", { name: "Background" })).toBeVisible();
     await expect(back.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Maya Okafor on LinkedIn" })).toHaveCount(1);
     await expect(page.locator(".bw-back").getByText("Series A, team of about 40")).toBeVisible();
     await expect(page.getByRole("link", { name: "Full profile" })).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "Review queue" })).toHaveCount(0);
     await page.keyboard.press(" ");
     await expect(page.getByRole("heading", { name: "Recent" })).toBeVisible();
   });
 
   test("a long first name fits inside the badge", async ({ page }) => {
     await page.goto(FIXTURE);
-    await page.getByRole("button", { name: /Maximiliana Brightwater, 6 of 12/ }).click();
+    // The wide label is set after hydration, once the keyboard handler is attached.
+    await expect(card(page)).toHaveAttribute("aria-label", /badge and details/);
+    await press(page, "ArrowRight", 3);
     await expect(card(page, /Maximiliana Brightwater/)).toBeVisible();
     expect(await firstNameFits(page)).toBe(true);
   });
 
   test("counter and arrows browse and wrap around", async ({ page }) => {
     await page.goto(FIXTURE);
-    await expect(counter(page)).toBeVisible();
-    await page.getByRole("button", { name: /Elena Garcia, 12 of 12/ }).click();
+    await expect(counter(page)).toHaveText(/3\s*of\s*12/);
+    const previous = page.getByRole("button", { name: "Previous person" });
+    for (let i = 0; i < 3; i++) await previous.click();
+    await expect(counter(page)).toHaveText(/12\s*of\s*12/);
     await page.getByRole("button", { name: "Next person" }).click();
     await expect(counter(page)).toHaveText(/1\s*of\s*12/);
-    await page.getByRole("button", { name: "Previous person" }).click();
+    await previous.click();
     await expect(counter(page)).toHaveText(/12\s*of\s*12/);
   });
 

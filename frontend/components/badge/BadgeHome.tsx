@@ -7,7 +7,6 @@ import { ensureClientToken } from "@/lib/auth";
 import { formatEventTime, fullName, type BadgeEvent, type BadgePerson, type TriageState } from "@/lib/badge";
 import { APP_EVENTS, APP_HOME, eventPath } from "@/lib/routes";
 import BadgeCard, { SocialButtons } from "./BadgeCard";
-import BadgeRail from "./BadgeRail";
 import BadgeTabs from "./BadgeTabs";
 import { useBadgeQueue, type Decisions } from "./useBadgeQueue";
 import { useMediaQuery } from "./useMediaQuery";
@@ -169,7 +168,7 @@ export default function BadgeHome({
                 {timeLabel ? <time dateTime={event?.startsAt ?? undefined}>{timeLabel}</time> : null}
               </p>
               {people.length ? (
-                <div className="bw-counter" aria-live="polite">
+                <div className="bw-counter">
                   <ChevronButton direction={-1} disabled={people.length <= 1} onClick={() => queue.go(-1)} />
                   <span className="bw-counter-box">
                     {queue.index + 1} <span className="bw-counter-of">of</span> {people.length}
@@ -183,7 +182,10 @@ export default function BadgeHome({
 
         {people.length ? (
           <>
-            <BadgeRail people={people} index={queue.index} decisions={queue.decisions} onJump={queue.jump} />
+            {/* Position and decision for screen readers; phones show no counter. */}
+            <p className="bw-status sr-only" aria-live="polite">
+              {person ? `${fullName(person)}, ${queue.index + 1} of ${people.length}${decided ? `, ${decided}` : ""}` : ""}
+            </p>
             <main className="bw-main">
               {done ? (
                 <EmptyRoom event={event} />
@@ -224,7 +226,7 @@ export default function BadgeHome({
                         </kbd>
                       </button>
                     </div>
-                    <p className="bw-hint">Use the arrow keys to browse, or click a badge on the lanyard to jump.</p>
+                    <p className="bw-hint">Use the arrow keys to browse.</p>
                   </div>
                 </>
               ) : null}
