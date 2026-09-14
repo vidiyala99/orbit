@@ -54,6 +54,8 @@ export function polishCopy(text: string | null | undefined): string {
     .replace(/\bwarm_intro\b/gi, "warm intro")
     // Product copy uses no em or en dashes: a spaced dash between clauses becomes a colon.
     .replace(/\s+[—–]\s+/g, ": ")
+    // Joined bio lines leave "guitar.," or "friends!,": keep the sentence mark, drop the comma.
+    .replace(/([.!?])\s*,/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -74,33 +76,67 @@ export function overlaps(a: string, b: string): boolean {
 }
 
 const ROLE_SPLIT = /^(.{2,80}?)\s+(?:@|at|-|–|—)\s+(.{2,60})$/i;
+/** "Professionally: MLE; founder of PRAVIEL" names the role even inside a bio. */
+const ROLE_LABEL = /^(?:professionally|work|role|currently|day job)\s*:\s*/i;
+const GREETING = /^(?:hi|hello|hey)\b[\s,!.]/i;
+const FIRST_PERSON = /\b(?:i am|i'm|im|i've|my name|i work|i build|looking for|excited|passionate)\b/i;
+const EXTRA_TITLE_WORDS = 5;
+const TITLE_MAX_CHARS = 90;
+
+const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
+
+/** Luma's role field often holds a bio: sentences, greetings, first person, or a long paragraph. */
+export function looksLikeBio(line: string): boolean {
+  const text = line.trim();
+  if (!text) return false;
+  if (/[!?]/.test(text) || GREETING.test(text) || FIRST_PERSON.test(text)) return true;
+  if (/\.["')\]]?$/.test(text) && wordCount(text) > 3) return true;
+  return text.length > TITLE_MAX_CHARS;
+}
 
 /**
- * "Founder & CEO - SuperU" -> { title: "Founder & CEO", company: "SuperU" }.
- * Only explicit separators with spaces around them count; anything else keeps the whole
- * role as the title and no company, so a bio sentence is never mistaken for an employer.
+ * "Founder & CEO - SuperU" -> { title: "Founder & CEO", company: "SuperU", bio: "" }.
+ * Only explicit separators with spaces around them split off a company, so a bio sentence is never
+ * mistaken for an employer. The first line is the title only when it reads like one (or a line is
+ * labelled "Professionally:"); short follow-on lines join the title and sentences become the bio.
  */
-export function splitRole(raw: string | null | undefined): { title: string; company: string | null } {
+export function splitRole(raw: string | null | undefined): { title: string; company: string | null; bio: string } {
   const lines = (raw ?? "")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-  if (!lines.length) return { title: "", company: null };
+  if (!lines.length) return { title: "", company: null, bio: "" };
 
-  const [first, ...rest] = lines;
-  const extra = rest.join(", ");
-  const match = first.match(ROLE_SPLIT);
+  let titleText = "";
+  const extras: string[] = [];
+  const bioLines: string[] = [];
+  lines.forEach((line, i) => {
+    const label = line.match(ROLE_LABEL);
+    if (!titleText && label) {
+      titleText = line.slice(label[0].length).replace(/\.$/, "");
+    } else if (!titleText && i === 0 && !looksLikeBio(line)) {
+      titleText = line.replace(/\.$/, "");
+    } else if (titleText && i > 0 && !looksLikeBio(line) && wordCount(line) <= EXTRA_TITLE_WORDS && bioLines.length === 0) {
+      extras.push(line);
+    } else {
+      bioLines.push(line);
+    }
+  });
+
+  const bio = bioLines.join(" ");
+  const extra = extras.join(", ");
+  const match = titleText.match(ROLE_SPLIT);
   const company = match?.[2]?.trim() ?? "";
-  const looksLikeCompany = company && company.split(/\s+/).length <= 5 && !/[.!?]/.test(company);
+  const looksLikeCompany = company && wordCount(company) <= 5 && !/[.!?]/.test(company);
 
   if (match && looksLikeCompany) {
-    return { title: [match[1].trim(), extra].filter(Boolean).join(", "), company };
+    return { title: [match[1].trim(), extra].filter(Boolean).join(", "), company, bio };
   }
-  return { title: [first, extra].filter(Boolean).join(", "), company: null };
+  return { title: [titleText, extra].filter(Boolean).join(", "), company: null, bio };
 }
 
 export function toBadgePerson(p: PersonSummaryT): BadgePerson {
-  const { title, company } = splitRole(p.role);
+  const { title, company, bio } = splitRole(p.role);
   const evidence = (p.evidence ?? []).filter((e) => e?.quote?.trim());
   const quote = (sourceId: string) => polishCopy(evidence.find((e) => e.source_id === sourceId)?.quote);
 
@@ -133,7 +169,8 @@ export function toBadgePerson(p: PersonSummaryT): BadgePerson {
     approach,
     why: overlaps(why, approach) ? "" : why,
     recent,
-    about: quote("about") || null,
+    // Researched About wins; otherwise a bio found in the Luma role field is their Background.
+    about: quote("about") || polishCopy(bio) || null,
     companyBullets: [],
   };
 }

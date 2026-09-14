@@ -122,6 +122,15 @@ test.describe("phone", () => {
     const keep = page.getByRole("button", { name: /^keep$/i });
     await keep.click();
     await expect(page.getByText("Kept Maya. Added to Inbox.")).toBeVisible();
+    // The toast springs in from below; measure where it rests, not a frame of its entrance.
+    await expect
+      .poll(async () => {
+        const first = await page.locator(".bw-toast").boundingBox();
+        await page.waitForTimeout(50);
+        const second = await page.locator(".bw-toast").boundingBox();
+        return Boolean(first && second && first.y === second.y);
+      })
+      .toBe(true);
     const toast = await page.locator(".bw-toast").boundingBox();
     const actions = await page.locator(".bw-actions").boundingBox();
     const socials = await page.locator(".bw-dock").boundingBox();

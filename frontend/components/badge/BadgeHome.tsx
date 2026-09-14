@@ -141,7 +141,8 @@ export default function BadgeHome({
       setToastBottom(null);
       return;
     }
-    const update = () => setToastBottom(Math.max(0, window.innerHeight - dock.getBoundingClientRect().top) + 10);
+    // 16px clears the dock at every frame: the toast enters from 14px lower (see the toast's initial y).
+    const update = () => setToastBottom(Math.max(0, window.innerHeight - dock.getBoundingClientRect().top) + 16);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(dock);

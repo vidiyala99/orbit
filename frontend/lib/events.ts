@@ -40,9 +40,11 @@ export function isFocusEvent(
 }
 
 /**
- * Prefer the soonest live/upcoming room that already has guests.
- * Only fall back to latest sync when nothing is in the Focus window
- * (so tomorrow's Going event beats a stale synced mixer from earlier today).
+ * Prefer the soonest live/upcoming room that already has guests
+ * (so tomorrow's Going event beats a mixer that ended earlier today).
+ * When every room is over, feature the one that happened most recently: the event
+ * the user just attended. Sync time is arbitrary (a re-sync can land seconds apart),
+ * so it only breaks ties between rooms that started at the same moment.
  */
 export function pickFeaturedEvent(events: EventT[], now = Date.now()): EventT | null {
   const withGuests = events.filter((e) => (e.guest_count ?? 0) > 0);
@@ -55,10 +57,11 @@ export function pickFeaturedEvent(events: EventT[], now = Date.now()): EventT | 
   if (inFocus.length) return inFocus[0];
 
   return [...pool].sort((a, b) => {
+    const byStart = new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
+    if (byStart !== 0) return byStart;
     const as = a.synced_at ? new Date(a.synced_at).getTime() : 0;
     const bs = b.synced_at ? new Date(b.synced_at).getTime() : 0;
-    if (bs !== as) return bs - as;
-    return new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
+    return bs - as;
   })[0];
 }
 

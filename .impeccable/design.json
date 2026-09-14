@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T00:00:00Z",
+  "title": "Design System: Actintro",
+  "extensions": {
+    "colorMeta": {
+      "keep-pink": { "role": "primary", "displayName": "Keep Pink", "canonical": "#f8376b", "tonalRamp": ["#3d0615", "#6b0c26", "#9a1239", "#c91a4c", "#f8376b", "#fa6d93", "#fca3bb", "#fed9e3"] },
+      "tier-green": { "role": "secondary", "displayName": "Tier Green", "canonical": "#68b86a", "tonalRamp": ["#12260f", "#1f4220", "#2f6130", "#448a46", "#68b86a", "#8fca90", "#c9e5c9", "#eaf5ea"] },
+      "ground": { "role": "neutral", "displayName": "Cool Ground", "canonical": "#f2f3f5", "darkValue": "#0a0b0b" },
+      "ground-raised": { "role": "neutral", "displayName": "Raised Ground", "canonical": "#ffffff", "darkValue": "#17181a" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#111214", "darkValue": "#f3f3f4" },
+      "ink-muted": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#4b5059", "darkValue": "#a8abb1" },
+      "card": { "role": "neutral", "displayName": "PVC Card", "canonical": "#f2efeb", "note": "Constant in light and dark." },
+      "focus": { "role": "neutral", "displayName": "Focus Blue", "canonical": "#0b3bcd", "darkValue": "#8fa8ff" }
+    },
+    "typographyMeta": {
+      "badge-name": { "displayName": "Badge Name", "purpose": "First name only, uppercase, one line, sized min(var(--bw-name-xl), Ncqi). Caps: 4.6rem phone, 3.6rem short phone, 5.8rem tablet, 6.5rem desktop." },
+      "event-title": { "displayName": "Event Title", "purpose": "Page h1. 1.9rem desktop." },
+      "body": { "displayName": "Body", "purpose": "Opener and back-of-badge text. Never below 1rem on phones; 1.1rem/1.5 on desktop right card." },
+      "job-title": { "displayName": "Job Title", "purpose": "Two-line clamp. 1rem tablet, 1.15rem desktop." },
+      "label": { "displayName": "Label", "purpose": "Sentence-case bold labels on the badge front." },
+      "chip": { "displayName": "Chip", "purpose": "Signals and company. 0.9rem desktop." }
+    },
+    "shadows": [
+      { "name": "badge-lift", "value": "0 1px 2px rgba(17, 18, 20, 0.06), 0 10px 28px rgba(17, 18, 20, 0.08)", "purpose": "Badge face in light mode only; none in dark." },
+      { "name": "keep-pressed", "value": "inset 0 0 0 2.5px #0a0a0b", "purpose": "Keep when browsing back to a kept person." },
+      { "name": "topnav-active", "value": "inset 0 -2px 0 #f8376b", "purpose": "Active desktop destination." },
+      { "name": "focus-ring", "value": "outline: 2px solid var(--bw-focus); outline-offset: 2px; border-radius: 6px", "purpose": "Every link and button." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Default easing; CSS --bw-ease." },
+      { "name": "ease-exit", "value": "cubic-bezier(0.32, 0.72, 0, 1)", "purpose": "Keep and Skip exits." },
+      { "name": "arrive-spring", "value": "spring duration 0.42s bounce 0.12 (0.3s desktop)", "purpose": "Browsed badge arriving." },
+      { "name": "drop-spring", "value": "spring duration 0.52s bounce 0.28 delay 0.06s", "purpose": "Next badge dropping onto the clip after Keep/Skip." },
+      { "name": "flip", "value": "rotateY spring 0.55s bounce 0.18; scale [1, 0.965, 1] over 0.5s", "purpose": "Phone and tablet badge flip." },
+      { "name": "keep-exit", "value": "0.28s ease-exit, x 115%, rotate 11deg, y -18px, pink wash to 0.32", "purpose": "Kept badge leaving (desktop: x 80px, no rotation, no wash)." },
+      { "name": "skip-exit", "value": "0.26s ease-exit, x -115%, rotate -8deg", "purpose": "Skipped badge leaving." },
+      { "name": "settle", "value": "520ms ease-out keyframes bwSettle", "purpose": "First paint only; off under reduced motion." },
+      { "name": "press", "value": "scale 0.97, 120ms ease-out", "purpose": "Dock buttons." },
+      { "name": "toast-undo-window", "value": "4500ms linear countdown, pauses on hover/focus", "purpose": "Undo after Keep/Skip." },
+      { "name": "swipe-threshold", "value": "80px or 500px/s", "purpose": "Drag release that browses." },
+      { "name": "reduced-motion", "value": "180ms opacity crossfade", "purpose": "Replaces flip and handoff." },
+      { "name": "keyboard", "value": "duration 0", "purpose": "Arrow keys, K, S." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "0" },
+      { "name": "short-phone", "value": "max-width 899px and max-height 720px" },
+      { "name": "tablet", "value": "600px" },
+      { "name": "desktop", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Keep Button",
+      "kind": "button",
+      "refersTo": "button-keep",
+      "description": "The decision. Always wider than Skip.",
+      "html": "<button class=\"ds-keep\">Keep</button>",
+      "css": ".ds-keep { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; min-width: 12rem; border: 0; border-radius: 0.5rem; background: #f8376b; color: #0a0a0b; font-family: Carlito, system-ui, sans-serif; font-size: 1.15rem; font-weight: 700; transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease; } .ds-keep:hover { background: #de2a5a; } .ds-keep:active { transform: scale(0.97); } .ds-keep:focus-visible { outline: 2px solid #0b3bcd; outline-offset: 2px; }"
+    },
+    {
+      "name": "Skip Button",
+      "kind": "button",
+      "refersTo": "button-skip",
+      "description": "Outlined ink; inverts when pressed state is shown.",
+      "html": "<button class=\"ds-skip\">Skip</button>",
+      "css": ".ds-skip { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; min-width: 8rem; border: 1.5px solid #111214; border-radius: 0.5rem; background: transparent; color: #111214; font-family: Carlito, system-ui, sans-serif; font-size: 1.15rem; font-weight: 700; transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease; } .ds-skip:hover { background: #ffffff; } .ds-skip:active { transform: scale(0.97); } .ds-skip:focus-visible { outline: 2px solid #0b3bcd; outline-offset: 2px; }"
+    },
+    {
+      "name": "Social Button",
+      "kind": "button",
+      "refersTo": "button-social",
+      "description": "LinkedIn or X, once per screen.",
+      "html": "<a class=\"ds-social\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.1-6.7L5.4 22H2.3l7.7-8.8L2 2h6.8l4.6 6.1L18.9 2Zm-1.1 18h1.7L7.3 3.9H5.5L17.8 20Z\"/></svg><span>X</span></a>",
+      "css": ".ds-social { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; min-width: 10rem; border: 1.5px solid #111214; border-radius: 0.5rem; color: #111214; font-family: Carlito, system-ui, sans-serif; font-size: 0.95rem; font-weight: 700; text-decoration: none; transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease; } .ds-social:hover { background: #ffffff; } .ds-social:active { transform: scale(0.97); } .ds-social:focus-visible { outline: 2px solid #0b3bcd; outline-offset: 2px; }"
+    },
+    {
+      "name": "Chips",
+      "kind": "chip",
+      "refersTo": "chip-company",
+      "description": "Company chip (inverted, first) and signal chips.",
+      "html": "<ul class=\"ds-chips\"><li class=\"ds-chip ds-chip-company\">Acme</li><li class=\"ds-chip\">Potentially hiring</li></ul>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; list-style: none; margin: 0; padding: 0.75rem; background: #f2efeb; } .ds-chip { display: inline-flex; align-items: center; padding: 0.15rem 0.45rem; border: 1px solid #0b0b0c; border-radius: 0.3rem; font-family: Carlito, system-ui, sans-serif; font-size: 0.82rem; font-weight: 700; line-height: 1.25; color: #0b0b0c; } .ds-chip-company { background: #0b0b0c; color: #f2efeb; }"
+    },
+    {
+      "name": "Badge Front",
+      "kind": "card",
+      "refersTo": "badge-face",
+      "description": "Signature component: PVC badge with slot, photo, fitted first name, title, match band.",
+      "html": "<div class=\"ds-badge\"><span class=\"ds-slot\"></span><div class=\"ds-grid\"><div class=\"ds-photo\"></div><div><p class=\"ds-first\">RILEY</p><p class=\"ds-last\">Chen</p><hr class=\"ds-rule\"><p class=\"ds-title\">Security Engineer, Acme</p><p class=\"ds-tier\">&#9733; Top match</p></div></div></div>",
+      "css": ".ds-badge { position: relative; width: 22rem; padding: 1.35rem 0 0.9rem 0.8rem; border: 1px solid #d9d4d0; border-radius: 0.85rem; background: #f2efeb; color: #0b0b0c; box-shadow: 0 1px 2px rgba(17,18,20,0.06), 0 10px 28px rgba(17,18,20,0.08); font-family: Carlito, system-ui, sans-serif; } .ds-slot { position: absolute; top: 0.55rem; left: 50%; width: 2.4rem; height: 0.42rem; transform: translateX(-50%); border-radius: 9999px; background: #0a0a0a; } .ds-grid { display: grid; grid-template-columns: 42% 1fr; gap: 0.75rem; min-height: 12rem; } .ds-photo { border-radius: 0.45rem; background: #cfc8c4; } .ds-first { margin: 0.55rem 0 0; font-family: 'Big Shoulders', 'Arial Narrow', sans-serif; font-weight: 900; font-size: 3.4rem; line-height: 0.86; letter-spacing: -0.015em; } .ds-last { margin: 0.45rem 0 0; font-size: 1.4rem; font-weight: 700; line-height: 1.1; } .ds-rule { margin: 0.55rem 0.8rem 0.45rem 0; border: 0; border-top: 1px solid #cfc8c4; } .ds-title { margin: 0; font-size: 0.97rem; font-weight: 700; line-height: 1.3; } .ds-tier { margin: 0.6rem 0 0 -0.35rem; padding: 0.3rem 0.8rem; background: #68b86a; color: #0a0a09; font-size: 0.9rem; font-weight: 700; }"
+    },
+    {
+      "name": "Undo Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Decision confirmation with Undo and a shrinking countdown bar.",
+      "html": "<div class=\"ds-toast\"><span>Kept Riley. Added to Inbox.</span><button class=\"ds-undo\">Undo</button><span class=\"ds-timer\"></span></div>",
+      "css": ".ds-toast { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.55rem 0.55rem 0.9rem; border-radius: 0.6rem; background: #111214; color: #f2f3f5; font-family: Carlito, system-ui, sans-serif; font-size: 0.9rem; } .ds-undo { min-height: 2.5rem; padding: 0 0.75rem; border: 0; border-radius: 0.4rem; background: transparent; color: #f8376b; font: inherit; font-weight: 700; } .ds-undo:focus-visible { outline: 2px solid #8fa8ff; outline-offset: 2px; } .ds-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #f8376b; transform-origin: left; transform: scaleX(0.6); }"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Phone and tablet destinations; active in keep pink.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Home</a><a class=\"ds-tab\" href=\"#\">Events</a><a class=\"ds-tab\" href=\"#\">Inbox</a></nav>",
+      "css": ".ds-tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 22rem; background: #ffffff; border-top: 1px solid #c9ccd2; } .ds-tab { display: flex; align-items: center; justify-content: center; min-height: 2.9rem; font-family: Carlito, system-ui, sans-serif; font-size: 0.82rem; font-weight: 700; color: #4b5059; text-decoration: none; } .ds-tab[aria-current='page'] { color: #f8376b; } .ds-tab:focus-visible { outline: 2px solid #0b3bcd; outline-offset: 2px; border-radius: 6px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Badge World",
+    "overview": "Actintro's app is the ranked guest list of a real event, one guest at a time. Each guest is an off-white PVC name badge hanging from a metal clip: a heavy condensed first name you can read across a room, a photo, a title, a few chips, a match band, and the one line that tells you how to approach them. The world is built for the room: a phone, one hand, bad light, seconds of attention. Hot pink means Keep and nothing else; green means match strength. The handoff between badges is the focal motion moment. Only Home is built in the Badge world; Events, Inbox, person, onboarding, auth, and landing still render the superseded Lobby night look and are not yet migrated.",
+    "keyCharacteristics": [
+      "Off-white PVC badge with a metal clip and punched slot, in light and dark.",
+      "Big Shoulders black-weight uppercase first names, sized to fit the column.",
+      "Carlito for every other word; body never below 16px on phones.",
+      "Hot pink is Keep; green tier band is match strength; no other accent.",
+      "Phone: one flippable card. Desktop (900px and up): open badge holder, identity left, context right.",
+      "Motion is spent on the badge handoff and the flip; keyboard is instant."
+    ],
+    "rules": [
+      { "name": "The Keep Pink Rule", "body": "Pink is spent only on Keep and on things that point back to Keep (its press state, the Keep flash, the Undo action and its countdown, the active destination). Never use it for decoration, links, headings, badges of status, or errors.", "section": "colors" },
+      { "name": "The PVC Stays PVC Rule", "body": "The badge card is off-white #f2efeb in light and dark. Dark mode changes the ground around the badge, removes its shadow, and hides its edge; it never darkens the card.", "section": "colors" },
+      { "name": "The Theme Follows The Phone Rule", "body": "Appearance comes from prefers-color-scheme only. Every new token needs a light value and a dark value (or a stated reason it is card-bound and constant), and both must meet WCAG 2.2 AA.", "section": "colors" },
+      { "name": "The 16px Floor Rule", "body": "Reading text on phones (the opener and every back-of-badge paragraph) is never below 1rem. Supporting text (chips, labels, tabs, tablet-only Why and company bullets) may go down to about 0.8rem, never lower for anything a user must read to decide.", "section": "typography" },
+      { "name": "The Name Fits Rule", "body": "The first name is always one uppercase line that sizes itself to its container. Never wrap it, truncate it with an ellipsis, or give it a fixed size.", "section": "typography" },
+      { "name": "The Two Faces Rule", "body": "Big Shoulders is only for the person's first name and initials. Titles, the wordmark, buttons, and body are Carlito.", "section": "typography" },
+      { "name": "The Dock Never Drops Rule", "body": "Skip and Keep are always visible without scrolling. On phones the badge shrinks; on desktop the cards cap their height and scroll internally.", "section": "layout" },
+      { "name": "The Once Per Screen Rule", "body": "LinkedIn and X appear exactly once on any screen: in the dock on phones and tablets (never on the flip side), on the right card on desktop.", "section": "layout" },
+      { "name": "The Object, Not Chrome Rule", "body": "Only the badge gets depth. Controls, bars, and the page stay flat.", "section": "elevation" },
+      { "name": "The Handoff Is The Moment Rule", "body": "Motion is spent on the badge leaving and arriving, the flip, and the toast. Nothing else animates on entrance. Anything repeated constantly (keyboard browsing, K/S) is instant.", "section": "components" }
+    ],
+    "dos": [
+      "Do scope Badge world styles under .badge-world and use the --bw-* tokens; never hardcode a light-only value.",
+      "Do keep primary targets at least 44px (Skip and Keep 48px, social buttons and desktop tabs 44px, phone tabs about 46px) and secondary browse controls at least 24px, always with an alternative (swipe or arrow keys).",
+      "Do keep Keep wider than Skip (3fr : 2fr) and put Skip on the left.",
+      "Do show the focus ring (2px focus color, 2px offset) on every link and button.",
+      "Do give screen readers a polite live status (\"Name, n of N[, kept|skipped]\") since phones show no counter.",
+      "Do make exiting badges and the hidden badge side inert.",
+      "Do pause any timed Undo window on hover and focus.",
+      "Do write copy without em dashes, in sentence case, using the domain verbs Keep and Skip.",
+      "Do label thin or pending data honestly (card-muted text) instead of hiding it."
+    ],
+    "donts": [
+      "Don't extend the Lobby night look (Syne, IBM Plex Sans, JetBrains Mono, coral #E23D2B, slate ground, grain overlay) to new work; it is being replaced page by page.",
+      "Don't use keep-pink for anything other than Keep and its echoes (see The Keep Pink Rule).",
+      "Don't darken the badge card in dark mode.",
+      "Don't show source tags such as \"Luma bio\", \"LinkedIn\", or \"Company site\" on the badge.",
+      "Don't render LinkedIn/X more than once per screen or put them on the phone flip side.",
+      "Don't add a lanyard rail, progress bar, or counter to phones; jump-to-person belongs to the Events guest list search.",
+      "Don't add an expanding panel or sheet to the badge; the flip side is the detail view.",
+      "Don't drop phone reading text below 1rem.",
+      "Don't use uppercase letter-spaced eyebrow labels, mono meta text, or glyph-font icons; labels are sentence-case Carlito bold and icons are inline SVG.",
+      "Don't animate keyboard-driven browsing or K/S."
+    ]
+  }
+}

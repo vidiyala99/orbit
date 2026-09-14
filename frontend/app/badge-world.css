@@ -16,6 +16,8 @@
   --bw-keep: #f8376b;
   --bw-keep-press: #de2a5a;
   --bw-keep-ink: #0a0a0b;
+  /* Pink as text on the toast (dark in light mode, light in dark mode); kept at 4.5:1 or better. */
+  --bw-undo: #f8376b;
   --bw-tier: #68b86a;
   --bw-tier-ink: #0a0a09;
   --bw-tier-high: #c9e5c9;
@@ -49,6 +51,7 @@
     --bw-card-muted: #474645;
     --bw-card-rule: #c2c0c1;
     --bw-skip-mark: #9ea2a9;
+    --bw-undo: #b0104a;
     --bw-focus: #8fa8ff;
     --bw-skeleton: #1d1f22;
     color-scheme: dark;
@@ -233,12 +236,6 @@
   color: var(--bw-card-ink); text-decoration: underline;
 }
 
-.bw-source-tag {
-  display: inline-flex; align-items: center; flex-shrink: 0; padding: 0.15rem 0.45rem; border-radius: 0.3rem;
-  font-size: 0.72rem; font-weight: 700; color: var(--bw-ink); background: var(--bw-ground-raised); border: 1px solid var(--bw-rule);
-}
-.bw-face .bw-source-tag { color: var(--bw-card-muted); background: transparent; border-color: var(--bw-card-rule); }
-.bw-back .bw-source-tag { margin-top: 0.35rem; }
 
 /* Dock: LinkedIn/X, then the decision */
 .bw-dock { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -289,7 +286,7 @@
   display: flex; align-items: center; gap: 0.75rem; max-width: 26rem; padding: 0.55rem 0.55rem 0.55rem 0.9rem;
   border-radius: 0.6rem; background: var(--bw-ink); color: var(--bw-ground); font-size: 0.9rem; pointer-events: auto;
 }
-.bw-toast-undo { min-height: 2.5rem; padding: 0 0.75rem; border-radius: 0.4rem; font-weight: 700; color: var(--bw-keep); }
+.bw-toast-undo { min-height: 2.75rem; padding: 0 0.75rem; border-radius: 0.4rem; font-weight: 700; color: var(--bw-undo); }
 .bw-toast { position: relative; overflow: hidden; }
 .bw-toast-timer {
   position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--bw-keep); transform-origin: left;
@@ -308,7 +305,9 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1rem; min-height: 2.9rem;
   font-size: 0.82rem; font-weight: 700; color: var(--bw-ink-muted); text-decoration: none;
 }
-.bw-tab[aria-current="page"] { color: var(--bw-keep); }
+/* Active tab: ink label for text contrast; the pink stays on the icon, where 3:1 is enough. */
+.bw-tab[aria-current="page"] { color: var(--bw-ink); }
+.bw-tab[aria-current="page"] svg { color: var(--bw-keep); }
 
 /* Empty, loading, fallbacks */
 .bw-empty { margin: 2rem auto; max-width: 22rem; text-align: center; }
