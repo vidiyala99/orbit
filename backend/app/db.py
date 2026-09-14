@@ -3,7 +3,9 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 from .config import settings
 
-engine = create_engine(settings.database_url)
+# Neon suspends idle computes and drops their connections: check a pooled connection before
+# using it, and retire connections before the 5-minute idle suspend so none go stale.
+engine = create_engine(settings.database_url, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
