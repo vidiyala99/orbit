@@ -1,6 +1,7 @@
 "use client";
 
 import { animate, motion, useIsPresent, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { LinkedInIcon, XIcon } from "@/components/SocialIcons";
 import { TIER_LABEL, fullName, titleLine, type BadgePerson } from "@/lib/badge";
 import BadgeAvatar from "./BadgeAvatar";
@@ -154,7 +155,7 @@ function BadgeBack({ person }: { person: BadgePerson }) {
         {person.about ? (
           <section className="bw-back-section">
             <h3 className="bw-back-heading">Background</h3>
-            <p className="bw-back-text bw-clamp-5">{person.about}</p>
+            <p className="bw-back-text">{person.about}</p>
           </section>
         ) : null}
         {person.company && person.companyBullets.length ? (
@@ -203,6 +204,14 @@ export default function BadgeCard({
   // A badge already animating out (after Keep, K, or a swipe) must not browse or flip again.
   const isPresent = useIsPresent();
   const reduceMotion = useReducedMotion();
+  // 3D only while turning: at rest the visible side renders flat and sharp (see .bw-flip-rest).
+  const [turning, setTurning] = useState(false);
+  const lastFlipped = useRef(flipped);
+  useEffect(() => {
+    if (lastFlipped.current === flipped) return;
+    lastFlipped.current = flipped;
+    if (!reduceMotion) setTurning(true);
+  }, [flipped, reduceMotion]);
 
   function onDragEnd(_: unknown, info: { offset: { x: number }; velocity: { x: number } }) {
     if (!isPresent) return;
@@ -230,7 +239,7 @@ export default function BadgeCard({
         role="group"
         aria-roledescription="badge"
         aria-label={wide ? `${name}, badge and details` : `${name}, ${flipped ? "details" : "badge"}. Tap to flip, swipe to browse.`}
-        className={`bw-card ${flipped ? "bw-flipped" : ""}`}
+        className={`bw-card ${flipped ? "bw-flipped" : ""} ${turning ? "" : "bw-flip-rest"}`}
         style={wide ? undefined : { x, rotate }}
         drag={wide || !isPresent ? false : "x"}
         dragDirectionLock
@@ -245,6 +254,7 @@ export default function BadgeCard({
           // Motion skips unchanged keyframe arrays, so each side gets its own array to replay the mid-flip lift.
           animate={{ rotateY: flipped ? 180 : 0, scale: flipped ? [1, 0.965, 1] : [1, 0.966, 1] }}
           transition={FLIP_TRANSITION}
+          onAnimationComplete={() => setTurning(false)}
         >
           <div aria-hidden={frontHidden} inert={frontHidden}>
             <BadgeFront person={person} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { looksLikeBio, polishCopy, splitRole, toBadgePerson } from "../badge";
+import { endExcerpt, looksLikeBio, polishCopy, splitRole, toBadgePerson } from "../badge";
 import type { PersonSummaryT } from "../events";
 
 function person(overrides: Partial<PersonSummaryT>): PersonSummaryT {
@@ -127,6 +127,44 @@ describe("toBadgePerson", () => {
     const line = "Ask which security seat is open and what good looks like in the first ninety days.";
     const badge = toBadgePerson(person({ why: line, evidence: [{ source_id: "approach", quote: line }] }));
     expect(badge.why).toBe("");
+  });
+});
+
+describe("endExcerpt", () => {
+  it("drops a dangling fragment after the last full sentence", () => {
+    expect(
+      endExcerpt("I'm Aditya, the founder of superU. I have led Data Program at Tesla alongside product leaders. Now bu…"),
+    ).toBe("I'm Aditya, the founder of superU. I have led Data Program at Tesla alongside product leaders.");
+  });
+
+  it("cuts back to a whole word when there is no sentence to end on", () => {
+    expect(endExcerpt("Builds runtime security for agent platforms across regul...")).toBe(
+      "Builds runtime security for agent platforms across…",
+    );
+  });
+
+  it("leaves text without a trailing ellipsis untouched", () => {
+    expect(endExcerpt("Active on AI-resistant CAPTCHA work (ResponsePie angle).")).toBe(
+      "Active on AI-resistant CAPTCHA work (ResponsePie angle).",
+    );
+    expect(endExcerpt(null)).toBe("");
+  });
+
+  it("keeps a long unfinished sentence as an excerpt rather than discarding it", () => {
+    const long = "Short first. " + "then a very long second sentence that keeps going well past the fragment limit without stopping and";
+    // Too long to discard as a fragment, so it stays an excerpt, cut back to its last whole word.
+    expect(endExcerpt(long + "…")).toBe(
+      "Short first. then a very long second sentence that keeps going well past the fragment limit without stopping…",
+    );
+  });
+});
+
+describe("toBadgePerson excerpts", () => {
+  it("ends a truncated About cleanly on the badge", () => {
+    const badge = toBadgePerson(
+      person({ evidence: [{ source_id: "about", quote: "I'm Aditya, the founder of superU. Now bu…" }] }),
+    );
+    expect(badge.about).toBe("I'm Aditya, the founder of superU.");
   });
 });
 

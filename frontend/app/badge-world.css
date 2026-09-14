@@ -135,6 +135,14 @@
 .bw-card-inner > * { grid-area: 1 / 1; min-height: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 /* The front sets the badge's size; the back overlays it and scrolls inside. */
 .bw-card-inner > :last-child { position: absolute; inset: 0; transform: rotateY(180deg); }
+/* Phones and tablets: 3D only while the badge turns. At rest the visible side is drawn flat, because Chrome
+   resamples 3D-projected layers and a flipped side would otherwise stay soft. Desktop shows both sides. */
+@media (max-width: 899px) {
+  .bw-flip-rest { perspective: none; }
+  .bw-flip-rest .bw-card-inner, .bw-flip-rest .bw-card-inner > * { transform: none !important; }
+  .bw-flip-rest:not(.bw-flipped) .bw-card-inner > :last-child,
+  .bw-flip-rest.bw-flipped .bw-card-inner > :first-child { visibility: hidden; }
+}
 @media (prefers-reduced-motion: reduce) {
   .bw-card-inner { transition: none; transform: none !important; }
   .bw-card-inner > :last-child { transform: none; }
@@ -146,6 +154,8 @@
 .bw-face {
   position: relative; height: 100%; overflow: hidden; border-radius: 0.85rem; background: var(--bw-card);
   color: var(--bw-card-ink); border: 1px solid var(--bw-card-edge); box-shadow: var(--bw-card-shadow);
+  /* The badge is light PVC in both appearances, so its native controls (scrollbars) render light too. */
+  color-scheme: light;
 }
 .bw-slot {
   position: absolute; top: 0.55rem; left: 50%; width: 2.4rem; height: 0.42rem; transform: translateX(-50%);
@@ -211,6 +221,9 @@
 /* A longer profile scrolls inside the card; the fade at the bottom says there is more. */
 .bw-back-scroll {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 1.75rem;
+  /* A thin scrollbar in the card's own colors, with room reserved so text never runs into it. */
+  scrollbar-width: thin; scrollbar-color: var(--bw-card-rule) transparent; scrollbar-gutter: stable;
+  padding-right: 0.35rem;
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
 }

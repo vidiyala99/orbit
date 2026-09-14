@@ -60,6 +60,28 @@ export function polishCopy(text: string | null | undefined): string {
     .trim();
 }
 
+const TRAILING_ELLIPSIS = /\s*(?:…|\.{3})\s*$/;
+/** Longest dangling fragment worth dropping after the last full sentence, in characters. */
+const DANGLING_MAX = 60;
+
+/**
+ * Research quotes are sometimes stored cut off mid-word ("...product leaders. Now bu…").
+ * End an excerpt cleanly: keep everything up to the last full sentence when only a short
+ * fragment follows it; otherwise cut back to the last whole word and keep the ellipsis.
+ */
+export function endExcerpt(text: string | null | undefined): string {
+  const value = (text ?? "").trim();
+  if (!TRAILING_ELLIPSIS.test(value)) return value;
+  const body = value.replace(TRAILING_ELLIPSIS, "");
+  const lastSentenceEnd = Math.max(body.lastIndexOf(". "), body.lastIndexOf("! "), body.lastIndexOf("? "));
+  if (lastSentenceEnd > 0 && body.length - lastSentenceEnd - 2 <= DANGLING_MAX) {
+    return body.slice(0, lastSentenceEnd + 1);
+  }
+  const lastSpace = body.lastIndexOf(" ");
+  const words = lastSpace > 0 ? body.slice(0, lastSpace) : body;
+  return `${words.replace(/[\s,;:]+$/, "")}…`;
+}
+
 function normalized(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
@@ -138,7 +160,7 @@ export function splitRole(raw: string | null | undefined): { title: string; comp
 export function toBadgePerson(p: PersonSummaryT): BadgePerson {
   const { title, company, bio } = splitRole(p.role);
   const evidence = (p.evidence ?? []).filter((e) => e?.quote?.trim());
-  const quote = (sourceId: string) => polishCopy(evidence.find((e) => e.source_id === sourceId)?.quote);
+  const quote = (sourceId: string) => endExcerpt(polishCopy(evidence.find((e) => e.source_id === sourceId)?.quote));
 
   const approach =
     quote("approach") ||
